@@ -678,7 +678,7 @@ const { useState, useEffect, useRef } = React;
 // SECTION 1 — CONFIG (Supabase client + empresa context)
 // ─────────────────────────────────────────────────────────────
 
-const SUPABASE_URL  = 'https://mnhbmipbiegialdsiyln.supabase.co';
+const SUPABASE_URL = 'https://mnhbmipbiegialdsiyln.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_1X0TIJqFR-iG1JJkmlEE8A_9CW4fMIz';
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true },
@@ -776,19 +776,29 @@ const parseCurrencyBR = v => {
 };
 
 // Currency — format
-const formatCurrencyBR = n => {
-  if (n === null || n === undefined || isNaN(n)) return 'R$ 0,00';
-  const neg = n < 0;
-  const abs = Math.abs(n);
-  return (neg ? '-' : '') + 'R$ ' + abs.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-};
+function formatCurrency(value) {
+  const number = Number(value || 0);
 
+  return number.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  });
+}
 // Percent — parse: accepts "1,43" / "1.43" / "1,43%" → stores as 1.43
 const parsePercentBR = v => {
   if (v === null || v === undefined || v === '') return 0;
   const s = v.toString().trim().replace('%', '').replace(',', '.');
   const n = parseFloat(s);
   return isNaN(n) ? 0 : n;
+};
+
+const formatCurrencyBR = value => {
+  const number = Number(value || 0);
+
+  return number.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  });
 };
 
 // Percent — format
