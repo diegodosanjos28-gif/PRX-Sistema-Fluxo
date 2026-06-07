@@ -4098,22 +4098,11 @@ function UnitCard({unit,selYear,selMonth,onSelect,isActive,kpisPortfolio}){
   );
 }
 
-function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiva,onSelectEmpresa,kpisPortfolio,onCriarUnidade}){
+function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiva,onSelectEmpresa,kpisPortfolio}){
   const[showModal,setShowModal]=useState(false);
   const[newName,setNewName]=useState('');
   const[newSeg,setNewSeg]=useState('');
-  const[salvandoUnidade,setSalvandoUnidade]=useState(false);
-  const[erroUnidade,setErroUnidade]=useState('');
   const canAdd=empresas.length<MAX_UNITS;
-  const fecharModal=()=>{setShowModal(false);setNewName('');setNewSeg('');setErroUnidade('');};
-  const handleCriar=async()=>{
-    setErroUnidade('');
-    setSalvandoUnidade(true);
-    const err=await onCriarUnidade(newName);
-    setSalvandoUnidade(false);
-    if(err){setErroUnidade(err);return;}
-    fecharModal();
-  };
   return(
     <div className="portfolio-wrap">
       <div className="portfolio-toolbar">
@@ -4158,11 +4147,11 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
         )}
       </div>
       {showModal&&(
-        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&fecharModal()}>
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowModal(false)}>
           <div className="modal" style={{maxWidth:420}}>
             <div className="flex items-center justify-between" style={{marginBottom:16}}>
               <div style={{fontSize:15,fontWeight:700}}>🏢 Nova Unidade</div>
-              <button className="btn btn-secondary btn-sm" onClick={fecharModal}>✕</button>
+              <button className="btn btn-secondary btn-sm" onClick={()=>setShowModal(false)}>✕</button>
             </div>
             <div className="unit-modal-form">
               <div className="fg">
@@ -4171,10 +4160,9 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
                   autoFocus
                   placeholder="Ex: Mercado Zanon — Filial Norte"
                   value={newName}
-                  onChange={e=>{setNewName(e.target.value);setErroUnidade('');}}
-                  onKeyDown={e=>{if(e.key==='Enter'&&newName.trim()&&!salvandoUnidade)handleCriar();}}
+                  onChange={e=>setNewName(e.target.value)}
+                  onKeyDown={e=>{if(e.key==='Enter')alert('Funcionalidade será conectada ao Supabase em etapa futura.');}}
                   maxLength={60}
-                  disabled={salvandoUnidade}
                 />
               </div>
               <div className="fg">
@@ -4184,19 +4172,21 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
                   value={newSeg}
                   onChange={e=>setNewSeg(e.target.value)}
                   maxLength={50}
-                  disabled={salvandoUnidade}
                 />
               </div>
-              {erroUnidade&&<div className="alert alert-r" style={{marginBottom:0}}><span>⚠️</span><span>{erroUnidade}</span></div>}
-              <div className="flex gap-2" style={{justifyContent:'flex-end',marginTop:8}}>
-                <button className="btn btn-secondary btn-sm" onClick={fecharModal} disabled={salvandoUnidade}>Cancelar</button>
+              <div className="alert alert-a" style={{marginBottom:0}}>
+                <span>ℹ️</span>
+                <span>O cadastro de novas unidades será conectado ao Supabase em etapa futura.</span>
+              </div>
+              <div className="flex gap-2" style={{justifyContent:'flex-end',marginTop:4}}>
+                <button className="btn btn-secondary btn-sm" onClick={()=>{setShowModal(false);setNewName('');setNewSeg('');}}>Cancelar</button>
                 <button
                   className="btn btn-sm"
-                  style={{background:'var(--petronas)',color:'#fff',opacity:salvandoUnidade?0.7:1}}
-                  onClick={handleCriar}
-                  disabled={!newName.trim()||salvandoUnidade}
+                  style={{background:'var(--petronas)',color:'#fff'}}
+                  onClick={()=>alert('Funcionalidade será conectada ao Supabase em etapa futura.')}
+                  disabled={!newName.trim()}
                 >
-                  {salvandoUnidade?'Criando…':'Criar Unidade'}
+                  Criar Unidade
                 </button>
               </div>
             </div>
@@ -4528,39 +4518,6 @@ function App(){
     });
   };
 
-  // BLOCO 4.7 — Criar nova unidade pelo Portfólio.
-  // Retorna null em caso de sucesso ou string de erro para exibir ao usuário.
-  const criarUnidade=async(nome)=>{
-    const nomeTrimmed=nome.trim();
-    if(!nomeTrimmed)return'Nome não pode estar vazio.';
-    if(!EMPRESA_ID)return'Nenhuma empresa ativa. Selecione uma unidade primeiro.';
-    // Verificação client-side de duplicidade
-    if(empresasDisponiveis.some(e=>e.nome.trim().toLowerCase()===nomeTrimmed.toLowerCase())){
-      return'Já existe uma unidade com este nome.';
-    }
-    try{
-      // Buscar cliente_id da empresa ativa
-      const{data:empAtiva,error:errEmp}=await supabase.from('empresas').select('cliente_id').eq('id',EMPRESA_ID).single();
-      if(errEmp||!empAtiva?.cliente_id)return'Não foi possível identificar o cliente da unidade ativa.';
-      const clienteId=empAtiva.cliente_id;
-      // Inserir nova empresa
-      const{data:novaEmpresa,error:errInsert}=await supabase.from('empresas').insert({nome:nomeTrimmed,cliente_id:clienteId}).select().single();
-      if(errInsert)return errInsert.message||'Erro ao criar unidade.';
-      // Criar vínculo em usuarios_empresas
-      const{data:{session}}=await supabase.auth.getSession();
-      const userId=session?.user?.id;
-      if(!userId)return'Sessão expirada. Faça login novamente.';
-      const{error:errVinculo}=await supabase.from('usuarios_empresas').insert({usuario_id:userId,empresa_id:novaEmpresa.id,role:'dono'});
-      if(errVinculo)return errVinculo.message||'Unidade criada, mas erro ao criar vínculo.';
-      // Atualizar lista imediatamente sem novo reload
-      const clienteNome=empresasDisponiveis.find(e=>e.id===EMPRESA_ID)?.clienteNome||'';
-      setEmpresasDisponiveis(prev=>[...prev,{id:novaEmpresa.id,nome:novaEmpresa.nome,clienteNome}]);
-      return null; // sucesso
-    }catch(err){
-      return err.message||'Erro inesperado ao criar unidade.';
-    }
-  };
-
   const handleLogout=async()=>{await supabase.auth.signOut();setAutenticado(false);EMPRESA_ID=null;};
   // Mescla contas manuais + parcelas automáticas de dívidas
   const contasComParcelas=mergeContasComParcelas(contas,dividas);
@@ -4665,7 +4622,6 @@ function App(){
           empresaAtiva={empresaAtiva}
           onSelectEmpresa={trocarEmpresa}
           kpisPortfolio={kpisPortfolio}
-          onCriarUnidade={criarUnidade}
         />}
       </div>
     </div>

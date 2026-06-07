@@ -4038,54 +4038,64 @@ const PRX_LOGO_SRC='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPoAAAB4CAYAAA
 
 const MAX_UNITS=6;
 
-// BLOCO 4.6 — KPIs reais do Portfólio. Lê do mapa kpisPortfolio pré-calculado via Supabase.
-// Se a unidade ainda não tiver dados carregados, retorna objeto empty como fallback seguro.
-const KPIS_EMPTY={totalEntradas:0,totalContasAbertas:0,totalDividasAtivas:0,totalRetiradas:0,totalFornecedores:0,saldoProjetado:0,status:'empty'};
-const calcUnitKPIs=(unit,kpisPortfolio)=>kpisPortfolio?.[unit.id]||KPIS_EMPTY;
+// Placeholder de KPIs por unidade.
+// Retorna zeros e status 'empty'. Será substituído por queries Supabase no BLOCO 4.6.
+const calcUnitKPIs=(unit,selYear,selMonth)=>({
+  totalEntradas:0,
+  totalSaidas:0,
+  metaDiaria:0,
+  totalContasPagar:0,
+  totalFornecedores:0,
+  topSegmento:null,
+  status:'empty',
+  temDados:false,
+});
 
-function UnitCard({unit,selYear,selMonth,onSelect,isActive,kpisPortfolio}){
-  const k=calcUnitKPIs(unit,kpisPortfolio);
+function UnitCard({unit,selYear,selMonth,onSelect,isActive}){
+  const kpis=calcUnitKPIs(unit,selYear,selMonth);
   const mesLabel=MONTHS[selMonth]+' '+selYear;
-  const statusLabel={ok:'Saudável',warn:'Atenção',danger:'Crítico',empty:'Sem dados'}[k.status];
+  const statusLabel={ok:'Saudável',warn:'Atenção',danger:'Crítico',empty:'Sem dados'}[kpis.status];
   return(
     <div className={`unit-card${isActive?' active-unit':''}`} onClick={()=>onSelect(unit.id)}>
-      <div className={`unit-card-hdr status-${k.status}`}>
+      <div className={`unit-card-hdr status-${kpis.status}`}>
         <div className="unit-card-name" title={unit.nome}>{unit.nome}</div>
         <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
           <span style={{fontSize:9.5,color:'var(--text-muted)',fontWeight:500,letterSpacing:'.02em'}}>{mesLabel}</span>
-          <div className={`unit-card-status ${k.status}`}>{statusLabel}</div>
+          <div className={`unit-card-status ${kpis.status}`}>{statusLabel}</div>
         </div>
       </div>
       <div className="unit-kpis">
         <div className="unit-kpi">
-          <div className="unit-kpi-lbl">💰 Entradas do mês</div>
-          <div className={`unit-kpi-val${k.totalEntradas>0?' g':''}`}>{fmt(k.totalEntradas)}</div>
+          <div className="unit-kpi-lbl">💰 Entradas até agora</div>
+          <div className={`unit-kpi-val${kpis.totalEntradas>0?' g':''}`}>{fmt(kpis.totalEntradas)}</div>
           <div className="unit-kpi-sub">{mesLabel}</div>
         </div>
         <div className="unit-kpi">
-          <div className="unit-kpi-lbl">📋 Contas em aberto</div>
-          <div className={`unit-kpi-val${k.totalContasAbertas>0?' r':''}`}>{fmt(k.totalContasAbertas)}</div>
-          <div className="unit-kpi-sub">a pagar no mês</div>
+          <div className="unit-kpi-lbl">📤 Saídas totais</div>
+          <div className={`unit-kpi-val${kpis.totalSaidas>0?' r':''}`}>{fmt(kpis.totalSaidas)}</div>
+          <div className="unit-kpi-sub">pagas no mês</div>
         </div>
         <div className="unit-kpi">
-          <div className="unit-kpi-lbl">🏦 Dívidas ativas</div>
-          <div className={`unit-kpi-val${k.totalDividasAtivas>0?' r':''}`}>{k.totalDividasAtivas>0?fmt(k.totalDividasAtivas):'—'}</div>
-          <div className="unit-kpi-sub">parcela mensal</div>
+          <div className="unit-kpi-lbl">🎯 Meta diária pgto</div>
+          <div className="unit-kpi-val a">{kpis.metaDiaria>0?fmt(kpis.metaDiaria):'—'}</div>
+          <div className="unit-kpi-sub">85% da média 7 dias</div>
         </div>
         <div className="unit-kpi">
-          <div className="unit-kpi-lbl">👤 Retiradas do mês</div>
-          <div className={`unit-kpi-val${k.totalRetiradas>0?' a':''}`}>{k.totalRetiradas>0?fmt(k.totalRetiradas):'—'}</div>
-          <div className="unit-kpi-sub">{mesLabel}</div>
+          <div className="unit-kpi-lbl">📋 Contas a pagar</div>
+          <div className={`unit-kpi-val${kpis.totalContasPagar>0?' r':''}`}>{fmt(kpis.totalContasPagar)}</div>
+          <div className="unit-kpi-sub">fixas + forn. + var.</div>
         </div>
         <div className="unit-kpi">
           <div className="unit-kpi-lbl">🚚 Fornecedores</div>
-          <div className="unit-kpi-val">{k.totalFornecedores>0?fmt(k.totalFornecedores):'—'}</div>
+          <div className="unit-kpi-val">{kpis.totalFornecedores>0?fmt(kpis.totalFornecedores):'—'}</div>
           <div className="unit-kpi-sub">total do mês</div>
         </div>
         <div className="unit-kpi">
-          <div className="unit-kpi-lbl">💵 Saldo projetado</div>
-          <div className={`unit-kpi-val${k.saldoProjetado>0?' g':k.saldoProjetado<0?' r':''}`}>{k.status==='empty'?'—':fmt(k.saldoProjetado)}</div>
-          <div className="unit-kpi-sub">entradas − contas − retiradas</div>
+          <div className="unit-kpi-lbl">🏷️ Segmento líder</div>
+          <div className="unit-kpi-val" style={{fontSize:12,whiteSpace:'normal',lineHeight:1.2}}>
+            {kpis.topSegmento?kpis.topSegmento.nome:'—'}
+          </div>
+          <div className="unit-kpi-sub">{kpis.topSegmento?fmt(kpis.topSegmento.valor):''}</div>
         </div>
       </div>
       <div className="unit-card-footer">
@@ -4098,22 +4108,11 @@ function UnitCard({unit,selYear,selMonth,onSelect,isActive,kpisPortfolio}){
   );
 }
 
-function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiva,onSelectEmpresa,kpisPortfolio,onCriarUnidade}){
+function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiva,onSelectEmpresa}){
   const[showModal,setShowModal]=useState(false);
   const[newName,setNewName]=useState('');
   const[newSeg,setNewSeg]=useState('');
-  const[salvandoUnidade,setSalvandoUnidade]=useState(false);
-  const[erroUnidade,setErroUnidade]=useState('');
   const canAdd=empresas.length<MAX_UNITS;
-  const fecharModal=()=>{setShowModal(false);setNewName('');setNewSeg('');setErroUnidade('');};
-  const handleCriar=async()=>{
-    setErroUnidade('');
-    setSalvandoUnidade(true);
-    const err=await onCriarUnidade(newName);
-    setSalvandoUnidade(false);
-    if(err){setErroUnidade(err);return;}
-    fecharModal();
-  };
   return(
     <div className="portfolio-wrap">
       <div className="portfolio-toolbar">
@@ -4146,7 +4145,6 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
             selMonth={selMonth}
             onSelect={onSelectEmpresa}
             isActive={empresaAtiva?.id===u.id}
-            kpisPortfolio={kpisPortfolio}
           />
         ))}
         {canAdd&&(
@@ -4158,11 +4156,11 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
         )}
       </div>
       {showModal&&(
-        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&fecharModal()}>
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setShowModal(false)}>
           <div className="modal" style={{maxWidth:420}}>
             <div className="flex items-center justify-between" style={{marginBottom:16}}>
               <div style={{fontSize:15,fontWeight:700}}>🏢 Nova Unidade</div>
-              <button className="btn btn-secondary btn-sm" onClick={fecharModal}>✕</button>
+              <button className="btn btn-secondary btn-sm" onClick={()=>setShowModal(false)}>✕</button>
             </div>
             <div className="unit-modal-form">
               <div className="fg">
@@ -4171,10 +4169,9 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
                   autoFocus
                   placeholder="Ex: Mercado Zanon — Filial Norte"
                   value={newName}
-                  onChange={e=>{setNewName(e.target.value);setErroUnidade('');}}
-                  onKeyDown={e=>{if(e.key==='Enter'&&newName.trim()&&!salvandoUnidade)handleCriar();}}
+                  onChange={e=>setNewName(e.target.value)}
+                  onKeyDown={e=>{if(e.key==='Enter')alert('Funcionalidade será conectada ao Supabase em etapa futura.');}}
                   maxLength={60}
-                  disabled={salvandoUnidade}
                 />
               </div>
               <div className="fg">
@@ -4184,19 +4181,21 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
                   value={newSeg}
                   onChange={e=>setNewSeg(e.target.value)}
                   maxLength={50}
-                  disabled={salvandoUnidade}
                 />
               </div>
-              {erroUnidade&&<div className="alert alert-r" style={{marginBottom:0}}><span>⚠️</span><span>{erroUnidade}</span></div>}
-              <div className="flex gap-2" style={{justifyContent:'flex-end',marginTop:8}}>
-                <button className="btn btn-secondary btn-sm" onClick={fecharModal} disabled={salvandoUnidade}>Cancelar</button>
+              <div className="alert alert-a" style={{marginBottom:0}}>
+                <span>ℹ️</span>
+                <span>O cadastro de novas unidades será conectado ao Supabase em etapa futura.</span>
+              </div>
+              <div className="flex gap-2" style={{justifyContent:'flex-end',marginTop:4}}>
+                <button className="btn btn-secondary btn-sm" onClick={()=>{setShowModal(false);setNewName('');setNewSeg('');}}>Cancelar</button>
                 <button
                   className="btn btn-sm"
-                  style={{background:'var(--petronas)',color:'#fff',opacity:salvandoUnidade?0.7:1}}
-                  onClick={handleCriar}
-                  disabled={!newName.trim()||salvandoUnidade}
+                  style={{background:'var(--petronas)',color:'#fff'}}
+                  onClick={()=>alert('Funcionalidade será conectada ao Supabase em etapa futura.')}
+                  disabled={!newName.trim()}
                 >
-                  {salvandoUnidade?'Criando…':'Criar Unidade'}
+                  Criar Unidade
                 </button>
               </div>
             </div>
@@ -4354,7 +4353,6 @@ function App(){
   const[empresasSeletorPRX,setEmpresasSeletorPRX]=useState([]); // lista global — só para EmpresaSelector PRX
   const[empresasDisponiveis,setEmpresasDisponiveis]=useState([]); // unidades do cliente ativo — para o Portfólio
   const[empresaAtiva,setEmpresaAtiva]=useState(null);
-  const[kpisPortfolio,setKpisPortfolio]=useState({}); // BLOCO 4.6 — KPIs calculados por empresa para o Portfólio
 
   const[entradas,setE_]=useState([]);
   const[contas,setC_]=useState([]);
@@ -4444,122 +4442,12 @@ function App(){
     })();
   },[autenticado,roleGlobal]);
 
-  // useEffect 5 (BLOCO 4.6): calcular KPIs reais do Portfólio via queries batch no Supabase.
-  // Dispara ao abrir a aba Portfólio ou ao mudar mês/ano enquanto ela está ativa.
-  // Não altera EMPRESA_ID, loadS, saveS nem useEffect 3.
-  useEffect(()=>{
-    if(activeTab!=='portfolio'||!autenticado||empresasDisponiveis.length===0)return;
-    (async()=>{
-      try{
-        const ids=empresasDisponiveis.map(e=>e.id);
-        const mStart=monthStart(selectedYear,selectedMonth);
-        const mEnd=monthEnd(selectedYear,selectedMonth);
-        const[{data:rawEnt},{data:rawCon},{data:rawDiv},{data:rawRet},{data:rawCfg}]=await Promise.all([
-          supabase.from('entradas').select('empresa_id,total,data').in('empresa_id',ids).gte('data',mStart).lte('data',mEnd),
-          supabase.from('contas').select('empresa_id,valor,status,vencimento,tipoDespesa').in('empresa_id',ids).gte('vencimento',mStart).lte('vencimento',mEnd),
-          supabase.from('dividas').select('empresa_id,parcelaMensal,status').in('empresa_id',ids).eq('status','Ativa'),
-          supabase.from('retiradas').select('empresa_id,valor,data').in('empresa_id',ids).gte('data',mStart).lte('data',mEnd),
-          supabase.from('config').select('empresa_id,saldoInicial').in('empresa_id',ids),
-        ]);
-        const kpis={};
-        ids.forEach(id=>{
-          const ent=(rawEnt||[]).filter(r=>r.empresa_id===id);
-          const con=(rawCon||[]).filter(r=>r.empresa_id===id);
-          const div=(rawDiv||[]).filter(r=>r.empresa_id===id);
-          const ret=(rawRet||[]).filter(r=>r.empresa_id===id);
-          const cfg=(rawCfg||[]).find(r=>r.empresa_id===id);
-          const totalEntradas=ent.reduce((s,r)=>s+(r.total||0),0);
-          const totalContasAbertas=con.filter(r=>r.status!=='Pago').reduce((s,r)=>s+(r.valor||0),0);
-          const totalFornecedores=con.filter(r=>r.tipoDespesa==='Fornecedor').reduce((s,r)=>s+(r.valor||0),0);
-          const totalDividasAtivas=div.reduce((s,r)=>s+parseCurrencyBR(r.parcelaMensal),0);
-          const totalRetiradas=ret.reduce((s,r)=>s+(r.valor||0),0);
-          const saldoInicial=Number(cfg?.saldoInicial)||defaultConfig.saldoInicial;
-          const saldoProjetado=saldoInicial+totalEntradas-totalContasAbertas-totalRetiradas;
-          let status='empty';
-          if(totalEntradas>0||totalContasAbertas>0){
-            if(saldoProjetado<=0)status='danger';
-            else if(totalContasAbertas>=totalEntradas*0.75)status='warn';
-            else status='ok';
-          }
-          kpis[id]={totalEntradas,totalContasAbertas,totalDividasAtivas,totalRetiradas,totalFornecedores,saldoProjetado,status};
-        });
-        setKpisPortfolio(kpis);
-      }catch(err){
-        console.error('Erro ao calcular KPIs do Portfólio:',err);
-      }
-    })();
-  },[activeTab,autenticado,empresasDisponiveis,selectedYear,selectedMonth]);
-
   // ── Setters assíncronos com optimistic update e indicador isSaving ──
   const setEntradas=async d=>{setE_(d);setIsSaving(true);try{await saveS(KEYS.entradas,d);}catch(err){console.error('Erro ao salvar entradas:',err);}finally{setIsSaving(false);}};
   const setContas=async d=>{setC_(d);setIsSaving(true);try{await saveS(KEYS.contas,d);}catch(err){console.error('Erro ao salvar contas:',err);}finally{setIsSaving(false);}};
   const setDividas=async d=>{setD_(d);setIsSaving(true);try{await saveS(KEYS.dividas,d);}catch(err){console.error('Erro ao salvar dívidas:',err);}finally{setIsSaving(false);}};
   const setRetiradas=async d=>{setR_(d);setIsSaving(true);try{await saveS(KEYS.retiradas,d);}catch(err){console.error('Erro ao salvar retiradas:',err);}finally{setIsSaving(false);}};
   const setConfig=async d=>{setCfg_(d);setIsSaving(true);try{await saveS(KEYS.config,d);}catch(err){console.error('Erro ao salvar config:',err);}finally{setIsSaving(false);}};
-
-  // BLOCO 4.5 — Troca de unidade pelo Portfólio (cliente comum)
-  const trocarEmpresa=(eid)=>{
-    // Correção 1: bloquear troca durante gravação em andamento
-    if(isSaving){alert('Aguarde o salvamento terminar antes de trocar de unidade.');return;}
-    // Correção 2: empresa já ativa — apenas navega para o painel
-    if(eid===EMPRESA_ID){setActiveTab('painel');return;}
-    // Troca de contexto: define EMPRESA_ID antes de qualquer setState
-    EMPRESA_ID=eid;
-    setEmpresaAtiva(empresasDisponiveis.find(e=>e.id===eid)||null);
-    setActiveTab('painel');
-    // Recarrega todos os dados para a nova empresa (mesmo padrão do useEffect 3, sem tocá-lo)
-    setCarregandoDados(true);
-    Promise.all([
-      loadS(KEYS.entradas),
-      loadS(KEYS.contas),
-      loadS(KEYS.dividas),
-      loadS(KEYS.retiradas),
-      loadS(KEYS.config),
-    ]).then(([ent,cnt,div,ret,cfg])=>{
-      setE_(Array.isArray(ent)?ent:[]);
-      setC_(Array.isArray(cnt)?cnt:[]);
-      setD_(Array.isArray(div)?div:[]);
-      setR_(Array.isArray(ret)?ret:[]);
-      setCfg_({...defaultConfig,...((cfg&&typeof cfg==='object')?cfg:{})});
-    }).catch(err=>{
-      console.error('Erro ao recarregar dados após troca de unidade:',err);
-    }).finally(()=>{
-      setCarregandoDados(false);
-    });
-  };
-
-  // BLOCO 4.7 — Criar nova unidade pelo Portfólio.
-  // Retorna null em caso de sucesso ou string de erro para exibir ao usuário.
-  const criarUnidade=async(nome)=>{
-    const nomeTrimmed=nome.trim();
-    if(!nomeTrimmed)return'Nome não pode estar vazio.';
-    if(!EMPRESA_ID)return'Nenhuma empresa ativa. Selecione uma unidade primeiro.';
-    // Verificação client-side de duplicidade
-    if(empresasDisponiveis.some(e=>e.nome.trim().toLowerCase()===nomeTrimmed.toLowerCase())){
-      return'Já existe uma unidade com este nome.';
-    }
-    try{
-      // Buscar cliente_id da empresa ativa
-      const{data:empAtiva,error:errEmp}=await supabase.from('empresas').select('cliente_id').eq('id',EMPRESA_ID).single();
-      if(errEmp||!empAtiva?.cliente_id)return'Não foi possível identificar o cliente da unidade ativa.';
-      const clienteId=empAtiva.cliente_id;
-      // Inserir nova empresa
-      const{data:novaEmpresa,error:errInsert}=await supabase.from('empresas').insert({nome:nomeTrimmed,cliente_id:clienteId}).select().single();
-      if(errInsert)return errInsert.message||'Erro ao criar unidade.';
-      // Criar vínculo em usuarios_empresas
-      const{data:{session}}=await supabase.auth.getSession();
-      const userId=session?.user?.id;
-      if(!userId)return'Sessão expirada. Faça login novamente.';
-      const{error:errVinculo}=await supabase.from('usuarios_empresas').insert({usuario_id:userId,empresa_id:novaEmpresa.id,role:'dono'});
-      if(errVinculo)return errVinculo.message||'Unidade criada, mas erro ao criar vínculo.';
-      // Atualizar lista imediatamente sem novo reload
-      const clienteNome=empresasDisponiveis.find(e=>e.id===EMPRESA_ID)?.clienteNome||'';
-      setEmpresasDisponiveis(prev=>[...prev,{id:novaEmpresa.id,nome:novaEmpresa.nome,clienteNome}]);
-      return null; // sucesso
-    }catch(err){
-      return err.message||'Erro inesperado ao criar unidade.';
-    }
-  };
 
   const handleLogout=async()=>{await supabase.auth.signOut();setAutenticado(false);EMPRESA_ID=null;};
   // Mescla contas manuais + parcelas automáticas de dívidas
@@ -4663,9 +4551,7 @@ function App(){
           setSelYear={setSelectedYear}
           setSelMonth={setSelectedMonth}
           empresaAtiva={empresaAtiva}
-          onSelectEmpresa={trocarEmpresa}
-          kpisPortfolio={kpisPortfolio}
-          onCriarUnidade={criarUnidade}
+          onSelectEmpresa={()=>{}}
         />}
       </div>
     </div>

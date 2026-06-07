@@ -667,125 +667,6 @@ textarea{resize:vertical;min-height:58px;}
 @media(max-width:1100px){.comp-inner-4{grid-template-columns:repeat(2,1fr);}.comp-inner-4 .comp-group:nth-child(odd){border-right:1px solid var(--border);}.comp-inner-4 .comp-group:nth-child(even){border-right:none;}.comp-inner-4 .comp-group:nth-child(-n+2){border-bottom:1px solid var(--border);}}
 @media(max-width:900px){.painel-kpi-grid.v5{grid-template-columns:repeat(2,1fr);}.painel-kpi-row2.v5{grid-template-columns:repeat(2,1fr);}.painel-layout-bottom{grid-template-columns:1fr;}.forn-body{grid-template-columns:1fr;gap:14px;}.forn-col{padding:0;}.forn-col:last-child{padding:0;border-left:none;border-top:1px solid var(--border);padding-top:12px;}}
 @media(max-width:700px){.comp-inner-4{grid-template-columns:1fr;}.comp-inner-4 .comp-group{border-right:none;border-bottom:1px solid var(--border);}.comp-inner-4 .comp-group:last-child{border-bottom:none;}}
-
-/* ── PAINEL LAYOUT INFERIOR: Calendário (esq) + CustoSegmentos (dir) ── */
-.painel-layout-bottom{display:grid;grid-template-columns:3fr 1fr;gap:11px;margin-bottom:11px;align-items:stretch;}
-.painel-layout-bottom>.calendario{height:100%;display:flex;flex-direction:column;}
-.painel-layout-bottom>.calendario .cal-grid{flex:1;}
-
-/* ── CALENDÁRIO: seleção por arrastar ── */
-.cal-day{cursor:pointer;user-select:none;transition:box-shadow .12s,border-color .12s;}
-.cal-day.cal-selected{box-shadow:inset 0 0 0 2px var(--petronas);position:relative;}
-.cal-day.cal-selected::after{content:'';position:absolute;inset:0;background:var(--petronas-soft);pointer-events:none;border-radius:5px;}
-.cal-day.empty{cursor:default;}
-.cal-sel-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:9px 13px;margin-bottom:11px;background:var(--surface-2);border-left:3px solid var(--petronas);border-radius:0 var(--radius-xs) var(--radius-xs) 0;font-size:11.5px;animation:calSelFadeIn .18s ease-out;}
-@keyframes calSelFadeIn{from{opacity:0;transform:translateY(-2px);}to{opacity:1;transform:translateY(0);}}
-.cal-sel-bar-block{display:flex;flex-direction:column;line-height:1.15;}
-.cal-sel-bar-lbl{font-size:9px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--text-muted);margin-bottom:2px;}
-.cal-sel-bar-val{font-size:14px;font-weight:800;color:var(--text-primary);letter-spacing:-.02em;}
-.cal-sel-bar-val.over{color:var(--red-dim);}
-.cal-sel-bar-val.under{color:var(--green-dim);}
-.cal-sel-bar-div{width:1px;height:26px;background:var(--border);}
-.cal-sel-bar-diff{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.02em;}
-.cal-sel-bar-diff.over{background:#fef2f2;color:var(--red-dim);}
-.cal-sel-bar-diff.under{background:#f0fdf4;color:var(--green-dim);}
-.cal-sel-bar-clear{margin-left:auto;font-size:10px;font-weight:600;color:var(--text-muted);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;text-transform:uppercase;letter-spacing:.06em;padding:4px 8px;border-radius:4px;}
-.cal-sel-bar-clear:hover{color:var(--text-primary);background:var(--ink-100);}
-
-/* ── CUSTO POR SEGMENTO (Painel do Dono) ── */
-.seg-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;}
-.seg-hdr{padding:11px 13px 9px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-shrink:0;flex-wrap:wrap;}
-.seg-hdr-meta{display:flex;flex-direction:column;gap:2px;min-width:0;}
-.seg-hdr-title{font-size:10px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--text-muted);}
-.seg-hdr-period{font-size:12.5px;font-weight:700;color:var(--text-primary);letter-spacing:-.01em;margin-top:1px;}
-.seg-hdr-kpis{display:flex;align-items:flex-start;gap:10px;}
-.seg-hdr-kpi{display:flex;flex-direction:column;align-items:flex-end;gap:1px;}
-.seg-hdr-kpi-lbl{font-size:8.5px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--text-muted);}
-.seg-hdr-kpi-val{font-size:13.5px;font-weight:800;color:var(--text-primary);letter-spacing:-.03em;line-height:1.1;}
-.seg-hdr-kpi-sub{font-size:9.5px;color:var(--text-muted);}
-.seg-hdr-div{width:1px;height:28px;background:var(--border);align-self:center;}
-.seg-chart-area{padding:11px 12px 6px;flex-shrink:0;}
-.seg-chart-canvas{position:relative;height:140px;}
-.seg-insight{margin:0 12px 9px;padding:7px 10px;background:var(--surface-2);border-left:3px solid var(--petronas);border-radius:0 var(--radius-xs) var(--radius-xs) 0;font-size:10.5px;line-height:1.5;color:var(--text-secondary);flex-shrink:0;}
-.seg-insight strong{color:var(--text-primary);font-weight:700;}
-.seg-list{flex:1;overflow-y:auto;border-top:1px solid var(--border);min-height:0;max-height:240px;}
-.seg-list::-webkit-scrollbar{width:4px;}
-.seg-list::-webkit-scrollbar-track{background:transparent;}
-.seg-list::-webkit-scrollbar-thumb{background:var(--ink-200);border-radius:2px;}
-.seg-list::-webkit-scrollbar-thumb:hover{background:var(--ink-300);}
-.seg-row{display:grid;grid-template-columns:14px 1fr 78px;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid var(--border);transition:background .1s;}
-.seg-row:last-child{border-bottom:none;}
-.seg-row:hover{background:var(--ink-50);}
-.seg-rank{font-size:9.5px;font-weight:700;color:var(--text-muted);text-align:right;}
-.seg-name-wrap{display:flex;align-items:center;gap:6px;min-width:0;}
-.seg-dot{width:6px;height:6px;border-radius:2px;flex-shrink:0;}
-.seg-name{font-size:11px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.seg-val-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:1px;}
-.seg-val{font-size:11.5px;font-weight:700;color:var(--text-primary);text-align:right;letter-spacing:-.02em;white-space:nowrap;}
-.seg-val-pct{font-size:9px;font-weight:600;color:var(--text-muted);}
-.seg-delta{font-size:8.5px;font-weight:700;white-space:nowrap;text-align:right;}
-.seg-delta.up{color:var(--red-dim);}
-.seg-delta.down{color:var(--green-dim);}
-.seg-delta.eq{color:var(--text-muted);}
-.seg-empty{padding:30px 20px;text-align:center;color:var(--text-muted);font-size:12px;line-height:1.6;}
-
-/* ── ENTRADAS: card Média Diária por dias corridos ── */
-.metric-card-medias .pc-medias{margin:2px 0 6px;}
-.metric-card-medias .pc-medias.pc-medias-solo{grid-template-columns:1fr;}
-.metric-card-medias .pc-medias.pc-medias-solo .pc-medias-col{padding:0;align-items:flex-start;text-align:left;}
-.metric-card-medias .metric-label{margin-bottom:6px;}
-.metrics-grid.entradas-grid .metric-card-medias .pc-medias-val{font-size:22px;}
-.metric-card-medias .pc-medias-lbl{font-size:9.5px;}
-@media(max-width:900px){.painel-layout-bottom{grid-template-columns:1fr;}}
-
-/* ══════════════════════════════════
-   ABA PORTFÓLIO — MULTI-UNIDADE
-   ══════════════════════════════════ */
-.portfolio-wrap{padding:0;}
-.portfolio-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
-.portfolio-toolbar-left{display:flex;align-items:center;gap:10px;}
-.portfolio-count{font-size:12px;color:var(--text-muted);font-weight:500;}
-.portfolio-count strong{color:var(--text-secondary);font-weight:700;}
-.portfolio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
-@media(max-width:1100px){.portfolio-grid{grid-template-columns:repeat(2,1fr);}}
-@media(max-width:680px){.portfolio-grid{grid-template-columns:1fr;}}
-.unit-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);overflow:hidden;cursor:pointer;transition:box-shadow .18s,transform .18s,border-color .18s;position:relative;}
-.unit-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);border-color:var(--petronas);}
-.unit-card.active-unit{border-color:var(--petronas);box-shadow:0 0 0 2px var(--petronas),var(--shadow-lg);}
-.unit-card-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 14px 10px;border-bottom:1px solid var(--border);position:relative;}
-.unit-card-hdr::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:0;}
-.unit-card-hdr.status-ok::before{background:var(--green);}
-.unit-card-hdr.status-warn::before{background:var(--amber);}
-.unit-card-hdr.status-danger::before{background:var(--red);}
-.unit-card-hdr.status-empty::before{background:var(--ink-300);}
-.unit-card-name{font-size:13px;font-weight:700;color:var(--text-primary);letter-spacing:-.01em;padding-left:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
-.unit-card-status{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
-.unit-card-status.ok{background:var(--green-light);color:var(--green-dim);}
-.unit-card-status.warn{background:var(--amber-light);color:var(--amber-dim);}
-.unit-card-status.danger{background:var(--red-light);color:var(--red-dim);}
-.unit-card-status.empty{background:var(--ink-100);color:var(--ink-400);}
-.unit-kpis{display:grid;grid-template-columns:1fr 1fr;gap:0;}
-.unit-kpi{padding:10px 13px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);min-width:0;}
-.unit-kpis>.unit-kpi:nth-child(2n){border-right:none;}
-.unit-kpis>.unit-kpi:nth-last-child(-n+2){border-bottom:none;}
-.unit-kpi-lbl{font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.unit-kpi-val{font-size:14px;font-weight:700;letter-spacing:-.02em;color:var(--text-primary);line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.unit-kpi-val.g{color:var(--green);}
-.unit-kpi-val.r{color:var(--red);}
-.unit-kpi-val.a{color:var(--amber);}
-.unit-kpi-sub{font-size:10px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.unit-card-footer{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--surface-2);border-top:1px solid var(--border);}
-.unit-card-footer-btn{font-size:10.5px;font-weight:600;color:var(--petronas-dark);background:none;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-family:'DM Sans',sans-serif;letter-spacing:.03em;padding:0;}
-.unit-card-footer-btn:hover{color:var(--petronas);}
-.unit-card-mes{font-size:10px;color:var(--text-muted);font-weight:500;}
-.unit-card-add{background:var(--surface);border:2px dashed var(--border);border-radius:var(--radius);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:32px 20px;cursor:pointer;transition:border-color .15s,background .15s;min-height:220px;}
-.unit-card-add:hover{border-color:var(--petronas);background:var(--petronas-soft);}
-.unit-card-add-ico{font-size:24px;opacity:.5;}
-.unit-card-add-label{font-size:13px;font-weight:600;color:var(--text-muted);}
-.unit-card-add-sub{font-size:11px;color:var(--text-muted);opacity:.7;}
-.unit-modal-form{display:flex;flex-direction:column;gap:13px;}
-.unit-modal-form .fg{display:flex;flex-direction:column;gap:4px;}
-.unit-modal-form label{font-size:12px;font-weight:600;color:var(--text-secondary);}
 </style>
 </head>
 <body>
@@ -856,7 +737,6 @@ const FAIXA_ATENCAO_CALENDARIO = 2000;
 
 // Navigation tabs
 const TABS = [
-  { id: 'portfolio',    label: 'Portfólio',         icon: '🏢' },
   { id: 'painel',       label: 'Painel do Dono',   icon: '📊' },
   { id: 'entradas',     label: 'Entradas',          icon: '💰' },
   { id: 'contas',       label: 'Contas a Pagar',    icon: '📋' },
@@ -866,7 +746,6 @@ const TABS = [
   { id: 'projecao',     label: 'Projeção',          icon: '📈' },
 ];
 const TAB_META = {
-  portfolio:    { sub: 'Visão consolidada de todas as unidades' },
   painel:       { sub: 'Visão executiva completa do caixa' },
   entradas:     { sub: 'Registro de vendas e receitas diárias' },
   contas:       { sub: 'Gestão de contas a pagar e vencimentos' },
@@ -1000,26 +879,17 @@ const saveS = async (chave, dados) => {
   if (!tabela)     { saveLocalS(chave, dados); return; }
   if (!EMPRESA_ID) return;
   if (tabela === 'config') {
-    // UPSERT config — erro indica RLS bloqueando escrita ou constraint violada.
-    // Causa mais comum: policy empresa_propria não cobre o EMPRESA_ID ativo (ex: PRX sem policy).
-    const { error: upsertErr } = await supabase.from('config').upsert({ ...dados, empresa_id: EMPRESA_ID });
-    if (upsertErr) { console.error('SUPABASE ERROR [upsert config]:', upsertErr); throw upsertErr; }
+    await supabase.from('config').upsert({ ...dados, empresa_id: EMPRESA_ID });
     return;
   }
-  // DELETE — apaga todos os rows da empresa antes de reinserir (substituição completa).
-  // Erro aqui indica RLS bloqueando DELETE ou problema de permissão na tabela.
-  const { error: deleteErr } = await supabase.from(tabela).delete().eq('empresa_id', EMPRESA_ID);
-  if (deleteErr) { console.error('SUPABASE ERROR [delete ' + tabela + ']:', deleteErr); throw deleteErr; }
+  await supabase.from(tabela).delete().eq('empresa_id', EMPRESA_ID);
   if (Array.isArray(dados) && dados.length > 0) {
     const rows = dados.map(d => {
       const row = { empresa_id: EMPRESA_ID };
       Object.entries(d).forEach(([k, v]) => { if (!k.startsWith('_')) row[k] = v; });
       return row;
     });
-    // INSERT — grava os novos rows com empresa_id do contexto ativo.
-    // Erro aqui indica RLS bloqueando INSERT, constraint violada ou empresa_id inválido.
-    const { error: insertErr } = await supabase.from(tabela).insert(rows);
-    if (insertErr) { console.error('SUPABASE ERROR [insert ' + tabela + ']:', insertErr); throw insertErr; }
+    await supabase.from(tabela).insert(rows);
   }
 };
 
@@ -1206,191 +1076,6 @@ function SugestaoRedistribuicao({contas,mediaDiariaEnt,metaPercentual,metaDiaria
   );
 }
 
-// ══════════════════════════════════════
-// CUSTO POR SEGMENTO — Painel do Dono
-// ══════════════════════════════════════
-const SEG_CORES=['#00A19B','#2563eb','#d97706','#7c3aed','#16a34a','#dc2626','#0891b2','#ea580c','#4f46e5','#92400e'];
-
-function geraInsight(segArr,totalMes,topSeg,topPct,selMonth,selYear){
-  if(!topSeg)return null;
-  const mesNome=MONTHS[selMonth]+'/'+selYear;
-  const nSegs=segArr.length;
-  const top2val=segArr.slice(0,2).reduce((s,x)=>s+x.valor,0);
-  const top2pct=totalMes>0?Math.round(top2val/totalMes*100):0;
-  if(topPct>=50){
-    return React.createElement(React.Fragment,null,
-      React.createElement('strong',null,topSeg.nome),
-      ' responde por ',
-      React.createElement('strong',null,topPct+'%'),
-      ' das compras. Concentração elevada: avaliar diversificação ou negociação por volume.'
-    );
-  }
-  if(top2pct>=70){
-    return React.createElement(React.Fragment,null,
-      'Os dois maiores setores concentram ',
-      React.createElement('strong',null,top2pct+'%'),
-      ' do custo de compras em '+mesNome+'. Base de fornecimento pouco diversificada.'
-    );
-  }
-  if(nSegs>=5&&topPct<30){
-    return React.createElement(React.Fragment,null,
-      'Compras distribuídas em ',
-      React.createElement('strong',null,nSegs+' setores'),
-      ', nenhum acima de ',
-      React.createElement('strong',null,topPct+'%'),
-      '. Boa diversificação. Oportunidade de consolidar pedidos para ganhar desconto.'
-    );
-  }
-  return React.createElement(React.Fragment,null,
-    React.createElement('strong',null,topSeg.nome),
-    ' lidera com ',
-    React.createElement('strong',null,formatCurrencyBR(topSeg.valor)),
-    ' ('+topPct+'% do total) em '+mesNome+'.'
-  );
-}
-
-function CustoSegmentos({contas,selYear,selMonth}){
-  const chartRef=useRef(null);
-  const mStart=monthStart(selYear,selMonth);
-  const mEnd=monthEnd(selYear,selMonth);
-  const prevYear=selMonth===0?selYear-1:selYear;
-  const prevMonth=selMonth===0?11:selMonth-1;
-  const mStartPrev=monthStart(prevYear,prevMonth);
-  const mEndPrev=monthEnd(prevYear,prevMonth);
-
-  const fornMes=contas.filter(c=>c.tipoDespesa==='Fornecedor'&&c.vencimento>=mStart&&c.vencimento<=mEnd);
-  const fornPrev=contas.filter(c=>c.tipoDespesa==='Fornecedor'&&c.vencimento>=mStartPrev&&c.vencimento<=mEndPrev);
-
-  const agrSeg=lista=>{
-    const m={};
-    lista.forEach(c=>{
-      const key=(c.segmento&&c.segmento.trim())||(c.categoria&&c.categoria.trim())||'Sem segmento';
-      if(!m[key])m[key]={nome:key,valor:0,qtd:0};
-      m[key].valor+=c.valor;m[key].qtd+=1;
-    });
-    return Object.values(m).sort((a,b)=>b.valor-a.valor);
-  };
-
-  const segArr=agrSeg(fornMes);
-  const segPrev=agrSeg(fornPrev);
-  const prevMap=Object.fromEntries(segPrev.map(s=>[s.nome,s.valor]));
-  const totalMes=segArr.reduce((s,x)=>s+x.valor,0);
-  const totalPrevMes=segPrev.reduce((s,x)=>s+x.valor,0);
-  const nSegs=segArr.length;
-  const topSeg=segArr[0]||null;
-  const topPct=topSeg&&totalMes>0?Math.round(topSeg.valor/totalMes*100):0;
-  const deltaTotalPct=totalPrevMes>0?((totalMes-totalPrevMes)/totalPrevMes*100):null;
-
-  const top6=segArr.slice(0,6);
-  useChart(chartRef,top6.length>0?{
-    type:'bar',
-    data:{
-      labels:top6.map(s=>s.nome.length>14?s.nome.slice(0,12)+'…':s.nome),
-      datasets:[{
-        data:top6.map(s=>s.valor),
-        backgroundColor:top6.map((_,i)=>SEG_CORES[i%SEG_CORES.length]+'22'),
-        borderColor:top6.map((_,i)=>SEG_CORES[i%SEG_CORES.length]),
-        borderWidth:1.5,borderRadius:3,borderSkipped:false,
-      }]
-    },
-    options:{
-      indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        tooltip:{callbacks:{
-          title:items=>top6[items[0].dataIndex].nome,
-          label:ctx=>' '+formatCurrencyBR(ctx.parsed.x)+' ('+Math.round(ctx.parsed.x/totalMes*100)+'%)',
-        }}
-      },
-      scales:{
-        x:{ticks:{callback:v=>v>=1000?(v/1000).toFixed(0)+'k':v,font:{size:9},color:'#94a3b8',maxTicksLimit:4},grid:{color:'rgba(15,23,42,0.04)'},border:{display:false}},
-        y:{ticks:{font:{size:10,weight:'600'},color:'#475569'},grid:{display:false},border:{display:false}}
-      },
-      layout:{padding:{top:2,right:14,bottom:0,left:0}},
-    }
-  }:null);
-
-  const mesLabel=MONTHS[selMonth]+' '+selYear;
-  const prevLabel=MONTHS[prevMonth]+' '+prevYear;
-
-  if(segArr.length===0){
-    return(
-      <div className="seg-panel">
-        <div className="seg-hdr">
-          <div className="seg-hdr-meta">
-            <div className="seg-hdr-title">Custo por Segmento</div>
-            <div className="seg-hdr-period">{mesLabel}</div>
-          </div>
-        </div>
-        <div className="seg-empty">
-          Nenhum boleto de fornecedor em {mesLabel}.<br/>
-          Cadastre contas com tipo <strong>Fornecedor</strong>.
-        </div>
-      </div>
-    );
-  }
-
-  const insight=geraInsight(segArr,totalMes,topSeg,topPct,selMonth,selYear);
-
-  return(
-    <div className="seg-panel">
-      <div className="seg-hdr">
-        <div className="seg-hdr-meta">
-          <div className="seg-hdr-title">Custo por Segmento</div>
-          <div className="seg-hdr-period">{mesLabel}</div>
-        </div>
-        <div className="seg-hdr-kpis">
-          <div className="seg-hdr-kpi">
-            <div className="seg-hdr-kpi-lbl">Total comprado</div>
-            <div className="seg-hdr-kpi-val">{formatCurrencyBR(totalMes)}</div>
-            <div className="seg-hdr-kpi-sub">
-              {deltaTotalPct!==null?(
-                <span style={{color:deltaTotalPct>0?'var(--red-dim)':'var(--green-dim)',fontWeight:700}}>
-                  {deltaTotalPct>0?'+':''}{deltaTotalPct.toFixed(0)}% vs {prevLabel}
-                </span>
-              ):(nSegs+' setor'+(nSegs===1?'':'es'))}
-            </div>
-          </div>
-          {deltaTotalPct!==null&&<div className="seg-hdr-div"/>}
-          {deltaTotalPct!==null&&(
-            <div className="seg-hdr-kpi">
-              <div className="seg-hdr-kpi-lbl">Setores</div>
-              <div className="seg-hdr-kpi-val">{nSegs}</div>
-              <div className="seg-hdr-kpi-sub">{nSegs===1?'categoria':'categorias'}</div>
-            </div>
-          )}
-        </div>
-      </div>
-      <div className="seg-chart-area">
-        <div className="seg-chart-canvas"><canvas ref={chartRef}></canvas></div>
-      </div>
-      {insight&&<div className="seg-insight">{insight}</div>}
-      <div className="seg-list">
-        {segArr.map((s,i)=>{
-          const p=totalMes>0?Math.round(s.valor/totalMes*100):0;
-          const prev=prevMap[s.nome]||0;
-          const delta=prev>0?((s.valor-prev)/prev*100):null;
-          const dClass=delta===null?'eq':delta>5?'up':delta<-5?'down':'eq';
-          const dLabel=delta===null?'—':(delta>0?'+':'')+delta.toFixed(0)+'%';
-          return(
-            <div className="seg-row" key={i}>
-              <span className="seg-rank">{i+1}</span>
-              <div className="seg-name-wrap">
-                <span className="seg-dot" style={{background:SEG_CORES[i%SEG_CORES.length]}}></span>
-                <span className="seg-name" title={s.nome}>{s.nome}</span>
-              </div>
-              <div className="seg-val-wrap">
-                <span className="seg-val">{formatCurrencyBR(s.valor)} <span className="seg-val-pct">· {p}%</span></span>
-                <span className={'seg-delta '+dClass}>{dLabel} vs {MONTHS_SHORT[prevMonth]}</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 // ══════════════════
 // PAINEL DO DONO
 // ══════════════════
@@ -1409,9 +1094,6 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
   const[expForn,setExpForn]=useState(false);
   const[expFin,setExpFin]=useState(false);
   const[showMeta,setShowMeta]=useState(false);
-  // Seleção por clique-arrasto do mouse no calendário
-  const[diasSelecionados,setDiasSelecionados]=useState(()=>new Set());
-  const[isArrastando,setIsArrastando]=useState(false);
   const[metaInput,setMetaInput]=useState('');
   // Popover de meta manual (financeira) por mês — fica no card "Meta Diária de Pagamento"
   const[showMetaManual,setShowMetaManual]=useState(false);
@@ -1682,147 +1364,155 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
         </div>
       </div>
 
-      {/* LAYOUT INFERIOR: Calendário (esq 75%) | Custo por Segmento (dir 25%) */}
+      {/* LAYOUT INFERIOR: Leitura + Sugestão (esq) | Fornecedores em Destaque (dir) */}
       <div className="painel-layout-bottom">
-        {/* CALENDÁRIO FINANCEIRO — coluna esquerda */}
-        <div className="calendario">
-          <div className="cal-head">
-            <div className="cal-title-wrap">
-              <div className="cal-nav">
-                <button className="cal-nav-btn" onClick={calPrev} title="Mês anterior" aria-label="Mês anterior">‹</button>
-                <button className="cal-nav-btn" onClick={calNext} title="Próximo mês" aria-label="Próximo mês">›</button>
-                {!calEhMesAtual&&(
-                  <button className="cal-nav-today" onClick={calHoje} title="Voltar ao mês atual">Hoje</button>
-                )}
-              </div>
-              <div className="cal-title">Calendário Financeiro — {MONTHS[calMonth]} {calYear}</div>
-            </div>
-            <div className="cal-head-right">
-              <div className="cal-legend">
-                <div className="cal-leg"><div className="cal-leg-dot" style={{background:'#dcfce7'}}></div>Saudável</div>
-                <div className="cal-leg"><div className="cal-leg-dot" style={{background:'#fef9c3'}}></div>Atenção</div>
-                <div className="cal-leg"><div className="cal-leg-dot" style={{background:'#fee2e2'}}></div>Crítico</div>
-              </div>
-              <button className="cal-meta-btn" onClick={()=>{setMetaInput(String(metaPercentual));setShowMeta(s=>!s);}} title="Ajustar a meta diária de pagamento">
-                ⚙ Ajustar meta
-              </button>
-            </div>
+        <div className="painel-bottom-left">
+          {/* LEITURA EXECUTIVA */}
+          <div className="leitura-exec">
+            <div className="le-eye">📋 Leitura Executiva — {MONTHS[selMonth]} {selYear}</div>
+            <div className="le-resumo">{leResumo}</div>
+            <ul className="le-bullets">
+              {leBullets.map((b,i)=>(<li key={i}><span className="le-dot"></span>{b}</li>))}
+            </ul>
           </div>
 
-          {showMeta&&(
-            <div className="cal-meta-panel">
-              <div className="cal-meta-panel-title">Meta diária de pagamento</div>
-              <div className="cal-meta-panel-row">
-                <input type="number" min="1" max="200" step="1" className="cal-meta-input"
-                  value={metaInput} onChange={e=>setMetaInput(e.target.value)}/>
-                <span className="cal-meta-pct">%</span>
-                <div className="cal-meta-preview">
-                  Valor atual: <strong>{fmtFull(mediaDiariaEnt*((parseFloat(metaInput)||metaPercentual)/100))}</strong>
+          {/* SUGESTÃO AUTOMÁTICA DE REDISTRIBUIÇÃO */}
+          <SugestaoRedistribuicao contas={contas} mediaDiariaEnt={mediaDiariaEnt} metaPercentual={metaPercentual} metaDiariaPagamento={metaDiariaPagamento} metaIsManual={metaIsManual} mesLabel={mesLabel}/>
+        </div>
+
+        {/* FORNECEDORES EM DESTAQUE */}
+        <div className="forn-panel">
+          <div className="forn-header">
+            <div className="forn-header-label">Fornecedores em Destaque</div>
+            <div className="forn-header-total">{fmtFull(totalFornMes)}</div>
+            <div className="forn-header-sub">{MONTHS[selMonth]} {selYear} · {fornArr.length} fornecedor{fornArr.length===1?'':'es'} no mês</div>
+          </div>
+          <div className="forn-body">
+            <div className="forn-col">
+              <div className="forn-section-title">Top 3 — mais caros</div>
+              {topFornValor.length===0?(
+                <div className="forn-empty">Nenhum fornecedor em {MONTHS[selMonth]}.</div>
+              ):(
+                <div className="forn-list">
+                  {topFornValor.map((f,i)=>{
+                    const pctF=totalFornMes>0?pct(f.valor,totalFornMes):0;
+                    return(
+                      <div key={i} className="forn-row">
+                        <div className="forn-row-rank">
+                          <div className="forn-row-num">{i+1}.</div>
+                          <div className="forn-row-name" title={f.nome}>{f.nome}</div>
+                        </div>
+                        <div className="forn-row-val">{fmtFull(f.valor)}</div>
+                        <div className="forn-row-meta">{pctF}% do total</div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-              <div className="cal-meta-actions">
-                <button className="cal-meta-save" onClick={()=>{
-                  const v=parseFloat(metaInput);
-                  if(isNaN(v)||v<=0||v>200){alert('Informe um percentual válido entre 1 e 200.');return;}
-                  setConfig({...config,metaPagamentoPercentual:v});
-                  setShowMeta(false);
-                }}>Salvar</button>
-                <button className="cal-meta-reset" onClick={()=>{
-                  setConfig({...config,metaPagamentoPercentual:85});
-                  setMetaInput('85');
-                }}>Restaurar padrão 85%</button>
-                <button className="cal-meta-cancel" onClick={()=>setShowMeta(false)}>Cancelar</button>
-              </div>
-              <div className="cal-meta-footnote">Padrão: 85% da média diária de entrada · esta meta é usada no calendário, na sugestão de redistribuição e no card de meta diária.</div>
+              )}
             </div>
-          )}
 
-          {/* Barra de resumo dos dias selecionados */}
-          {diasSelecionados.size>0&&(()=>{
-            const dias=Array.from(diasSelecionados);
-            const totalSelecionado=dias.reduce((s,d)=>{
-              const itens=contasPorDia[d]||[];
-              return s+itens.reduce((ss,c)=>ss+c.valor,0);
-            },0);
-            const metaAcumulada=metaDiariaPagamento*diasSelecionados.size;
-            const diff=totalSelecionado-metaAcumulada;
-            const isOver=diff>0;
-            const diffPct=metaAcumulada>0?Math.round((diff/metaAcumulada)*100):0;
-            return(
-              <div className="cal-sel-bar">
-                <div className="cal-sel-bar-block">
-                  <div className="cal-sel-bar-lbl">Dias selecionados</div>
-                  <div className="cal-sel-bar-val">{diasSelecionados.size}</div>
-                </div>
-                <div className="cal-sel-bar-div"></div>
-                <div className="cal-sel-bar-block">
-                  <div className="cal-sel-bar-lbl">Total a pagar</div>
-                  <div className={`cal-sel-bar-val ${isOver?'over':'under'}`}>{fmtFull(totalSelecionado)}</div>
-                </div>
-                <div className="cal-sel-bar-div"></div>
-                <div className="cal-sel-bar-block">
-                  <div className="cal-sel-bar-lbl">Meta acumulada</div>
-                  <div className="cal-sel-bar-val">{fmtFull(metaAcumulada)}</div>
-                </div>
-                {metaAcumulada>0&&(
-                  <span className={`cal-sel-bar-diff ${isOver?'over':'under'}`}>
-                    {isOver?'+':''}{diffPct}% {isOver?'acima':'abaixo'} da meta
-                  </span>
-                )}
-                <button className="cal-sel-bar-clear" onClick={()=>setDiasSelecionados(new Set())}>Limpar</button>
-              </div>
-            );
-          })()}
-
-          <div className="cal-grid"
-            onMouseDown={e=>{e.preventDefault();}}
-            onMouseUp={()=>setIsArrastando(false)}
-            onMouseLeave={()=>setIsArrastando(false)}
-          >
-            {['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(d=><div key={d} className="cal-dow">{d}</div>)}
-            {Array(offsetDays).fill(null).map((_,i)=><div key={'e'+i} className="cal-day empty"></div>)}
-            {Array(totalDays).fill(null).map((_,i)=>{
-              const day=i+1;
-              const itens=contasPorDia[day]||[];
-              const totalDia=itens.reduce((s,c)=>s+c.valor,0);
-              const int=calInt(totalDia,day);
-              const inSem=isInSemP(day);
-              const isToday=isTodayCell(day);
-              const isSelecionado=diasSelecionados.has(day);
-              return(
-                <div key={day} className={`cal-day${int?' '+int:' cal-leve'}${isToday?' cal-today':''}${isSelecionado?' cal-selected':''}`}
-                  onMouseDown={e=>{
-                    if(e.button!==0)return;
-                    e.preventDefault();
-                    setIsArrastando(true);
-                    setDiasSelecionados(new Set([day]));
-                  }}
-                  onMouseEnter={()=>{
-                    if(!isArrastando)return;
-                    setDiasSelecionados(prev=>{
-                      if(prev.has(day))return prev;
-                      const n=new Set(prev);n.add(day);return n;
-                    });
-                  }}
-                  style={inSem&&int&&int!=='cal-saudavel'?{borderLeftColor:'var(--amber)',borderLeftWidth:'2px'}:{}}>
-                  <div className="cal-day-n">{day}</div>
-                  {totalDia>0&&(<>
-                    <div className="cal-day-total">{fmt(totalDia)}</div>
-                    <div className="cal-day-items">
-                      {itens.slice(0,2).map((c,j)=>(
-                        <div key={j} style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(c.descricao||'').substring(0,10)} {fmt(c.valor)}</div>
-                      ))}
-                      {itens.length>2&&<div className="cal-day-more">+{itens.length-2}</div>}
+            <div className="forn-col">
+              <div className="forn-section-title">Top 3 — mais recorrentes</div>
+              {topFornQtd.length===0?(
+                <div className="forn-empty">Nenhum pagamento em {MONTHS[selMonth]}.</div>
+              ):(
+                <div className="forn-list">
+                  {topFornQtd.map((f,i)=>(
+                    <div key={i} className="forn-row">
+                      <div className="forn-row-rank">
+                        <div className="forn-row-num">{i+1}.</div>
+                        <div className="forn-row-name" title={f.nome}>{f.nome}</div>
+                      </div>
+                      <div className="forn-row-val">{f.qtd} pagamento{f.qtd===1?'':'s'}</div>
+                      <div className="forn-row-meta">{fmtFull(f.valor)}</div>
                     </div>
-                  </>)}
+                  ))}
                 </div>
-              );
-            })}
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CALENDÁRIO — abaixo dos blocos consultivos */}
+      <div className="calendario">
+        <div className="cal-head">
+          <div className="cal-title-wrap">
+            <div className="cal-nav">
+              <button className="cal-nav-btn" onClick={calPrev} title="Mês anterior" aria-label="Mês anterior">‹</button>
+              <button className="cal-nav-btn" onClick={calNext} title="Próximo mês" aria-label="Próximo mês">›</button>
+              {!calEhMesAtual&&(
+                <button className="cal-nav-today" onClick={calHoje} title="Voltar ao mês atual">Hoje</button>
+              )}
+            </div>
+            <div className="cal-title">Calendário Financeiro — {MONTHS[calMonth]} {calYear}</div>
+          </div>
+          <div className="cal-head-right">
+            <div className="cal-legend">
+              <div className="cal-leg"><div className="cal-leg-dot" style={{background:'#dcfce7'}}></div>Saudável</div>
+              <div className="cal-leg"><div className="cal-leg-dot" style={{background:'#fef9c3'}}></div>Atenção</div>
+              <div className="cal-leg"><div className="cal-leg-dot" style={{background:'#fee2e2'}}></div>Crítico</div>
+            </div>
+            <button className="cal-meta-btn" onClick={()=>{setMetaInput(String(metaPercentual));setShowMeta(s=>!s);}} title="Ajustar a meta diária de pagamento">
+              ⚙ Ajustar meta
+            </button>
           </div>
         </div>
 
-        {/* CUSTO POR SEGMENTO — coluna direita */}
-        <CustoSegmentos contas={contas} selYear={selYear} selMonth={selMonth}/>
+        {showMeta&&(
+          <div className="cal-meta-panel">
+            <div className="cal-meta-panel-title">Meta diária de pagamento</div>
+            <div className="cal-meta-panel-row">
+              <input type="number" min="1" max="200" step="1" className="cal-meta-input"
+                value={metaInput} onChange={e=>setMetaInput(e.target.value)}/>
+              <span className="cal-meta-pct">%</span>
+              <div className="cal-meta-preview">
+                Valor atual: <strong>{fmtFull(mediaDiariaEnt*((parseFloat(metaInput)||metaPercentual)/100))}</strong>
+              </div>
+            </div>
+            <div className="cal-meta-actions">
+              <button className="cal-meta-save" onClick={()=>{
+                const v=parseFloat(metaInput);
+                if(isNaN(v)||v<=0||v>200){alert('Informe um percentual válido entre 1 e 200.');return;}
+                setConfig({...config,metaPagamentoPercentual:v});
+                setShowMeta(false);
+              }}>Salvar</button>
+              <button className="cal-meta-reset" onClick={()=>{
+                setConfig({...config,metaPagamentoPercentual:85});
+                setMetaInput('85');
+              }}>Restaurar padrão 85%</button>
+              <button className="cal-meta-cancel" onClick={()=>setShowMeta(false)}>Cancelar</button>
+            </div>
+            <div className="cal-meta-footnote">Padrão: 85% da média diária de entrada · esta meta é usada no calendário, na sugestão de redistribuição e no card de meta diária.</div>
+          </div>
+        )}
+        <div className="cal-grid">
+          {['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(d=><div key={d} className="cal-dow">{d}</div>)}
+          {Array(offsetDays).fill(null).map((_,i)=><div key={'e'+i} className="cal-day empty"></div>)}
+          {Array(totalDays).fill(null).map((_,i)=>{
+            const day=i+1;
+            const itens=contasPorDia[day]||[];
+            const totalDia=itens.reduce((s,c)=>s+c.valor,0);
+            const int=calInt(totalDia,day);
+            const inSem=isInSemP(day);
+            const isToday=isTodayCell(day);
+            return(
+              <div key={day} className={`cal-day${int?' '+int:' cal-leve'}${isToday?' cal-today':''}`}
+                style={inSem&&int&&int!=='cal-saudavel'?{borderLeftColor:'var(--amber)',borderLeftWidth:'2px'}:{}}>
+                <div className="cal-day-n">{day}</div>
+                {totalDia>0&&(<>
+                  <div className="cal-day-total">{fmt(totalDia)}</div>
+                  <div className="cal-day-items">
+                    {itens.slice(0,2).map((c,j)=>(
+                      <div key={j} style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(c.descricao||'').substring(0,10)} {fmt(c.valor)}</div>
+                    ))}
+                    {itens.length>2&&<div className="cal-day-more">+{itens.length-2}</div>}
+                  </div>
+                </>)}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -1870,11 +1560,6 @@ function Entradas({entradas,setEntradas,contas,dividas,selectedYear,selectedMont
   const totalMes=entradasDoMes.reduce((s,e)=>s+e.total,0);
   const dias=new Set(entradasDoMes.map(e=>e.data)).size;
   const media=dias>0?totalMes/dias:0;
-  // Média diária por dias CORRIDOS — mesma régua do Painel do Dono
-  const totalDiasMesEnt=daysInMonth(selYear,selMonth);
-  const isMesAtualEnt=now.getFullYear()===selYear&&now.getMonth()===selMonth;
-  const diasCorridosBaseEnt=isMesAtualEnt?now.getDate():totalDiasMesEnt;
-  const mediaDiariaEnt=(totalMes>0&&diasCorridosBaseEnt>0)?totalMes/diasCorridosBaseEnt:0;
   const melhor=entradasDoMes.length?entradasDoMes.reduce((m,e)=>e.total>m.total?e:m):null;
   const pior=entradasDoMes.length?entradasDoMes.reduce((m,e)=>e.total<m.total?e:m):null;
   const sorted=[...entradasDoMes].sort((a,b)=>b.data.localeCompare(a.data));
@@ -1951,15 +1636,10 @@ function Entradas({entradas,setEntradas,contas,dividas,selectedYear,selectedMont
           <div className="metric-value amber">{fmtFull(totalAReceber)}</div>
           <div className="metric-sub">{totalMes>0?pct(totalAReceber,totalMes):0}% do total</div>
         </div>
-        <div className="metric-card metric-card-medias">
+        <div className="metric-card">
           <div className="metric-label">Média Diária</div>
-          <div className="pc-medias pc-medias-solo">
-            <div className="pc-medias-col">
-              <span className="pc-medias-lbl">Entrada</span>
-              <span className="pc-medias-val g">{fmtFull(mediaDiariaEnt)}</span>
-            </div>
-          </div>
-          <div className="metric-sub">por dia corrido do mês</div>
+          <div className="metric-value">{fmtFull(media)}</div>
+          <div className="metric-sub">por dia com venda</div>
         </div>
         <div className="metric-card">
           <div className="metric-label">Melhor Dia</div>
@@ -2765,18 +2445,6 @@ function Contas({contas,setContas,contasComParcelas,mediaDiariaEntrada,dividas,s
           ))}
         </div>
         <div style={{display:'flex',gap:7}}>
-          <button className="btn btn-secondary" style={{fontSize:13}} onClick={()=>{
-            if(!contasNoMes||contasNoMes.length===0){alert('Nenhuma conta no mês selecionado para exportar.');return;}
-            const mesLabel=(selMonth+1).toString().padStart(2,'0');
-            const nomearq='Zanon_Contas_'+selYear+'_'+mesLabel+'.csv';
-            const cabecalho=['Vencimento','Fornecedor','Descrição','Segmento','Valor','Categoria','Tipo de Despesa','Status','Forma de Pagamento','Conta de Saída','Observação'];
-            const escapar=v=>{const s=String(v===null||v===undefined?'':v);return s.includes(',')||s.includes('"')||s.includes('\n')?'"'+s.replace(/"/g,'""')+'"':s;};
-            const linhas=contasNoMes.map(c=>[c.vencimento||'',c.fornecedor||'',c.descricao||'',c.segmento||'',typeof c.valor==='number'?c.valor.toFixed(2):'',c.categoria||'Fornecedores',c.tipoDespesa||'',c.status||'',c.formaPag||'',c.contaSaida||'',c.obs||''].map(escapar).join(','));
-            const csv='﻿'+cabecalho.join(',')+'\n'+linhas.join('\n');
-            const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-            const url=URL.createObjectURL(blob);
-            const a=document.createElement('a');a.href=url;a.download=nomearq;a.click();URL.revokeObjectURL(url);
-          }}>📤 Exportar CSV</button>
           <button className="btn btn-secondary" style={{fontSize:13}} onClick={()=>setShowImport(true)}>📥 Importar</button>
           <button className="btn btn-primary" onClick={()=>openForm()}>+ Adicionar</button>
         </div>
@@ -4030,183 +3698,6 @@ function Fornecedores({contas,selectedYear,selectedMonth}){
 
 const PRX_LOGO_SRC='data:image/png;base64,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';
 
-// ══════════════════════════════════════════════════════════════
-// PORTFÓLIO — MULTI-UNIDADE (estrutura visual fiel ao modelo V35)
-// Fonte de dados: Supabase via props — conectado no BLOCO 4.6.
-// calcUnitKPIs é placeholder; retorna zeros até o login ser adaptado.
-// ══════════════════════════════════════════════════════════════
-
-const MAX_UNITS=6;
-
-// BLOCO 4.6 — KPIs reais do Portfólio. Lê do mapa kpisPortfolio pré-calculado via Supabase.
-// Se a unidade ainda não tiver dados carregados, retorna objeto empty como fallback seguro.
-const KPIS_EMPTY={totalEntradas:0,totalContasAbertas:0,totalDividasAtivas:0,totalRetiradas:0,totalFornecedores:0,saldoProjetado:0,status:'empty'};
-const calcUnitKPIs=(unit,kpisPortfolio)=>kpisPortfolio?.[unit.id]||KPIS_EMPTY;
-
-function UnitCard({unit,selYear,selMonth,onSelect,isActive,kpisPortfolio}){
-  const k=calcUnitKPIs(unit,kpisPortfolio);
-  const mesLabel=MONTHS[selMonth]+' '+selYear;
-  const statusLabel={ok:'Saudável',warn:'Atenção',danger:'Crítico',empty:'Sem dados'}[k.status];
-  return(
-    <div className={`unit-card${isActive?' active-unit':''}`} onClick={()=>onSelect(unit.id)}>
-      <div className={`unit-card-hdr status-${k.status}`}>
-        <div className="unit-card-name" title={unit.nome}>{unit.nome}</div>
-        <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
-          <span style={{fontSize:9.5,color:'var(--text-muted)',fontWeight:500,letterSpacing:'.02em'}}>{mesLabel}</span>
-          <div className={`unit-card-status ${k.status}`}>{statusLabel}</div>
-        </div>
-      </div>
-      <div className="unit-kpis">
-        <div className="unit-kpi">
-          <div className="unit-kpi-lbl">💰 Entradas do mês</div>
-          <div className={`unit-kpi-val${k.totalEntradas>0?' g':''}`}>{fmt(k.totalEntradas)}</div>
-          <div className="unit-kpi-sub">{mesLabel}</div>
-        </div>
-        <div className="unit-kpi">
-          <div className="unit-kpi-lbl">📋 Contas em aberto</div>
-          <div className={`unit-kpi-val${k.totalContasAbertas>0?' r':''}`}>{fmt(k.totalContasAbertas)}</div>
-          <div className="unit-kpi-sub">a pagar no mês</div>
-        </div>
-        <div className="unit-kpi">
-          <div className="unit-kpi-lbl">🏦 Dívidas ativas</div>
-          <div className={`unit-kpi-val${k.totalDividasAtivas>0?' r':''}`}>{k.totalDividasAtivas>0?fmt(k.totalDividasAtivas):'—'}</div>
-          <div className="unit-kpi-sub">parcela mensal</div>
-        </div>
-        <div className="unit-kpi">
-          <div className="unit-kpi-lbl">👤 Retiradas do mês</div>
-          <div className={`unit-kpi-val${k.totalRetiradas>0?' a':''}`}>{k.totalRetiradas>0?fmt(k.totalRetiradas):'—'}</div>
-          <div className="unit-kpi-sub">{mesLabel}</div>
-        </div>
-        <div className="unit-kpi">
-          <div className="unit-kpi-lbl">🚚 Fornecedores</div>
-          <div className="unit-kpi-val">{k.totalFornecedores>0?fmt(k.totalFornecedores):'—'}</div>
-          <div className="unit-kpi-sub">total do mês</div>
-        </div>
-        <div className="unit-kpi">
-          <div className="unit-kpi-lbl">💵 Saldo projetado</div>
-          <div className={`unit-kpi-val${k.saldoProjetado>0?' g':k.saldoProjetado<0?' r':''}`}>{k.status==='empty'?'—':fmt(k.saldoProjetado)}</div>
-          <div className="unit-kpi-sub">entradas − contas − retiradas</div>
-        </div>
-      </div>
-      <div className="unit-card-footer">
-        <button className="unit-card-footer-btn" onClick={e=>{e.stopPropagation();onSelect(unit.id);}}>
-          Abrir painel →
-        </button>
-        <span className="unit-card-mes">{unit.clienteNome||''}</span>
-      </div>
-    </div>
-  );
-}
-
-function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiva,onSelectEmpresa,kpisPortfolio,onCriarUnidade}){
-  const[showModal,setShowModal]=useState(false);
-  const[newName,setNewName]=useState('');
-  const[newSeg,setNewSeg]=useState('');
-  const[salvandoUnidade,setSalvandoUnidade]=useState(false);
-  const[erroUnidade,setErroUnidade]=useState('');
-  const canAdd=empresas.length<MAX_UNITS;
-  const fecharModal=()=>{setShowModal(false);setNewName('');setNewSeg('');setErroUnidade('');};
-  const handleCriar=async()=>{
-    setErroUnidade('');
-    setSalvandoUnidade(true);
-    const err=await onCriarUnidade(newName);
-    setSalvandoUnidade(false);
-    if(err){setErroUnidade(err);return;}
-    fecharModal();
-  };
-  return(
-    <div className="portfolio-wrap">
-      <div className="portfolio-toolbar">
-        <div className="portfolio-toolbar-left">
-          <div className="portfolio-count">
-            <strong>{empresas.length}</strong> de {MAX_UNITS} unidades
-          </div>
-          <div className="month-bar-inline" style={{marginBottom:0}}>
-            <select className="year-sel" value={selYear} onChange={e=>setSelYear(parseInt(e.target.value))}>
-              {[new Date().getFullYear()-1,new Date().getFullYear(),new Date().getFullYear()+1].map(y=><option key={y} value={y}>{y}</option>)}
-            </select>
-            <div className="month-sep"></div>
-            {MONTHS_SHORT.map((m,i)=>(
-              <button key={i} className={`mchip${selMonth===i?' active':''}`} onClick={()=>setSelMonth(i)}>{m}</button>
-            ))}
-          </div>
-        </div>
-        {canAdd&&(
-          <button className="btn btn-primary btn-sm" onClick={()=>setShowModal(true)} style={{background:'var(--petronas)',display:'flex',alignItems:'center',gap:5}}>
-            <span style={{fontSize:14,lineHeight:1}}>＋</span> Nova Unidade
-          </button>
-        )}
-      </div>
-      <div className="portfolio-grid">
-        {empresas.map(u=>(
-          <UnitCard
-            key={u.id}
-            unit={u}
-            selYear={selYear}
-            selMonth={selMonth}
-            onSelect={onSelectEmpresa}
-            isActive={empresaAtiva?.id===u.id}
-            kpisPortfolio={kpisPortfolio}
-          />
-        ))}
-        {canAdd&&(
-          <div className="unit-card-add" onClick={()=>setShowModal(true)}>
-            <div className="unit-card-add-ico">＋</div>
-            <div className="unit-card-add-label">Adicionar Unidade</div>
-            <div className="unit-card-add-sub">máx. {MAX_UNITS} unidades</div>
-          </div>
-        )}
-      </div>
-      {showModal&&(
-        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&fecharModal()}>
-          <div className="modal" style={{maxWidth:420}}>
-            <div className="flex items-center justify-between" style={{marginBottom:16}}>
-              <div style={{fontSize:15,fontWeight:700}}>🏢 Nova Unidade</div>
-              <button className="btn btn-secondary btn-sm" onClick={fecharModal}>✕</button>
-            </div>
-            <div className="unit-modal-form">
-              <div className="fg">
-                <label>Nome da unidade *</label>
-                <input
-                  autoFocus
-                  placeholder="Ex: Mercado Zanon — Filial Norte"
-                  value={newName}
-                  onChange={e=>{setNewName(e.target.value);setErroUnidade('');}}
-                  onKeyDown={e=>{if(e.key==='Enter'&&newName.trim()&&!salvandoUnidade)handleCriar();}}
-                  maxLength={60}
-                  disabled={salvandoUnidade}
-                />
-              </div>
-              <div className="fg">
-                <label>Segmento / Tipo</label>
-                <input
-                  placeholder="Ex: Supermercado, Açougue, Padaria..."
-                  value={newSeg}
-                  onChange={e=>setNewSeg(e.target.value)}
-                  maxLength={50}
-                  disabled={salvandoUnidade}
-                />
-              </div>
-              {erroUnidade&&<div className="alert alert-r" style={{marginBottom:0}}><span>⚠️</span><span>{erroUnidade}</span></div>}
-              <div className="flex gap-2" style={{justifyContent:'flex-end',marginTop:8}}>
-                <button className="btn btn-secondary btn-sm" onClick={fecharModal} disabled={salvandoUnidade}>Cancelar</button>
-                <button
-                  className="btn btn-sm"
-                  style={{background:'var(--petronas)',color:'#fff',opacity:salvandoUnidade?0.7:1}}
-                  onClick={handleCriar}
-                  disabled={!newName.trim()||salvandoUnidade}
-                >
-                  {salvandoUnidade?'Criando…':'Criar Unidade'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─────────────────────────────────────────────────────────────
 // SECTION 12 — AUTH
 // ─────────────────────────────────────────────────────────────
@@ -4221,16 +3712,10 @@ function LoginScreen({onLogin}){
     try{
       const{data,error}=await supabase.auth.signInWithPassword({email,password:senha});
       if(error){setErro(error.message==='Invalid login credentials'?'E-mail ou senha inválidos.':error.message);return;}
-      const{data:usuario}=await supabase.from('usuarios').select('empresa_id,role_global').eq('id',data.user.id).single();
+      const{data:usuario}=await supabase.from('usuarios').select('empresa_id').eq('id',data.user.id).single();
       if(!usuario){setErro('Usuário não vinculado a uma empresa. Contate o administrador.');return;}
-      const rg=usuario.role_global||null;
-      if(rg==='prx_admin'||rg==='prx_editor'){
-        const{data:emps}=await supabase.from('empresas').select('id,nome,cliente_id,clientes(nome)').order('nome');
-        onLogin(rg,emps||[]);
-      }else{
-        EMPRESA_ID=usuario.empresa_id;
-        onLogin(rg,[]);
-      }
+      EMPRESA_ID=usuario.empresa_id;
+      onLogin();
     }catch(err){setErro(err.message||'Erro ao fazer login.');}
     finally{setLoading(false);}
   };
@@ -4281,63 +3766,6 @@ function LoginScreen({onLogin}){
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// SECTION 12-B — EMPRESA SELECTOR (PRX Admin)
-// Componente visual puro. Não chama Supabase. Não altera estado global.
-// Recebe a lista de empresas pronta do App e devolve o id selecionado via onSelect.
-// ─────────────────────────────────────────────────────────────
-function EmpresaSelector({empresas,roleGlobal,onSelect}){
-  const roleLbl=roleGlobal==='prx_editor'?'PRX Editor':'PRX Admin';
-  return(
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',background:'var(--bg)'}}>
-      <div style={{width:'100%',maxWidth:'520px',padding:'0 16px'}}>
-        <div style={{display:'flex',justifyContent:'center',marginBottom:'24px'}}>
-          <div style={{background:'var(--surface)',padding:'12px 20px',borderRadius:'10px',boxShadow:'var(--shadow-md)'}}>
-            <ZanonLogo/>
-          </div>
-        </div>
-        <div style={{background:'var(--surface)',borderRadius:'var(--radius)',boxShadow:'var(--shadow-md)',padding:'28px 32px'}}>
-          <div style={{marginBottom:'20px'}}>
-            <div style={{display:'inline-flex',alignItems:'center',padding:'3px 10px',background:'var(--petronas-soft)',borderRadius:'20px',marginBottom:'10px'}}>
-              <span style={{fontSize:'11px',fontWeight:'700',letterSpacing:'.08em',textTransform:'uppercase',color:'var(--petronas-dark)'}}>{roleLbl}</span>
-            </div>
-            <h2 style={{fontSize:'18px',fontWeight:'700',color:'var(--text-primary)',marginBottom:'4px',letterSpacing:'-.02em'}}>Selecionar empresa</h2>
-            <p style={{fontSize:'13px',color:'var(--text-muted)'}}>Escolha a empresa que deseja acessar.</p>
-          </div>
-          {empresas.length===0?(
-            <div style={{textAlign:'center',padding:'28px 0',color:'var(--text-muted)',fontSize:'13px'}}>Nenhuma empresa encontrada.</div>
-          ):(
-            <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
-              {empresas.map(e=>(
-                <button
-                  key={e.id}
-                  onClick={()=>onSelect(e.id)}
-                  style={{
-                    display:'flex',alignItems:'center',justifyContent:'space-between',
-                    width:'100%',padding:'12px 16px',
-                    background:'var(--ink-50)',border:'1px solid var(--border)',
-                    borderRadius:'var(--radius-sm)',cursor:'pointer',
-                    fontFamily:'DM Sans,sans-serif',
-                    transition:'all .15s',textAlign:'left',
-                  }}
-                  onMouseEnter={e=>{ e.currentTarget.style.background='var(--petronas-soft)'; e.currentTarget.style.borderColor='var(--petronas)'; }}
-                  onMouseLeave={e=>{ e.currentTarget.style.background='var(--ink-50)'; e.currentTarget.style.borderColor='var(--border)'; }}
-                >
-                  <div>
-                    <div style={{fontSize:'14px',fontWeight:'600',color:'var(--text-primary)',marginBottom:'2px'}}>{e.nome}</div>
-                    {e.clientes?.nome&&<div style={{fontSize:'11px',color:'var(--text-muted)'}}>{e.clientes.nome}</div>}
-                  </div>
-                  <span style={{fontSize:'16px',color:'var(--text-muted)',marginLeft:'12px'}}>→</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function App(){
   const[activeTab,setActiveTab]=useState('painel');
   // ── Estado global de mês/ano: ÚNICA fonte de verdade para o mês selecionado em todo o dashboard ──
@@ -4345,16 +3773,9 @@ function App(){
   const[selectedMonth,setSelectedMonth]=useState(new Date().getMonth());
   // ── Estados de autenticação e carregamento ──
   const[autenticado,setAutenticado]=useState(false);
-  const[aguardandoSelecaoEmpresa,setAguardandoSelecaoEmpresa]=useState(false);
   const[carregandoAuth,setCarregandoAuth]=useState(true);
   const[carregandoDados,setCarregandoDados]=useState(false);
   const[isSaving,setIsSaving]=useState(false);
-  // Estados do Portfólio — carregados via Supabase após autenticação (BLOCO 4.4)
-  const[roleGlobal,setRoleGlobal]=useState(null);
-  const[empresasSeletorPRX,setEmpresasSeletorPRX]=useState([]); // lista global — só para EmpresaSelector PRX
-  const[empresasDisponiveis,setEmpresasDisponiveis]=useState([]); // unidades do cliente ativo — para o Portfólio
-  const[empresaAtiva,setEmpresaAtiva]=useState(null);
-  const[kpisPortfolio,setKpisPortfolio]=useState({}); // BLOCO 4.6 — KPIs calculados por empresa para o Portfólio
 
   const[entradas,setE_]=useState([]);
   const[contas,setC_]=useState([]);
@@ -4366,19 +3787,8 @@ function App(){
   useEffect(()=>{
     supabase.auth.getSession().then(async({data:{session}})=>{
       if(session){
-        const{data:usuario}=await supabase.from('usuarios').select('empresa_id,role_global').eq('id',session.user.id).single();
-        if(usuario){
-          const rg=usuario.role_global||null;
-          setRoleGlobal(rg);
-          if(rg==='prx_admin'||rg==='prx_editor'){
-            const{data:emps}=await supabase.from('empresas').select('id,nome,cliente_id,clientes(nome)').order('nome');
-            setEmpresasSeletorPRX(emps||[]);
-            setAguardandoSelecaoEmpresa(true);
-          }else{
-            EMPRESA_ID=usuario.empresa_id;
-            setAutenticado(true);
-          }
-        }
+        const{data:usuario}=await supabase.from('usuarios').select('empresa_id').eq('id',session.user.id).single();
+        if(usuario){EMPRESA_ID=usuario.empresa_id;setAutenticado(true);}
       }
       setCarregandoAuth(false);
     });
@@ -4387,7 +3797,7 @@ function App(){
   // useEffect 2: escutar eventos de auth (SIGNED_OUT, renovação de token)
   useEffect(()=>{
     const{data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
-      if(event==='SIGNED_OUT'){setAutenticado(false);EMPRESA_ID=null;setRoleGlobal(null);setEmpresasSeletorPRX([]);setEmpresasDisponiveis([]);setAguardandoSelecaoEmpresa(false);}
+      if(event==='SIGNED_OUT'){setAutenticado(false);EMPRESA_ID=null;}
     });
     return()=>subscription.unsubscribe();
   },[]);
@@ -4415,151 +3825,12 @@ function App(){
     });
   },[autenticado]);
 
-  // useEffect 4: carregar empresas disponíveis para o Portfólio após autenticação
-  // Dispara quando autenticado ou roleGlobal mudam.
-  // Não altera EMPRESA_ID nem loadS/saveS — apenas popula empresasDisponiveis.
-  useEffect(()=>{
-    if(!autenticado)return;
-    (async()=>{
-      try{
-        if(roleGlobal==='prx_admin'||roleGlobal==='prx_editor'){
-          // PRX: empresasDisponiveis já foi filtrada por cliente no onSelect do EmpresaSelector.
-          // useEffect 4 não sobrescreve para PRX.
-          return;
-        }else{
-          // Cliente: RLS em usuarios_empresas filtra automaticamente pelo auth.uid()
-          const{data,error}=await supabase
-            .from('usuarios_empresas')
-            .select('empresas!inner(id,nome,clientes(nome))');
-          if(error)throw error;
-          if(data)setEmpresasDisponiveis(data.map(r=>({
-            id:r.empresas.id,
-            nome:r.empresas.nome,
-            clienteNome:r.empresas.clientes?.nome||'',
-          })));
-        }
-      }catch(err){
-        console.error('Erro ao carregar empresas do Portfólio:',err);
-      }
-    })();
-  },[autenticado,roleGlobal]);
-
-  // useEffect 5 (BLOCO 4.6): calcular KPIs reais do Portfólio via queries batch no Supabase.
-  // Dispara ao abrir a aba Portfólio ou ao mudar mês/ano enquanto ela está ativa.
-  // Não altera EMPRESA_ID, loadS, saveS nem useEffect 3.
-  useEffect(()=>{
-    if(activeTab!=='portfolio'||!autenticado||empresasDisponiveis.length===0)return;
-    (async()=>{
-      try{
-        const ids=empresasDisponiveis.map(e=>e.id);
-        const mStart=monthStart(selectedYear,selectedMonth);
-        const mEnd=monthEnd(selectedYear,selectedMonth);
-        const[{data:rawEnt},{data:rawCon},{data:rawDiv},{data:rawRet},{data:rawCfg}]=await Promise.all([
-          supabase.from('entradas').select('empresa_id,total,data').in('empresa_id',ids).gte('data',mStart).lte('data',mEnd),
-          supabase.from('contas').select('empresa_id,valor,status,vencimento,tipoDespesa').in('empresa_id',ids).gte('vencimento',mStart).lte('vencimento',mEnd),
-          supabase.from('dividas').select('empresa_id,parcelaMensal,status').in('empresa_id',ids).eq('status','Ativa'),
-          supabase.from('retiradas').select('empresa_id,valor,data').in('empresa_id',ids).gte('data',mStart).lte('data',mEnd),
-          supabase.from('config').select('empresa_id,saldoInicial').in('empresa_id',ids),
-        ]);
-        const kpis={};
-        ids.forEach(id=>{
-          const ent=(rawEnt||[]).filter(r=>r.empresa_id===id);
-          const con=(rawCon||[]).filter(r=>r.empresa_id===id);
-          const div=(rawDiv||[]).filter(r=>r.empresa_id===id);
-          const ret=(rawRet||[]).filter(r=>r.empresa_id===id);
-          const cfg=(rawCfg||[]).find(r=>r.empresa_id===id);
-          const totalEntradas=ent.reduce((s,r)=>s+(r.total||0),0);
-          const totalContasAbertas=con.filter(r=>r.status!=='Pago').reduce((s,r)=>s+(r.valor||0),0);
-          const totalFornecedores=con.filter(r=>r.tipoDespesa==='Fornecedor').reduce((s,r)=>s+(r.valor||0),0);
-          const totalDividasAtivas=div.reduce((s,r)=>s+parseCurrencyBR(r.parcelaMensal),0);
-          const totalRetiradas=ret.reduce((s,r)=>s+(r.valor||0),0);
-          const saldoInicial=Number(cfg?.saldoInicial)||defaultConfig.saldoInicial;
-          const saldoProjetado=saldoInicial+totalEntradas-totalContasAbertas-totalRetiradas;
-          let status='empty';
-          if(totalEntradas>0||totalContasAbertas>0){
-            if(saldoProjetado<=0)status='danger';
-            else if(totalContasAbertas>=totalEntradas*0.75)status='warn';
-            else status='ok';
-          }
-          kpis[id]={totalEntradas,totalContasAbertas,totalDividasAtivas,totalRetiradas,totalFornecedores,saldoProjetado,status};
-        });
-        setKpisPortfolio(kpis);
-      }catch(err){
-        console.error('Erro ao calcular KPIs do Portfólio:',err);
-      }
-    })();
-  },[activeTab,autenticado,empresasDisponiveis,selectedYear,selectedMonth]);
-
   // ── Setters assíncronos com optimistic update e indicador isSaving ──
   const setEntradas=async d=>{setE_(d);setIsSaving(true);try{await saveS(KEYS.entradas,d);}catch(err){console.error('Erro ao salvar entradas:',err);}finally{setIsSaving(false);}};
   const setContas=async d=>{setC_(d);setIsSaving(true);try{await saveS(KEYS.contas,d);}catch(err){console.error('Erro ao salvar contas:',err);}finally{setIsSaving(false);}};
   const setDividas=async d=>{setD_(d);setIsSaving(true);try{await saveS(KEYS.dividas,d);}catch(err){console.error('Erro ao salvar dívidas:',err);}finally{setIsSaving(false);}};
   const setRetiradas=async d=>{setR_(d);setIsSaving(true);try{await saveS(KEYS.retiradas,d);}catch(err){console.error('Erro ao salvar retiradas:',err);}finally{setIsSaving(false);}};
   const setConfig=async d=>{setCfg_(d);setIsSaving(true);try{await saveS(KEYS.config,d);}catch(err){console.error('Erro ao salvar config:',err);}finally{setIsSaving(false);}};
-
-  // BLOCO 4.5 — Troca de unidade pelo Portfólio (cliente comum)
-  const trocarEmpresa=(eid)=>{
-    // Correção 1: bloquear troca durante gravação em andamento
-    if(isSaving){alert('Aguarde o salvamento terminar antes de trocar de unidade.');return;}
-    // Correção 2: empresa já ativa — apenas navega para o painel
-    if(eid===EMPRESA_ID){setActiveTab('painel');return;}
-    // Troca de contexto: define EMPRESA_ID antes de qualquer setState
-    EMPRESA_ID=eid;
-    setEmpresaAtiva(empresasDisponiveis.find(e=>e.id===eid)||null);
-    setActiveTab('painel');
-    // Recarrega todos os dados para a nova empresa (mesmo padrão do useEffect 3, sem tocá-lo)
-    setCarregandoDados(true);
-    Promise.all([
-      loadS(KEYS.entradas),
-      loadS(KEYS.contas),
-      loadS(KEYS.dividas),
-      loadS(KEYS.retiradas),
-      loadS(KEYS.config),
-    ]).then(([ent,cnt,div,ret,cfg])=>{
-      setE_(Array.isArray(ent)?ent:[]);
-      setC_(Array.isArray(cnt)?cnt:[]);
-      setD_(Array.isArray(div)?div:[]);
-      setR_(Array.isArray(ret)?ret:[]);
-      setCfg_({...defaultConfig,...((cfg&&typeof cfg==='object')?cfg:{})});
-    }).catch(err=>{
-      console.error('Erro ao recarregar dados após troca de unidade:',err);
-    }).finally(()=>{
-      setCarregandoDados(false);
-    });
-  };
-
-  // BLOCO 4.7 — Criar nova unidade pelo Portfólio.
-  // Retorna null em caso de sucesso ou string de erro para exibir ao usuário.
-  const criarUnidade=async(nome)=>{
-    const nomeTrimmed=nome.trim();
-    if(!nomeTrimmed)return'Nome não pode estar vazio.';
-    if(!EMPRESA_ID)return'Nenhuma empresa ativa. Selecione uma unidade primeiro.';
-    // Verificação client-side de duplicidade
-    if(empresasDisponiveis.some(e=>e.nome.trim().toLowerCase()===nomeTrimmed.toLowerCase())){
-      return'Já existe uma unidade com este nome.';
-    }
-    try{
-      // Buscar cliente_id da empresa ativa
-      const{data:empAtiva,error:errEmp}=await supabase.from('empresas').select('cliente_id').eq('id',EMPRESA_ID).single();
-      if(errEmp||!empAtiva?.cliente_id)return'Não foi possível identificar o cliente da unidade ativa.';
-      const clienteId=empAtiva.cliente_id;
-      // Inserir nova empresa
-      const{data:novaEmpresa,error:errInsert}=await supabase.from('empresas').insert({nome:nomeTrimmed,cliente_id:clienteId}).select().single();
-      if(errInsert)return errInsert.message||'Erro ao criar unidade.';
-      // Criar vínculo em usuarios_empresas
-      const{data:{session}}=await supabase.auth.getSession();
-      const userId=session?.user?.id;
-      if(!userId)return'Sessão expirada. Faça login novamente.';
-      const{error:errVinculo}=await supabase.from('usuarios_empresas').insert({usuario_id:userId,empresa_id:novaEmpresa.id,role:'dono'});
-      if(errVinculo)return errVinculo.message||'Unidade criada, mas erro ao criar vínculo.';
-      // Atualizar lista imediatamente sem novo reload
-      const clienteNome=empresasDisponiveis.find(e=>e.id===EMPRESA_ID)?.clienteNome||'';
-      setEmpresasDisponiveis(prev=>[...prev,{id:novaEmpresa.id,nome:novaEmpresa.nome,clienteNome}]);
-      return null; // sucesso
-    }catch(err){
-      return err.message||'Erro inesperado ao criar unidade.';
-    }
-  };
 
   const handleLogout=async()=>{await supabase.auth.signOut();setAutenticado(false);EMPRESA_ID=null;};
   // Mescla contas manuais + parcelas automáticas de dívidas
@@ -4579,8 +3850,7 @@ function App(){
     </div>
   );
   if(carregandoAuth)return <Spinner msg="Verificando sessão…"/>;
-  if(!autenticado&&!aguardandoSelecaoEmpresa)return <LoginScreen onLogin={(rg,emps)=>{setRoleGlobal(rg);if(rg==='prx_admin'||rg==='prx_editor'){setEmpresasSeletorPRX(emps);setAguardandoSelecaoEmpresa(true);}else{setAutenticado(true);}}}/>;
-  if(aguardandoSelecaoEmpresa)return <EmpresaSelector empresas={empresasSeletorPRX} roleGlobal={roleGlobal} onSelect={(eid)=>{EMPRESA_ID=eid;const emp=empresasSeletorPRX.find(e=>e.id===eid);const cid=emp?.cliente_id;const unidades=cid?empresasSeletorPRX.filter(e=>e.cliente_id===cid):[emp].filter(Boolean);setEmpresasDisponiveis(unidades.map(e=>({id:e.id,nome:e.nome,clienteNome:e.clientes?.nome||''})));setAguardandoSelecaoEmpresa(false);setAutenticado(true);}}/>;
+  if(!autenticado)return <LoginScreen onLogin={()=>setAutenticado(true)}/>;
   if(carregandoDados)return <Spinner msg="Carregando dados…"/>;
 
   const nowStr=new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
@@ -4588,23 +3858,11 @@ function App(){
   return(
     <div className="app-shell">
       <header className="app-header">
-        <button
-          onClick={()=>setActiveTab('portfolio')}
-          title="Portfólio de unidades"
-          style={{
-            display:'inline-flex',alignItems:'center',justifyContent:'center',
-            width:30,height:30,borderRadius:6,flexShrink:0,
-            background:activeTab==='portfolio'?'var(--petronas)':'rgba(255,255,255,.07)',
-            border:activeTab==='portfolio'?'1px solid var(--petronas)':'1px solid rgba(255,255,255,.12)',
-            cursor:'pointer',color:activeTab==='portfolio'?'#fff':'rgba(255,255,255,.55)',
-            fontSize:14,transition:'all .15s',
-          }}
-        >🏢</button>
         <div className="hdr-logo"><ZanonLogo/></div>
         <div className="hdr-div"></div>
         <nav className="hdr-nav">
           <div className="hdr-grp">
-            {TABS.filter(t=>t.id!=='projecao'&&t.id!=='portfolio').map(t=>(
+            {TABS.filter(t=>t.id!=='projecao').map(t=>(
               <button key={t.id} className={`hdr-btn${activeTab===t.id?' active':''}`} onClick={()=>setActiveTab(t.id)}>
                 <span className="dot"></span><span>{t.icon}</span><span>{t.label}</span>
               </button>
@@ -4656,17 +3914,6 @@ function App(){
         {activeTab==='dividas'&&<Dividas dividas={dividas} setDividas={setDividas} entradaMensal={totalEntMes}/>}
         {activeTab==='retiradas'&&<Retiradas retiradas={retiradas} setRetiradas={setRetiradas} entradaMensal={totalEntMes} config={config} setConfig={setConfig}/>}
         {activeTab==='projecao'&&<Projecao entradas={entradas} contas={contasComParcelas} config={config} setConfig={setConfig}/>}
-        {activeTab==='portfolio'&&<Portfolio
-          empresas={empresasDisponiveis}
-          selYear={selectedYear}
-          selMonth={selectedMonth}
-          setSelYear={setSelectedYear}
-          setSelMonth={setSelectedMonth}
-          empresaAtiva={empresaAtiva}
-          onSelectEmpresa={trocarEmpresa}
-          kpisPortfolio={kpisPortfolio}
-          onCriarUnidade={criarUnidade}
-        />}
       </div>
     </div>
   );
