@@ -752,6 +752,7 @@ textarea{resize:vertical;min-height:58px;}
 .unit-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);overflow:hidden;cursor:pointer;transition:box-shadow .18s,transform .18s,border-color .18s;position:relative;}
 .unit-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);border-color:var(--petronas);}
 .unit-card.active-unit{border-color:var(--petronas);box-shadow:0 0 0 2px var(--petronas),var(--shadow-lg);}
+.unit-card.selected-unit{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue),var(--shadow-lg);}
 .unit-card-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 14px 10px;border-bottom:1px solid var(--border);position:relative;}
 .unit-card-hdr::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:0;}
 .unit-card-hdr.status-ok::before{background:var(--green);}
@@ -4036,22 +4037,26 @@ const PRX_LOGO_SRC='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPoAAAB4CAYAAA
 // calcUnitKPIs é placeholder; retorna zeros até o login ser adaptado.
 // ══════════════════════════════════════════════════════════════
 
-const MAX_UNITS=6;
+const MAX_UNITS=100;
 
 // BLOCO 4.6 — KPIs reais do Portfólio. Lê do mapa kpisPortfolio pré-calculado via Supabase.
 // Se a unidade ainda não tiver dados carregados, retorna objeto empty como fallback seguro.
 const KPIS_EMPTY={totalEntradas:0,totalContasAbertas:0,totalDividasAtivas:0,totalRetiradas:0,totalFornecedores:0,saldoProjetado:0,status:'empty'};
 const calcUnitKPIs=(unit,kpisPortfolio)=>kpisPortfolio?.[unit.id]||KPIS_EMPTY;
 
-function UnitCard({unit,selYear,selMonth,onSelect,isActive,kpisPortfolio}){
+function UnitCard({unit,selYear,selMonth,isActive,isSelected,onSelect,kpisPortfolio}){
   const k=calcUnitKPIs(unit,kpisPortfolio);
   const mesLabel=MONTHS[selMonth]+' '+selYear;
   const statusLabel={ok:'Saudável',warn:'Atenção',danger:'Crítico',empty:'Sem dados'}[k.status];
+  let cardCls='unit-card';
+  if(isActive)cardCls+=' active-unit';
+  else if(isSelected)cardCls+=' selected-unit';
   return(
-    <div className={`unit-card${isActive?' active-unit':''}`} onClick={()=>onSelect(unit.id)}>
+    <div className={cardCls} onClick={()=>onSelect(unit.id)}>
       <div className={`unit-card-hdr status-${k.status}`}>
         <div className="unit-card-name" title={unit.nome}>{unit.nome}</div>
         <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
+          {isActive&&<span style={{fontSize:9,fontWeight:700,letterSpacing:'.06em',textTransform:'uppercase',color:'var(--petronas)',background:'var(--petronas-soft)',padding:'2px 7px',borderRadius:20}}>Em uso</span>}
           <span style={{fontSize:9.5,color:'var(--text-muted)',fontWeight:500,letterSpacing:'.02em'}}>{mesLabel}</span>
           <div className={`unit-card-status ${k.status}`}>{statusLabel}</div>
         </div>
@@ -4089,23 +4094,40 @@ function UnitCard({unit,selYear,selMonth,onSelect,isActive,kpisPortfolio}){
         </div>
       </div>
       <div className="unit-card-footer">
-        <button className="unit-card-footer-btn" onClick={e=>{e.stopPropagation();onSelect(unit.id);}}>
-          Abrir painel →
-        </button>
         <span className="unit-card-mes">{unit.clienteNome||''}</span>
+        <span style={{fontSize:10.5,color:isSelected?'var(--petronas)':'var(--text-muted)',fontWeight:600}}>
+          {isSelected?'✓ Selecionada':'Clique para selecionar'}
+        </span>
       </div>
     </div>
   );
 }
 
-function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiva,onSelectEmpresa,kpisPortfolio,onCriarUnidade}){
+function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiva,onSelectEmpresa,kpisPortfolio,onCriarUnidade,onExcluirUnidade,roleGlobal}){
   const[showModal,setShowModal]=useState(false);
   const[newName,setNewName]=useState('');
   const[newSeg,setNewSeg]=useState('');
   const[salvandoUnidade,setSalvandoUnidade]=useState(false);
   const[erroUnidade,setErroUnidade]=useState('');
+  const[confirmDelete,setConfirmDelete]=useState(null);
+  const[excluindoUnidade,setExcluindoUnidade]=useState(false);
+  const[erroExcluir,setErroExcluir]=useState('');
+  const[selectedId,setSelectedId]=useState(null);
   const canAdd=empresas.length<MAX_UNITS;
+  const canDelete=(roleGlobal===null||roleGlobal==='prx_admin')&&empresas.length>1;
+  const selectedUnit=empresas.find(e=>e.id===selectedId)||null;
+  const selectedIsActive=selectedUnit&&empresaAtiva?.id===selectedUnit.id;
   const fecharModal=()=>{setShowModal(false);setNewName('');setNewSeg('');setErroUnidade('');};
+  const fecharConfirmDelete=()=>{if(excluindoUnidade)return;setConfirmDelete(null);setErroExcluir('');};
+  const handleSelect=(id)=>{
+    // toggle: clica na mesma → deseleciona
+    setSelectedId(prev=>prev===id?null:id);
+  };
+  const handleAbrirPainel=()=>{
+    if(!selectedUnit)return;
+    onSelectEmpresa(selectedUnit.id);
+    setSelectedId(null);
+  };
   const handleCriar=async()=>{
     setErroUnidade('');
     setSalvandoUnidade(true);
@@ -4113,6 +4135,16 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
     setSalvandoUnidade(false);
     if(err){setErroUnidade(err);return;}
     fecharModal();
+  };
+  const handleExcluir=async()=>{
+    if(!confirmDelete)return;
+    setErroExcluir('');
+    setExcluindoUnidade(true);
+    const err=await onExcluirUnidade(confirmDelete.id);
+    setExcluindoUnidade(false);
+    if(err){setErroExcluir(err);return;}
+    setConfirmDelete(null);
+    setSelectedId(null);
   };
   return(
     <div className="portfolio-wrap">
@@ -4131,11 +4163,37 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
             ))}
           </div>
         </div>
-        {canAdd&&(
-          <button className="btn btn-primary btn-sm" onClick={()=>setShowModal(true)} style={{background:'var(--petronas)',display:'flex',alignItems:'center',gap:5}}>
-            <span style={{fontSize:14,lineHeight:1}}>＋</span> Nova Unidade
-          </button>
-        )}
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          {/* Barra de ações — só aparece quando há uma unidade selecionada */}
+          {selectedUnit&&(
+            <div style={{display:'flex',alignItems:'center',gap:8,background:'var(--surface)',border:'1px solid var(--border)',borderRadius:'var(--radius-sm)',padding:'5px 10px',boxShadow:'var(--shadow-xs)'}}>
+              <span style={{fontSize:12,fontWeight:600,color:'var(--text-secondary)',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{selectedUnit.nome}</span>
+              <div style={{width:1,height:16,background:'var(--border)'}}></div>
+              <button
+                className="btn btn-primary btn-sm"
+                style={{background:'var(--petronas)',color:'#fff',padding:'4px 12px'}}
+                onClick={handleAbrirPainel}
+              >Abrir painel →</button>
+              {canDelete&&!selectedIsActive&&(
+                <button
+                  className="btn btn-secondary btn-sm"
+                  style={{color:'var(--red-dim)',borderColor:'rgba(220,38,38,.3)',padding:'4px 12px'}}
+                  onClick={()=>setConfirmDelete(selectedUnit)}
+                >🗑 Excluir</button>
+              )}
+              <button
+                style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'var(--text-muted)',padding:'2px 4px',lineHeight:1}}
+                onClick={()=>setSelectedId(null)}
+                title="Limpar seleção"
+              >✕</button>
+            </div>
+          )}
+          {canAdd&&(
+            <button className="btn btn-primary btn-sm" onClick={()=>setShowModal(true)} style={{background:'var(--petronas)',display:'flex',alignItems:'center',gap:5}}>
+              <span style={{fontSize:14,lineHeight:1}}>＋</span> Nova Unidade
+            </button>
+          )}
+        </div>
       </div>
       <div className="portfolio-grid">
         {empresas.map(u=>(
@@ -4144,8 +4202,9 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
             unit={u}
             selYear={selYear}
             selMonth={selMonth}
-            onSelect={onSelectEmpresa}
             isActive={empresaAtiva?.id===u.id}
+            isSelected={selectedId===u.id}
+            onSelect={handleSelect}
             kpisPortfolio={kpisPortfolio}
           />
         ))}
@@ -4153,7 +4212,7 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
           <div className="unit-card-add" onClick={()=>setShowModal(true)}>
             <div className="unit-card-add-ico">＋</div>
             <div className="unit-card-add-label">Adicionar Unidade</div>
-            <div className="unit-card-add-sub">máx. {MAX_UNITS} unidades</div>
+            <div className="unit-card-add-sub">Adicionar nova unidade ao portfólio</div>
           </div>
         )}
       </div>
@@ -4199,6 +4258,32 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
                   {salvandoUnidade?'Criando…':'Criar Unidade'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {confirmDelete&&(
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&fecharConfirmDelete()}>
+          <div className="modal" style={{maxWidth:400}}>
+            <div className="flex items-center justify-between" style={{marginBottom:16}}>
+              <div style={{fontSize:15,fontWeight:700}}>Excluir unidade</div>
+              <button className="btn btn-secondary btn-sm" onClick={fecharConfirmDelete} disabled={excluindoUnidade}>✕</button>
+            </div>
+            <p style={{fontSize:14,color:'var(--text-secondary)',marginBottom:6}}>
+              Tem certeza que deseja excluir <strong>{confirmDelete.nome}</strong>?
+            </p>
+            <p style={{fontSize:12,color:'var(--text-muted)',marginBottom:16}}>
+              Os dados financeiros desta unidade não serão apagados.
+            </p>
+            {erroExcluir&&<div className="alert alert-r" style={{marginBottom:12}}><span>⚠️</span><span>{erroExcluir}</span></div>}
+            <div className="flex gap-2" style={{justifyContent:'flex-end'}}>
+              <button className="btn btn-secondary btn-sm" onClick={fecharConfirmDelete} disabled={excluindoUnidade}>Cancelar</button>
+              <button
+                className="btn btn-sm"
+                style={{background:'var(--red-dim)',color:'#fff',opacity:excluindoUnidade?0.7:1}}
+                onClick={handleExcluir}
+                disabled={excluindoUnidade}
+              >{excluindoUnidade?'Excluindo…':'Confirmar exclusão'}</button>
             </div>
           </div>
         </div>
@@ -4288,6 +4373,25 @@ function LoginScreen({onLogin}){
 // ─────────────────────────────────────────────────────────────
 function EmpresaSelector({empresas,roleGlobal,onSelect}){
   const roleLbl=roleGlobal==='prx_editor'?'PRX Editor':'PRX Admin';
+  // Agrupar empresas por cliente_id → exibir um item por cliente
+  const clientes=React.useMemo(()=>{
+    const map={};
+    empresas.forEach(e=>{
+      if(!e.cliente_id)return;
+      if(!map[e.cliente_id]){
+        map[e.cliente_id]={clienteId:e.cliente_id,clienteNome:e.clientes?.nome||'(sem cliente)',unidades:[]};
+      }
+      map[e.cliente_id].unidades.push(e);
+    });
+    return Object.values(map).sort((a,b)=>a.clienteNome.localeCompare(b.clienteNome,'pt-BR'));
+  },[empresas]);
+  // Empresa principal: mesma nome do cliente, ou primeira da lista (já ordenada por nome)
+  const handleSelect=grupo=>{
+    const principal=grupo.unidades.find(
+      e=>e.nome.trim().toLowerCase()===grupo.clienteNome.trim().toLowerCase()
+    )||grupo.unidades[0];
+    onSelect(principal.id);
+  };
   return(
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',background:'var(--bg)'}}>
       <div style={{width:'100%',maxWidth:'520px',padding:'0 16px'}}>
@@ -4301,17 +4405,17 @@ function EmpresaSelector({empresas,roleGlobal,onSelect}){
             <div style={{display:'inline-flex',alignItems:'center',padding:'3px 10px',background:'var(--petronas-soft)',borderRadius:'20px',marginBottom:'10px'}}>
               <span style={{fontSize:'11px',fontWeight:'700',letterSpacing:'.08em',textTransform:'uppercase',color:'var(--petronas-dark)'}}>{roleLbl}</span>
             </div>
-            <h2 style={{fontSize:'18px',fontWeight:'700',color:'var(--text-primary)',marginBottom:'4px',letterSpacing:'-.02em'}}>Selecionar empresa</h2>
-            <p style={{fontSize:'13px',color:'var(--text-muted)'}}>Escolha a empresa que deseja acessar.</p>
+            <h2 style={{fontSize:'18px',fontWeight:'700',color:'var(--text-primary)',marginBottom:'4px',letterSpacing:'-.02em'}}>Selecionar cliente</h2>
+            <p style={{fontSize:'13px',color:'var(--text-muted)'}}>Escolha o cliente que deseja acessar.</p>
           </div>
-          {empresas.length===0?(
-            <div style={{textAlign:'center',padding:'28px 0',color:'var(--text-muted)',fontSize:'13px'}}>Nenhuma empresa encontrada.</div>
+          {clientes.length===0?(
+            <div style={{textAlign:'center',padding:'28px 0',color:'var(--text-muted)',fontSize:'13px'}}>Nenhum cliente encontrado.</div>
           ):(
             <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
-              {empresas.map(e=>(
+              {clientes.map(c=>(
                 <button
-                  key={e.id}
-                  onClick={()=>onSelect(e.id)}
+                  key={c.clienteId}
+                  onClick={()=>handleSelect(c)}
                   style={{
                     display:'flex',alignItems:'center',justifyContent:'space-between',
                     width:'100%',padding:'12px 16px',
@@ -4324,8 +4428,8 @@ function EmpresaSelector({empresas,roleGlobal,onSelect}){
                   onMouseLeave={e=>{ e.currentTarget.style.background='var(--ink-50)'; e.currentTarget.style.borderColor='var(--border)'; }}
                 >
                   <div>
-                    <div style={{fontSize:'14px',fontWeight:'600',color:'var(--text-primary)',marginBottom:'2px'}}>{e.nome}</div>
-                    {e.clientes?.nome&&<div style={{fontSize:'11px',color:'var(--text-muted)'}}>{e.clientes.nome}</div>}
+                    <div style={{fontSize:'14px',fontWeight:'600',color:'var(--text-primary)',marginBottom:'2px'}}>{c.clienteNome}</div>
+                    <div style={{fontSize:'11px',color:'var(--text-muted)'}}>{c.unidades.length}{c.unidades.length===1?' unidade':' unidades'}</div>
                   </div>
                   <span style={{fontSize:'16px',color:'var(--text-muted)',marginLeft:'12px'}}>→</span>
                 </button>
@@ -4541,6 +4645,7 @@ function App(){
     try{
       // Buscar cliente_id da empresa ativa
       const{data:empAtiva,error:errEmp}=await supabase.from('empresas').select('cliente_id').eq('id',EMPRESA_ID).single();
+      console.log('DEBUG criarUnidade', { EMPRESA_ID, empAtiva, errEmp });
       if(errEmp||!empAtiva?.cliente_id)return'Não foi possível identificar o cliente da unidade ativa.';
       const clienteId=empAtiva.cliente_id;
       // Inserir nova empresa
@@ -4550,14 +4655,46 @@ function App(){
       const{data:{session}}=await supabase.auth.getSession();
       const userId=session?.user?.id;
       if(!userId)return'Sessão expirada. Faça login novamente.';
-      const{error:errVinculo}=await supabase.from('usuarios_empresas').insert({usuario_id:userId,empresa_id:novaEmpresa.id,role:'dono'});
-      if(errVinculo)return errVinculo.message||'Unidade criada, mas erro ao criar vínculo.';
+      const{error:errVinculo}=await supabase.from('usuarios_empresas').insert({usuario_id:userId,empresa_id:novaEmpresa.id,role:'admin'});
+      if(errVinculo){
+        // Remover empresa órfã se o vínculo falhou
+        await supabase.from('empresas').delete().eq('id',novaEmpresa.id);
+        return errVinculo.message||'Erro ao criar vínculo. Unidade removida.';
+      }
       // Atualizar lista imediatamente sem novo reload
       const clienteNome=empresasDisponiveis.find(e=>e.id===EMPRESA_ID)?.clienteNome||'';
       setEmpresasDisponiveis(prev=>[...prev,{id:novaEmpresa.id,nome:novaEmpresa.nome,clienteNome}]);
       return null; // sucesso
     }catch(err){
       return err.message||'Erro inesperado ao criar unidade.';
+    }
+  };
+
+  // BLOCO 4.8 — Excluir unidade pelo Portfólio.
+  // Sequência: 1) deleta vínculos em usuarios_empresas, 2) deleta a empresa em empresas
+  // prx_admin: opera sem filtro de usuario_id
+  // cliente comum: filtra por seu proprio usuario_id nos vínculos
+  const excluirUnidade=async(empresaId)=>{
+    if(empresaId===EMPRESA_ID)return'Não é possível excluir a unidade ativa. Troque para outra unidade primeiro.';
+    if(empresasDisponiveis.length<=1)return'Não é possível excluir a única unidade.';
+    try{
+      const{data:{session}}=await supabase.auth.getSession();
+      const userId=session?.user?.id;
+      if(!userId)return'Sessão expirada. Faça login novamente.';
+      const isPRX=roleGlobal==='prx_admin'||roleGlobal==='prx_editor';
+      // Passo 1 — remover vínculos (ignora se não houver nenhum)
+      let qVinculo=supabase.from('usuarios_empresas').delete().eq('empresa_id',empresaId);
+      if(!isPRX)qVinculo=qVinculo.eq('usuario_id',userId);
+      const{error:errVinculo}=await qVinculo;
+      if(errVinculo)return errVinculo.message||'Erro ao remover vínculos da unidade.';
+      // Passo 2 — deletar a empresa do banco para não reaparecer no próximo login
+      const{error:errEmp}=await supabase.from('empresas').delete().eq('id',empresaId);
+      if(errEmp)return errEmp.message||'Vínculos removidos, mas erro ao excluir a unidade do banco.';
+      // Passo 3 — atualizar lista local
+      setEmpresasDisponiveis(prev=>prev.filter(e=>e.id!==empresaId));
+      return null;
+    }catch(err){
+      return err.message||'Erro inesperado ao excluir unidade.';
     }
   };
 
@@ -4666,6 +4803,8 @@ function App(){
           onSelectEmpresa={trocarEmpresa}
           kpisPortfolio={kpisPortfolio}
           onCriarUnidade={criarUnidade}
+          onExcluirUnidade={excluirUnidade}
+          roleGlobal={roleGlobal}
         />}
       </div>
     </div>
