@@ -4518,11 +4518,15 @@ function App(){
             .from('usuarios_empresas')
             .select('empresas!inner(id,nome,clientes(nome))').eq('empresas.ativo',true);
           if(error)throw error;
-          if(data)setEmpresasDisponiveis(data.map(r=>({
-            id:r.empresas.id,
-            nome:r.empresas.nome,
-            clienteNome:r.empresas.clientes?.nome||'',
-          })));
+          if(data){
+            const units=data.map(r=>({
+              id:r.empresas.id,
+              nome:r.empresas.nome,
+              clienteNome:r.empresas.clientes?.nome||'',
+            }));
+            setEmpresasDisponiveis(units);
+            setEmpresaAtiva(units.find(e=>e.id===EMPRESA_ID)||null);
+          }
         }
       }catch(err){
         console.error('Erro ao carregar empresas do Portfólio:',err);
@@ -4627,7 +4631,6 @@ function App(){
     try{
       // Buscar cliente_id da empresa ativa
       const{data:empAtiva,error:errEmp}=await supabase.from('empresas').select('cliente_id').eq('id',EMPRESA_ID).single();
-      console.log('DEBUG criarUnidade', { EMPRESA_ID, empAtiva, errEmp });
       if(errEmp||!empAtiva?.cliente_id)return'Não foi possível identificar o cliente da unidade ativa.';
       const clienteId=empAtiva.cliente_id;
       // Criar empresa e vínculos via RPC (atômico, cria vínculos para todos os usuários do cliente)
