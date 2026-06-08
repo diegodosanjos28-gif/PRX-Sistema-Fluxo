@@ -752,6 +752,7 @@ textarea{resize:vertical;min-height:58px;}
 .unit-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);overflow:hidden;cursor:pointer;transition:box-shadow .18s,transform .18s,border-color .18s;position:relative;}
 .unit-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);border-color:var(--petronas);}
 .unit-card.active-unit{border-color:var(--petronas);box-shadow:0 0 0 2px var(--petronas),var(--shadow-lg);}
+.unit-card.selected-unit{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue),var(--shadow-lg);}
 .unit-card-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 14px 10px;border-bottom:1px solid var(--border);position:relative;}
 .unit-card-hdr::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:0;}
 .unit-card-hdr.status-ok::before{background:var(--green);}
@@ -4046,7 +4047,7 @@ const PRX_LOGO_SRC='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPoAAAB4CAYAAA
 // calcUnitKPIs é placeholder; retorna zeros até o login ser adaptado.
 // ══════════════════════════════════════════════════════════════
 
-const MAX_UNITS=6;
+const MAX_UNITS=100;
 
 // BLOCO 4.6 — KPIs reais do Portfólio. Lê do mapa kpisPortfolio pré-calculado via Supabase.
 // Se a unidade ainda não tiver dados carregados, retorna objeto empty como fallback seguro.
@@ -4059,10 +4060,11 @@ function UnitCard({unit,selYear,selMonth,onSelect,isActive,kpisPortfolio,onExclu
   const statusLabel={ok:'Saudável',warn:'Atenção',danger:'Crítico',empty:'Sem dados'}[k.status];
   const showExcluir=canDelete&&!isActive;
   return(
-    <div className={`unit-card${isActive?' active-unit':''}`} onClick={()=>onSelect(unit.id)}>
+    <div className={cardCls} onClick={()=>onSelect(unit.id)}>
       <div className={`unit-card-hdr status-${k.status}`}>
         <div className="unit-card-name" title={unit.nome}>{unit.nome}</div>
         <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
+          {isActive&&<span style={{fontSize:9,fontWeight:700,letterSpacing:'.06em',textTransform:'uppercase',color:'var(--petronas)',background:'var(--petronas-soft)',padding:'2px 7px',borderRadius:20}}>Em uso</span>}
           <span style={{fontSize:9.5,color:'var(--text-muted)',fontWeight:500,letterSpacing:'.02em'}}>{mesLabel}</span>
           <div className={`unit-card-status ${k.status}`}>{statusLabel}</div>
         </div>
@@ -4109,6 +4111,9 @@ function UnitCard({unit,selYear,selMonth,onSelect,isActive,kpisPortfolio,onExclu
           </button>
         )}
         <span className="unit-card-mes">{unit.clienteNome||''}</span>
+        <span style={{fontSize:10.5,color:isSelected?'var(--petronas)':'var(--text-muted)',fontWeight:600}}>
+          {isSelected?'✓ Selecionada':'Clique para selecionar'}
+        </span>
       </div>
     </div>
   );
@@ -4161,11 +4166,37 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
             ))}
           </div>
         </div>
-        {canAdd&&(
-          <button className="btn btn-primary btn-sm" onClick={()=>setShowModal(true)} style={{background:'var(--petronas)',display:'flex',alignItems:'center',gap:5}}>
-            <span style={{fontSize:14,lineHeight:1}}>＋</span> Nova Unidade
-          </button>
-        )}
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          {/* Barra de ações — só aparece quando há uma unidade selecionada */}
+          {selectedUnit&&(
+            <div style={{display:'flex',alignItems:'center',gap:8,background:'var(--surface)',border:'1px solid var(--border)',borderRadius:'var(--radius-sm)',padding:'5px 10px',boxShadow:'var(--shadow-xs)'}}>
+              <span style={{fontSize:12,fontWeight:600,color:'var(--text-secondary)',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{selectedUnit.nome}</span>
+              <div style={{width:1,height:16,background:'var(--border)'}}></div>
+              <button
+                className="btn btn-primary btn-sm"
+                style={{background:'var(--petronas)',color:'#fff',padding:'4px 12px'}}
+                onClick={handleAbrirPainel}
+              >Abrir painel →</button>
+              {canDelete&&!selectedIsActive&&(
+                <button
+                  className="btn btn-secondary btn-sm"
+                  style={{color:'var(--red-dim)',borderColor:'rgba(220,38,38,.3)',padding:'4px 12px'}}
+                  onClick={()=>setConfirmDelete(selectedUnit)}
+                >🗑 Excluir</button>
+              )}
+              <button
+                style={{background:'none',border:'none',cursor:'pointer',fontSize:13,color:'var(--text-muted)',padding:'2px 4px',lineHeight:1}}
+                onClick={()=>setSelectedId(null)}
+                title="Limpar seleção"
+              >✕</button>
+            </div>
+          )}
+          {canAdd&&(
+            <button className="btn btn-primary btn-sm" onClick={()=>setShowModal(true)} style={{background:'var(--petronas)',display:'flex',alignItems:'center',gap:5}}>
+              <span style={{fontSize:14,lineHeight:1}}>＋</span> Nova Unidade
+            </button>
+          )}
+        </div>
       </div>
       <div className="portfolio-grid">
         {empresas.map(u=>(
@@ -4174,8 +4205,9 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
             unit={u}
             selYear={selYear}
             selMonth={selMonth}
-            onSelect={onSelectEmpresa}
             isActive={empresaAtiva?.id===u.id}
+            isSelected={selectedId===u.id}
+            onSelect={handleSelect}
             kpisPortfolio={kpisPortfolio}
             onExcluir={setConfirmDelete}
             canDelete={canDelete}
@@ -4186,7 +4218,7 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
           <div className="unit-card-add" onClick={()=>setShowModal(true)}>
             <div className="unit-card-add-ico">＋</div>
             <div className="unit-card-add-label">Adicionar Unidade</div>
-            <div className="unit-card-add-sub">máx. {MAX_UNITS} unidades</div>
+            <div className="unit-card-add-sub">Adicionar nova unidade ao portfólio</div>
           </div>
         )}
       </div>
@@ -4623,11 +4655,28 @@ function App(){
     try{
       // Buscar cliente_id da empresa ativa
       const{data:empAtiva,error:errEmp}=await supabase.from('empresas').select('cliente_id').eq('id',EMPRESA_ID).single();
+      console.log('DEBUG criarUnidade', { EMPRESA_ID, empAtiva, errEmp });
       if(errEmp||!empAtiva?.cliente_id)return'Não foi possível identificar o cliente da unidade ativa.';
       const clienteId=empAtiva.cliente_id;
+<<<<<<< HEAD
       // Criar empresa e vínculos via RPC (atômico, cria vínculos para todos os usuários do cliente)
       const{data,error}=await supabase.rpc('criar_unidade',{p_nome:nomeTrimmed,p_cliente_id:clienteId});
       if(error)return error.message||'Erro ao criar unidade.';
+=======
+      // Inserir nova empresa
+      const{data:novaEmpresa,error:errInsert}=await supabase.from('empresas').insert({nome:nomeTrimmed,cliente_id:clienteId}).select().single();
+      if(errInsert)return errInsert.message||'Erro ao criar unidade.';
+      // Criar vínculo em usuarios_empresas
+      const{data:{session}}=await supabase.auth.getSession();
+      const userId=session?.user?.id;
+      if(!userId)return'Sessão expirada. Faça login novamente.';
+      const{error:errVinculo}=await supabase.from('usuarios_empresas').insert({usuario_id:userId,empresa_id:novaEmpresa.id,role:'admin'});
+      if(errVinculo){
+        // Remover empresa órfã se o vínculo falhou
+        await supabase.from('empresas').delete().eq('id',novaEmpresa.id);
+        return errVinculo.message||'Erro ao criar vínculo. Unidade removida.';
+      }
+>>>>>>> c5b5404ecfbd7de0567cf70b21c4d1e3c74f71dd
       // Atualizar lista imediatamente sem novo reload
       const clienteNome=empresasDisponiveis.find(e=>e.id===EMPRESA_ID)?.clienteNome||'';
       setEmpresasDisponiveis(prev=>[...prev,{id:data.empresa_id,nome:nomeTrimmed,clienteNome}]);
@@ -4638,6 +4687,7 @@ function App(){
   };
 
   // BLOCO 4.8 — Excluir unidade pelo Portfólio.
+<<<<<<< HEAD
   // Remove apenas o vínculo em usuarios_empresas. Não apaga dados financeiros.
   // Retorna null em caso de sucesso ou string de erro para exibir ao usuário.
   const excluirUnidade=async(empresaId)=>{
@@ -4646,6 +4696,28 @@ function App(){
     try{
       const{error}=await supabase.rpc('inativar_unidade',{p_empresa_id:empresaId});
       if(error)return error.message||'Erro ao excluir unidade.';
+=======
+  // Sequência: 1) deleta vínculos em usuarios_empresas, 2) deleta a empresa em empresas
+  // prx_admin: opera sem filtro de usuario_id
+  // cliente comum: filtra por seu proprio usuario_id nos vínculos
+  const excluirUnidade=async(empresaId)=>{
+    if(empresaId===EMPRESA_ID)return'Não é possível excluir a unidade ativa. Troque para outra unidade primeiro.';
+    if(empresasDisponiveis.length<=1)return'Não é possível excluir a única unidade.';
+    try{
+      const{data:{session}}=await supabase.auth.getSession();
+      const userId=session?.user?.id;
+      if(!userId)return'Sessão expirada. Faça login novamente.';
+      const isPRX=roleGlobal==='prx_admin'||roleGlobal==='prx_editor';
+      // Passo 1 — remover vínculos (ignora se não houver nenhum)
+      let qVinculo=supabase.from('usuarios_empresas').delete().eq('empresa_id',empresaId);
+      if(!isPRX)qVinculo=qVinculo.eq('usuario_id',userId);
+      const{error:errVinculo}=await qVinculo;
+      if(errVinculo)return errVinculo.message||'Erro ao remover vínculos da unidade.';
+      // Passo 2 — deletar a empresa do banco para não reaparecer no próximo login
+      const{error:errEmp}=await supabase.from('empresas').delete().eq('id',empresaId);
+      if(errEmp)return errEmp.message||'Vínculos removidos, mas erro ao excluir a unidade do banco.';
+      // Passo 3 — atualizar lista local
+>>>>>>> c5b5404ecfbd7de0567cf70b21c4d1e3c74f71dd
       setEmpresasDisponiveis(prev=>prev.filter(e=>e.id!==empresaId));
       return null;
     }catch(err){
