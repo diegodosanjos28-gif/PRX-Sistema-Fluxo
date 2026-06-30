@@ -4680,7 +4680,7 @@ function App(){
   );
   if(carregandoAuth)return <Spinner msg="Verificando sessão…"/>;
   if(!autenticado&&!aguardandoSelecaoEmpresa)return <LoginScreen onLogin={(rg,emps)=>{setRoleGlobal(rg);if(rg==='prx_admin'||rg==='prx_editor'){setEmpresasSeletorPRX(emps);setAguardandoSelecaoEmpresa(true);}else{setAutenticado(true);}}}/>;
-  if(aguardandoSelecaoEmpresa)return <EmpresaSelector empresas={empresasSeletorPRX} roleGlobal={roleGlobal} onSelect={(eid)=>{EMPRESA_ID=eid;const emp=empresasSeletorPRX.find(e=>e.id===eid);const cid=emp?.cliente_id;const unidades=cid?empresasSeletorPRX.filter(e=>e.cliente_id===cid):[emp].filter(Boolean);setEmpresasDisponiveis(unidades.map(e=>({id:e.id,nome:e.nome,clienteNome:e.clientes?.nome||''})));setAguardandoSelecaoEmpresa(false);setAutenticado(true);}}/>;
+  if(aguardandoSelecaoEmpresa)return <EmpresaSelector empresas={empresasSeletorPRX} roleGlobal={roleGlobal} onSelect={(eid)=>{EMPRESA_ID=eid;const emp=empresasSeletorPRX.find(e=>e.id===eid);const cid=emp?.cliente_id;const unidades=cid?empresasSeletorPRX.filter(e=>e.cliente_id===cid):[emp].filter(Boolean);setEmpresasDisponiveis(unidades.map(e=>({id:e.id,nome:e.nome,clienteNome:e.clientes?.nome||''})));setEmpresaAtiva({id:emp?.id,nome:emp?.nome,clienteNome:emp?.clientes?.nome||''});setAguardandoSelecaoEmpresa(false);setAutenticado(true);}}/>;
   if(carregandoDados)return <Spinner msg="Carregando dados…"/>;
 
   const nowStr=new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
@@ -4700,7 +4700,7 @@ function App(){
             fontSize:14,transition:'all .15s',
           }}
         >🏢</button>
-        <div className="hdr-logo">{empresaAtiva?.clienteNome==='Picanhas Grill'?<img src="./ChatGPT Image 30 de jun. de 2026, 13_38_36.png" alt="Picanhas Grill" style={{height:'34px',width:'auto',maxWidth:'176px',display:'block',objectFit:'contain'}}/>:<ZanonLogo/>}</div>
+        <div className="hdr-logo">{(()=>{const n=(empresaAtiva?.clienteNome||empresaAtiva?.nome||'').trim().toLowerCase();return n==='picanhas grill'?<img src="./ChatGPT Image 30 de jun. de 2026, 13_38_36.png" alt="Picanhas Grill" style={{height:'34px',width:'auto',maxWidth:'176px',display:'block',objectFit:'contain'}}/>:<ZanonLogo/>;})()}</div>
         <div className="hdr-div"></div>
         <nav className="hdr-nav">
           <div className="hdr-grp">
