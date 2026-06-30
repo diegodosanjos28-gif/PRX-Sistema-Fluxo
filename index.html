@@ -25,6 +25,8 @@
   --red:#dc2626;--red-light:#fef2f2;--red-dim:#b91c1c;
   --blue:#2563eb;--blue-light:#eff6ff;--blue-dim:#1d4ed8;
   --purple:#7c3aed;--purple-light:#f5f3ff;
+  --papaya:#E8760A;--papaya-dark:#CF6800;--papaya-soft:rgba(232,118,10,.10);
+  --carbon:#1B1C20;--carbon-soft:#272830;
   --ink-900:#0f172a;--ink-800:#1e293b;--ink-700:#334155;
   --ink-500:#64748b;--ink-400:#94a3b8;--ink-300:#cbd5e1;
   --ink-200:#e2e8f0;--ink-100:#f1f5f9;--ink-50:#f8fafc;
@@ -33,10 +35,10 @@
   /* Fundo off-white acinzentado McLaren-inspired */
   --bg:#E8E7E3;--surface:#ffffff;--surface-2:#f4f3ef;
   /* Header premium em cinza chumbo (charcoal) */
-  --header-bg:#2F3437;
+  --header-bg:#1B1C20;
   --header-border:rgba(255,255,255,.10);
-  --header-text:#f4f3ef;
-  --header-text-muted:#a8aeb2;
+  --header-text:#F0EFEB;
+  --header-text-muted:#8E9099;
   --radius:10px;--radius-sm:7px;--radius-xs:5px;
   --shadow-xs:0 1px 2px rgba(15,23,42,0.04);
   --shadow:0 1px 3px rgba(15,23,42,0.06),0 1px 2px rgba(15,23,42,0.04);
@@ -49,24 +51,27 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 /* APP SHELL */
 .app-shell{display:flex;flex-direction:column;min-height:100vh;}
 
-/* TOP HEADER — Cinza chumbo premium com acabamento Verde Petronas */
+/* TOP HEADER — Carbon premium com acento Papaya */
 .app-header{
   background:var(--header-bg);
-  height:62px;
+  height:54px;
   display:flex;
   align-items:center;
-  padding:0 24px;
+  padding:0 28px;
   gap:18px;
   position:sticky;top:0;z-index:100;
-  border-bottom:2px solid var(--petronas);
-  box-shadow:0 1px 0 rgba(0,0,0,.18),0 2px 12px rgba(0,0,0,.10);
+  border-bottom:1px solid var(--papaya);
+  border-radius:0;
+  margin:0;
+  width:100%;
+  box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 4px 16px rgba(18,18,20,.14);
 }
 .hdr-logo{
   display:flex;align-items:center;flex-shrink:0;
   background:#ffffff;
-  padding:6px 12px;
-  border-radius:8px;
-  box-shadow:0 1px 2px rgba(0,0,0,.20),0 0 0 1px rgba(255,255,255,.04);
+  padding:5px 11px;
+  border-radius:7px;
+  box-shadow:0 1px 2px rgba(18,18,20,.22),0 0 0 1px rgba(255,255,255,.04);
 }
 .hdr-div{width:1px;height:30px;background:var(--header-border);flex-shrink:0;}
 .hdr-nav{display:flex;align-items:stretch;gap:2px;flex:1;overflow:hidden;height:100%;}
@@ -95,9 +100,9 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
   transition:background .15s;
   border-radius:1px;
 }
-.hdr-btn:hover{color:var(--petronas);}
+.hdr-btn:hover{color:var(--papaya);}
 .hdr-btn.active{color:#ffffff;}
-.hdr-btn.active::after{background:var(--petronas);}
+.hdr-btn.active::after{background:var(--papaya);}
 .hdr-btn .dot{display:none;}
 .hdr-right{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0;}
 .hdr-date{
@@ -134,9 +139,9 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 /* Divisória sutil entre o título e o seletor de meses na linha interna */
 .page-hdr-sep{width:1px;height:22px;background:rgba(15,23,42,0.10);flex-shrink:0;margin:0 2px;}
 /* Atalho "Projeção" na linha interna do Painel do Dono */
-.page-hdr-shortcut{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.04em;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);font-family:'DM Sans',sans-serif;transition:all .15s;box-shadow:var(--shadow-xs);white-space:nowrap;}
-.page-hdr-shortcut:hover{background:var(--petronas-soft);color:var(--petronas-dark);border-color:var(--petronas-soft);}
-.page-hdr-shortcut.active{background:var(--petronas);color:#fff;border-color:var(--petronas);}
+.page-hdr-shortcut{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.04em;cursor:pointer;border:1px solid rgba(232,118,10,.30);background:var(--papaya-soft);color:var(--papaya-dark);font-family:'DM Sans',sans-serif;transition:all .15s;box-shadow:var(--shadow-xs);white-space:nowrap;}
+.page-hdr-shortcut:hover{background:rgba(232,118,10,.17);color:var(--papaya-dark);border-color:rgba(232,118,10,.45);}
+.page-hdr-shortcut.active{background:var(--papaya);color:#fff;border-color:var(--papaya);}
 /* Logo PRX no canto direito da linha interna */
 .page-hdr-prx{display:inline-flex;align-items:center;height:30px;opacity:.88;}
 .page-hdr-prx img{height:30px;width:auto;display:block;}
@@ -239,8 +244,8 @@ textarea{resize:vertical;min-height:58px;}
 .year-sel{padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid var(--border);background:var(--surface-2);color:var(--text-secondary);cursor:pointer;font-family:'DM Sans',sans-serif;}
 .month-sep{width:1px;height:15px;background:var(--border);flex-shrink:0;}
 .mchip{padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid transparent;background:transparent;color:var(--text-muted);transition:all .1s;font-family:'DM Sans',sans-serif;}
-.mchip:hover{background:var(--petronas-soft);color:var(--petronas-dark);}
-.mchip.active{background:var(--petronas);color:white;}
+.mchip:hover{background:var(--papaya-soft);color:var(--papaya-dark);}
+.mchip.active{background:var(--papaya);color:white;}
 
 /* PROJEÇÃO — VEREDITO + BLOCOS EXECUTIVOS */
 .prj-verdict{display:flex;align-items:center;gap:18px;padding:14px 20px;border-radius:var(--radius);margin-bottom:12px;border:1px solid var(--border);box-shadow:var(--shadow-xs);flex-wrap:wrap;position:relative;overflow:hidden;}
@@ -333,20 +338,20 @@ textarea{resize:vertical;min-height:58px;}
   align-items:center;
   justify-content:space-between;
   gap:12px;
-  border-bottom:1.5px solid #00D2BE;
+  border-bottom:1.5px solid var(--papaya);
   position:relative;
 }
 .comp-header::before{
   content:'';
   position:absolute;left:0;top:0;bottom:0;width:3px;
-  background:#00D2BE;
+  background:var(--papaya);
 }
 .comp-header-label{
   display:inline-flex;align-items:center;
   font-size:10px;font-weight:700;letter-spacing:.12em;
   text-transform:uppercase;
   color:#fff;
-  background:#0f172a;
+  background:var(--carbon);
   padding:5px 10px;
   border-radius:3px;
   margin:0;
@@ -371,7 +376,7 @@ textarea{resize:vertical;min-height:58px;}
 .comp-item-name{font-size:10.5px;color:var(--text-muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px;}
 .comp-item-val{font-size:10.5px;font-weight:600;color:var(--text-secondary);white-space:nowrap;}
 .comp-expand{font-size:10px;color:var(--text-muted);cursor:pointer;background:none;border:none;padding:2px 0;font-family:'DM Sans',sans-serif;}
-.comp-expand:hover{color:var(--zanon-red);}
+.comp-expand:hover{color:var(--papaya);}
 
 /* PAG HOJE → REDISTRIBUIÇÃO */
 .redistribuicao{background:#fefce8;border:1px solid #fde68a;border-radius:var(--radius);padding:10px 13px;box-shadow:0 1px 3px rgba(217,119,6,0.06);}
@@ -413,7 +418,7 @@ textarea{resize:vertical;min-height:58px;}
 .cal-mod{background:#fef9c3;border-color:#fde68a;}
 .cal-pesado{background:#ffedd5;border-color:#fed7aa;}
 .cal-critico{background:#fee2e2;border-color:#fca5a5;}
-.cal-today{outline:2px solid var(--zanon-red);outline-offset:-1px;}
+.cal-today{outline:2px solid var(--papaya);outline-offset:-1px;}
 .cal-mod .cal-day-total{color:#92400e;}
 .cal-pesado .cal-day-total{color:#c2410c;}
 .cal-critico .cal-day-total{color:var(--red);}
@@ -468,8 +473,89 @@ textarea{resize:vertical;min-height:58px;}
 .comp-inner-4 .comp-group-total{font-size:13px;}
 .painel-comp-full{margin-bottom:11px;}
 
-/* Linha inferior: Leitura+Sugestão (esq 40%) | Fornecedores em Destaque (dir 60%) */
-.painel-layout-bottom{display:grid;grid-template-columns:2fr 3fr;gap:11px;margin-bottom:11px;align-items:start;}
+/* ── Painel do Dono — Hero banner ── */
+.painel-hero-wrap{margin:2px 0 18px;}
+.painel-hero{position:relative;border-radius:18px;overflow:hidden;min-height:300px;box-shadow:0 16px 38px rgba(18,18,20,.22),0 3px 10px rgba(18,18,20,.10);}
+.painel-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 56%;}
+.painel-hero-shade{position:absolute;inset:0;background:linear-gradient(96deg,rgba(13,12,14,.92) 0%,rgba(13,12,14,.68) 34%,rgba(13,12,14,.32) 60%,rgba(13,12,14,.22) 100%);}
+.painel-hero-shade::after{content:'';position:absolute;left:0;right:0;bottom:0;height:64%;background:linear-gradient(to top,rgba(9,9,11,.94),rgba(9,9,11,.30) 55%,transparent);}
+.painel-hero-body{position:relative;z-index:2;padding:34px 40px 108px;min-height:300px;display:flex;flex-direction:column;justify-content:flex-start;}
+.painel-hero-eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--papaya);margin-bottom:16px;}
+.painel-hero-eyebrow::before{content:'';width:28px;height:2px;background:var(--papaya);border-radius:2px;}
+.painel-hero-title{font-size:34px;line-height:1.1;font-weight:800;letter-spacing:-.03em;color:#fff;max-width:540px;text-wrap:balance;}
+.painel-hero-title b{color:var(--papaya);font-weight:800;}
+.painel-hero-sub{font-size:13.5px;line-height:1.55;color:rgba(255,255,255,.84);max-width:440px;margin-top:14px;}
+.painel-hero-chip{position:absolute;top:30px;right:32px;z-index:3;display:inline-flex;align-items:center;gap:9px;padding:8px 15px;border-radius:30px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.24);backdrop-filter:blur(8px);color:#fff;font-size:12px;font-weight:700;letter-spacing:.01em;text-transform:capitalize;}
+.painel-hero-chip .dot{width:7px;height:7px;border-radius:50%;background:var(--papaya);box-shadow:0 0 0 3px rgba(232,118,10,.32);}
+.painel-hero-prx{position:absolute;top:74px;right:32px;z-index:3;display:inline-flex;align-items:center;padding:7px 14px;border-radius:12px;background:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 6px 18px rgba(13,12,14,.32);}
+.painel-hero-prx img{height:19px;width:auto;display:block;}
+.painel-hero-kpis{position:relative;z-index:5;margin:-80px 20px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:13px;}
+/* ── Painel do Dono — HK KPI cards ── */
+.hk{background:#fff;border:1px solid rgba(213,213,208,.9);border-radius:15px;padding:16px 18px 15px;box-shadow:0 12px 28px rgba(18,18,20,.17),0 1px 3px rgba(18,18,20,.08);display:flex;flex-direction:column;min-height:114px;position:relative;}
+.hk-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:11px;}
+.hk-ico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0;line-height:1;}
+.hk-ico.g{background:var(--green-light);color:var(--green-dim);}
+.hk-ico.r{background:#fef2f2;color:var(--red);}
+.hk-ico.s{background:#eef2f6;color:#475569;}
+.hk-label{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);line-height:1.3;}
+.hk-top .hk-label{margin-top:2px;}
+.hk-value{font-size:25px;font-weight:800;letter-spacing:-.035em;line-height:1.04;color:var(--carbon);}
+.hk-value.g{color:var(--green-dim);}
+.hk-value.r{color:var(--red);}
+.hk-sub{font-size:10.5px;color:var(--text-muted);font-weight:500;margin-top:7px;line-height:1.35;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.hk-medias{display:flex;align-items:stretch;gap:0;}
+.hk-medias-col{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:3px;align-items:center;text-align:center;padding:0 12px;}
+.hk-medias-lbl{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);}
+.hk-medias-val{font-size:18px;font-weight:800;letter-spacing:-.03em;line-height:1;}
+.hk-medias-val.g{color:var(--green-dim);}
+.hk-medias-val.r{color:var(--red);}
+.hk-medias-sep{width:1px;align-self:stretch;background:var(--border);flex-shrink:0;}
+.hk.hk-meta{background:#212227;border:1.5px solid var(--papaya);box-shadow:0 14px 32px rgba(232,118,10,.26),0 2px 8px rgba(18,18,20,.24);overflow:hidden;}
+.hk-meta>*{position:relative;z-index:1;}
+.hk-meta::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.05) 0,rgba(255,255,255,.05) 1px,transparent 1px,transparent 2.5px),repeating-linear-gradient(-45deg,rgba(255,255,255,.05) 0,rgba(255,255,255,.05) 1px,transparent 1px,transparent 2.5px);background-size:3.5px 3.5px;}
+.hk-meta .hk-ico{background:var(--papaya);color:#fff;}
+.hk-meta .hk-label{color:rgba(255,255,255,.92);}
+.hk-meta .hk-value{color:var(--papaya);}
+.hk-meta .hk-sub{color:rgba(255,255,255,.74);}
+.hk-meta .pc-meta-btn{font-size:9px;font-weight:700;color:#fff;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.30);border-radius:5px;padding:3px 8px;cursor:pointer;font-family:inherit;letter-spacing:.05em;text-transform:uppercase;line-height:1.2;transition:background .15s,border-color .15s;}
+.hk-meta .pc-meta-btn:hover{background:var(--papaya);border-color:var(--papaya);}
+.hk-meta .pc-meta-badge{display:inline-block;font-size:8px;font-weight:800;letter-spacing:.07em;background:var(--papaya);color:#fff;padding:1px 5px;border-radius:3px;margin-left:6px;vertical-align:middle;text-transform:uppercase;}
+.hk-meta .pc-meta-popover{color:var(--text-primary);}
+@media(max-width:920px){
+  .painel-hero-kpis{grid-template-columns:repeat(2,1fr);margin-top:-66px;}
+  .painel-hero-title{font-size:27px;}
+  .painel-hero-body{padding:28px 26px 94px;}
+}
+@media(max-width:600px){
+  .painel-hero-kpis{grid-template-columns:1fr;margin:-54px 8px 0;}
+  .painel-hero-chip{display:none;}
+  .painel-hero-prx{display:none;}
+  .painel-hero-title{font-size:23px;}
+}
+/* ═══ Painel do Dono — forn-pago-compact (PAGO A FORNECEDORES) ═══ */
+.forn-pago-compact{background:#FAFAF7;border:1.5px solid var(--carbon);border-radius:var(--radius);padding:14px 22px 14px 28px;position:relative;overflow:hidden;display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:0;align-items:center;box-shadow:0 1px 4px rgba(18,18,20,.06),0 1px 2px rgba(18,18,20,.04);color:var(--text-primary);}
+.forn-pago-compact::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--papaya);}
+.fpc-main{display:flex;flex-direction:column;gap:3px;padding-right:18px;}
+.fpc-label{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:5px;}
+.fpc-label span{color:var(--papaya);}
+.fpc-value{font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--carbon);line-height:1.1;}
+.fpc-sub{font-size:10.5px;color:var(--text-muted);font-weight:500;}
+.fpc-prog-bg{height:4px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden;margin-top:5px;}
+.fpc-prog{height:100%;background:var(--papaya);border-radius:3px;transition:width .35s ease;}
+.fpc-cell{display:flex;flex-direction:column;gap:2px;border-left:1px solid var(--border);padding:0 16px;}
+.fpc-cell-lbl{font-size:8.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text-muted);}
+.fpc-cell-val{font-size:15px;font-weight:700;color:var(--text-primary);letter-spacing:-.02em;line-height:1.15;}
+.fpc-cell-sub{font-size:9.5px;color:var(--text-muted);font-weight:500;}
+@media(max-width:740px){
+  .forn-pago-compact{grid-template-columns:1fr 1fr;row-gap:12px;}
+  .fpc-main{grid-column:1/3;padding-right:0;}
+  .fpc-cell:nth-child(2){border-left:none;padding-left:0;}
+}
+
+/* Linha inferior: forn-pago-compact + calendário (full width, stacked) */
+.painel-layout-bottom{display:flex;flex-direction:column;gap:11px;margin-bottom:11px;}
+.painel-layout-bottom>.calendario{display:flex;flex-direction:column;}
+.painel-layout-bottom>.calendario .cal-grid{flex:1;}
 .painel-bottom-left{display:flex;flex-direction:column;gap:11px;}
 
 /* Painel Fornecedores em Destaque */
@@ -606,7 +692,7 @@ textarea{resize:vertical;min-height:58px;}
 .cal-meta-panel-title{font-size:11px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
 .cal-meta-panel-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px;}
 .cal-meta-input{width:70px;padding:5px 8px;font-size:13px;font-weight:600;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text-primary);font-family:inherit;outline:none;text-align:center;}
-.cal-meta-input:focus{border-color:var(--blue);}
+.cal-meta-input:focus{border-color:var(--papaya);}
 .cal-meta-pct{font-size:12px;font-weight:600;color:var(--text-secondary);}
 .cal-meta-preview{font-size:11px;color:var(--text-secondary);margin-left:auto;}
 .cal-meta-preview strong{color:var(--text-primary);font-weight:700;}
@@ -668,17 +754,12 @@ textarea{resize:vertical;min-height:58px;}
 @media(max-width:900px){.painel-kpi-grid.v5{grid-template-columns:repeat(2,1fr);}.painel-kpi-row2.v5{grid-template-columns:repeat(2,1fr);}.painel-layout-bottom{grid-template-columns:1fr;}.forn-body{grid-template-columns:1fr;gap:14px;}.forn-col{padding:0;}.forn-col:last-child{padding:0;border-left:none;border-top:1px solid var(--border);padding-top:12px;}}
 @media(max-width:700px){.comp-inner-4{grid-template-columns:1fr;}.comp-inner-4 .comp-group{border-right:none;border-bottom:1px solid var(--border);}.comp-inner-4 .comp-group:last-child{border-bottom:none;}}
 
-/* ── PAINEL LAYOUT INFERIOR: Calendário (esq) + CustoSegmentos (dir) ── */
-.painel-layout-bottom{display:grid;grid-template-columns:3fr 1fr;gap:11px;margin-bottom:11px;align-items:stretch;}
-.painel-layout-bottom>.calendario{height:100%;display:flex;flex-direction:column;}
-.painel-layout-bottom>.calendario .cal-grid{flex:1;}
-
 /* ── CALENDÁRIO: seleção por arrastar ── */
 .cal-day{cursor:pointer;user-select:none;transition:box-shadow .12s,border-color .12s;}
-.cal-day.cal-selected{box-shadow:inset 0 0 0 2px var(--petronas);position:relative;}
-.cal-day.cal-selected::after{content:'';position:absolute;inset:0;background:var(--petronas-soft);pointer-events:none;border-radius:5px;}
+.cal-day.cal-selected{box-shadow:inset 0 0 0 2px var(--papaya);position:relative;}
+.cal-day.cal-selected::after{content:'';position:absolute;inset:0;background:var(--papaya-soft);pointer-events:none;border-radius:5px;}
 .cal-day.empty{cursor:default;}
-.cal-sel-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:9px 13px;margin-bottom:11px;background:var(--surface-2);border-left:3px solid var(--petronas);border-radius:0 var(--radius-xs) var(--radius-xs) 0;font-size:11.5px;animation:calSelFadeIn .18s ease-out;}
+.cal-sel-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:9px 13px;margin-bottom:11px;background:var(--surface-2);border-left:3px solid var(--papaya);border-radius:0 var(--radius-xs) var(--radius-xs) 0;font-size:11.5px;animation:calSelFadeIn .18s ease-out;}
 @keyframes calSelFadeIn{from{opacity:0;transform:translateY(-2px);}to{opacity:1;transform:translateY(0);}}
 .cal-sel-bar-block{display:flex;flex-direction:column;line-height:1.15;}
 .cal-sel-bar-lbl{font-size:9px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--text-muted);margin-bottom:2px;}
@@ -736,8 +817,6 @@ textarea{resize:vertical;min-height:58px;}
 .metric-card-medias .metric-label{margin-bottom:6px;}
 .metrics-grid.entradas-grid .metric-card-medias .pc-medias-val{font-size:22px;}
 .metric-card-medias .pc-medias-lbl{font-size:9.5px;}
-@media(max-width:900px){.painel-layout-bottom{grid-template-columns:1fr;}}
-
 /* ══════════════════════════════════
    ABA PORTFÓLIO — MULTI-UNIDADE
    ══════════════════════════════════ */
@@ -856,15 +935,15 @@ const DEFAULT_PRAZOS = { dinheiro: 0, pix: 0, debito: 1, credito: 1, voucher: 30
 const FAIXA_ATENCAO_CALENDARIO = 2000;
 
 // Navigation tabs
-const TABS = [
-  { id: 'portfolio',    label: 'Portfólio',         icon: '🏢' },
-  { id: 'painel',       label: 'Painel do Dono',   icon: '📊' },
-  { id: 'entradas',     label: 'Entradas',          icon: '💰' },
-  { id: 'contas',       label: 'Contas a Pagar',    icon: '📋' },
-  { id: 'fornecedores', label: 'Fornecedores',      icon: '🚚' },
-  { id: 'dividas',      label: 'Dívidas',           icon: '🏦' },
-  { id: 'retiradas',    label: 'Retiradas',         icon: '👤' },
-  { id: 'projecao',     label: 'Projeção',          icon: '📈' },
+const TABS=[
+  {id:'portfolio',label:'Portfólio',icon:(<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>)},
+  {id:'painel',label:'Painel do Dono',icon:(<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>)},
+  {id:'entradas',label:'Entradas',icon:(<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01"/><path d="M18 12h.01"/></svg>)},
+  {id:'contas',label:'Contas a Pagar',icon:(<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></svg>)},
+  {id:'fornecedores',label:'Fornecedores',icon:(<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>)},
+  {id:'dividas',label:'Dívidas',icon:(<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>)},
+  {id:'retiradas',label:'Retiradas',icon:(<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>)},
+  {id:'projecao',label:'Projeção',icon:(<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>)},
 ];
 const TAB_META = {
   portfolio:    { sub: 'Visão consolidada de todas as unidades' },
@@ -1405,7 +1484,7 @@ function CustoSegmentos({contas,selYear,selMonth}){
 // ══════════════════
 // PAINEL DO DONO
 // ══════════════════
-function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear,setSelectedYear,selectedMonth,setSelectedMonth}){
+function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear,setSelectedYear,selectedMonth,setSelectedMonth,header}){
   const now=new Date();
   // Alias locais para manter o código existente legível — sem useState próprio.
   const selYear=selectedYear;
@@ -1466,6 +1545,13 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
   const metaIsManual=metaInfo.isManual;
   const chaveMesAtual=metaInfo.chaveMes;
   const mesLabel=`${MONTHS[selMonth]}/${selYear}`;
+  const prevYear=selMonth===0?selYear-1:selYear;
+  const prevMonth=selMonth===0?11:selMonth-1;
+  const mStartPrev=monthStart(prevYear,prevMonth);
+  const mEndPrev=monthEnd(prevYear,prevMonth);
+  const entMesPrev=entradas.filter(e=>e.data>=mStartPrev&&e.data<=mEndPrev);
+  const totalEntPrev=entMesPrev.reduce((s,e)=>s+e.total,0);
+  const deltaEntPct=totalEntPrev>0?((totalEnt-totalEntPrev)/totalEntPrev*100):null;
   const saldoAtual=config.saldoInicial;
   const saldoProj=saldoAtual+totalEnt-totalSaiMes;
   const semaMap={};
@@ -1486,6 +1572,14 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
   const varAg=agrNome(porTipo['Variável']);
   const fornAg=agrNome(porTipo['Fornecedor']);
   const finAg=agrNome(porTipo['Financeira']);
+  // ── Pago a Fornecedores no Mês (mesma regra da aba Fornecedores) ──
+  const fornMesArr=porTipo['Fornecedor'];
+  const fornPagos=fornMesArr.filter(c=>c.status==='Pago');
+  const totalPagoForn=fornPagos.reduce((s,c)=>s+c.valor,0);
+  const qtdPagosForn=fornPagos.length;
+  const qtdTotalFornBoletos=fornMesArr.length;
+  const pctPagoForn=totForn>0?pct(totalPagoForn,totForn):0;
+  const totalRestanteForn=Math.max(0,totForn-totalPagoForn);
 
   const concentMax=semanas[0]&&totalSaiMes>0?pct(semanas[0][1],totalSaiMes):0;
   const pctParcelas=pct(dividas.reduce((s,d)=>s+d.parcelaMensal,0),totalEnt);
@@ -1557,71 +1651,92 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
 
   return(
     <div>
-      {/* CARDS PRINCIPAIS — Linha 1: Entradas / Saídas / Saldo Projetado */}
-      <div className="painel-kpi-grid v5">
-        <div className="pc pc-t-green">
-          <div className="pc-label">Entradas do Mês</div>
-          <div className="pc-value g">{fmtFull(totalEnt)}</div>
-          <div className="pc-sub">{diasEnt} dias com venda</div>
+      {/* ══ HERO — imagem do mercado + 4 KPIs sobrepostos ══ */}
+      <div className="painel-hero-wrap">
+        <div className="painel-hero">
+          <img className="painel-hero-img" src={BANNER_SRC} alt="Corredor do Mercado Zanon"/>
+          <div className="painel-hero-shade"></div>
+          <div className="painel-hero-chip"><span className="dot"></span>{mesLabel}</div>
+          <div className="painel-hero-prx" title="PRX — Gestão de recebíveis" aria-label="PRX">
+            <img src={PRX_LOGO_SRC} alt="PRX"/>
+          </div>
+          <div className="painel-hero-body">
+            <div className="painel-hero-eyebrow">Mercado Zanon · Visão do Dono</div>
+            <div className="painel-hero-title">A saúde financeira do mês em <b>um só olhar</b></div>
+            <div className="painel-hero-sub">Entradas, saídas, médias diárias e a meta de pagamento — tudo o que move o caixa, reunido no topo do painel.</div>
+          </div>
         </div>
-        <div className="pc pc-t-red">
-          <div className="pc-label">Saídas até Agora</div>
-          <div className="pc-value r">{fmtFull(totalSaidoAteAgora)}</div>
-          <div className="pc-sub">Valor já pago no mês</div>
-        </div>
-        <div className="pc" style={{borderTopColor:saldoProj<0?'var(--red)':'var(--green)',borderTopWidth:2,borderTopStyle:'solid'}}>
-          <div className="pc-label">Saldo Projetado</div>
-          <div className={`pc-value${saldoProj>=0?' g':' r'}`}>{fmtFull(saldoProj)}</div>
-          <div className="pc-sub">{saldoProj<0?'⚠️ Caixa negativo':'✓ Resultado positivo'}</div>
-        </div>
-      </div>
 
-      {/* CARDS PRINCIPAIS — Linha 2: Caixa Mínimo / Médias Diárias / Meta Diária de Pagamento */}
-      <div className="painel-kpi-row2 v5">
-        <div className="pc pc-t-blue">
-          <div className="pc-label">Caixa Mínimo Recomendado</div>
-          <div className="pc-value a">{fmtFull(caixaMin)}</div>
-          <div className="pc-sub">Maior semana + 15%</div>
-        </div>
-        <div className="pc pc-t-slate">
-          <div className="pc-label">Médias Diárias</div>
-          <div className="pc-medias">
-            <div className="pc-medias-col">
-              <span className="pc-medias-lbl">Entrada</span>
-              <span className="pc-medias-val g">{fmt(mediaDiariaEnt)}</span>
+        <div className="painel-hero-kpis">
+          {/* Entradas do Mês */}
+          <div className="hk">
+            <div className="hk-top">
+              <div className="hk-label">Entradas do Mês</div>
+              <div className="hk-ico g">↑</div>
             </div>
-            <div className="pc-medias-sep"></div>
-            <div className="pc-medias-col">
-              <span className="pc-medias-lbl">Saída</span>
-              <span className="pc-medias-val r">{fmt(mediaDiariaSai)}</span>
+            <div className="hk-value g">{fmtFull(totalEnt)}</div>
+            <div className="hk-sub">
+              <span>{diasEnt} dias com venda</span>
+              {deltaEntPct!==null&&(
+                <span style={{fontSize:9.5,fontWeight:700,padding:'1px 5px',borderRadius:8,background:deltaEntPct>=0?'#f0fdf4':'#fef2f2',color:deltaEntPct>=0?'#15803d':'#b91c1c'}}>
+                  {deltaEntPct>=0?'+':''}{deltaEntPct.toFixed(0)}% vs {MONTHS_SHORT[prevMonth]}
+                </span>
+              )}
             </div>
           </div>
-          <div className="pc-sub">por dia corrido do mês</div>
-        </div>
-        <div className="pc pc-papaya" style={{position:'relative'}}>
-          <div className="pc-meta-row">
-            <div className="pc-label">
-              Meta Diária de Pagamento
-              {metaIsManual&&<span className="pc-meta-badge" title={`Meta manual para ${mesLabel}`}>Manual</span>}
+
+          {/* Saídas do Mês */}
+          <div className="hk">
+            <div className="hk-top">
+              <div className="hk-label">Saídas do Mês</div>
+              <div className="hk-ico r">↓</div>
             </div>
-            <button
-              type="button"
-              className="pc-meta-btn"
-              onClick={()=>{
-                // Ao abrir, preenche o input com a meta atual (manual ou automática) já formatada
-                const valorAtual=metaDiariaPagamento>0?formatCurrencyBR(metaDiariaPagamento).replace('R$ ',''):'';
-                setMetaManualInput(valorAtual);
-                setShowMetaManual(s=>!s);
-              }}
-              title={`Definir meta diária manual para ${mesLabel}`}
-            >
-              Manual
-            </button>
+            <div className="hk-value r">{fmtFull(totalSaiMes)}</div>
+            <div className="hk-sub">{fmtFull(totalSaidoAteAgora)} já pagos no mês</div>
           </div>
-          <div className="pc-value a">{fmtFull(metaDiariaPagamento)}</div>
-          <div className="pc-sub">
-            {metaIsManual?`Meta manual — ${mesLabel}`:`${metaPercentual}% da média diária`}
+
+          {/* Médias Diárias (entrada + saída) */}
+          <div className="hk">
+            <div className="hk-top">
+              <div className="hk-label">Médias Diárias (dia)</div>
+              <div className="hk-ico s">⇅</div>
+            </div>
+            <div className="hk-medias">
+              <div className="hk-medias-col">
+                <span className="hk-medias-lbl">Entrada</span>
+                <span className="hk-medias-val g">{fmt(mediaDiariaEnt)}</span>
+              </div>
+              <div className="hk-medias-sep"></div>
+              <div className="hk-medias-col">
+                <span className="hk-medias-lbl">Saída</span>
+                <span className="hk-medias-val r">{fmt(mediaDiariaSai)}</span>
+              </div>
+            </div>
+            <div className="hk-sub">por dia corrido do mês</div>
           </div>
+
+          {/* Meta Diária de Pagamento — DESTAQUE */}
+          <div className="hk hk-meta">
+            <div className="hk-top">
+              <div className="hk-label">
+                Meta Diária de Pagamento
+                {metaIsManual&&<span className="pc-meta-badge" title={`Meta manual para ${mesLabel}`}>Manual</span>}
+              </div>
+              <button
+                type="button"
+                className="pc-meta-btn"
+                onClick={()=>{
+                  const valorAtual=metaDiariaPagamento>0?formatCurrencyBR(metaDiariaPagamento).replace('R$ ',''):'';
+                  setMetaManualInput(valorAtual);
+                  setShowMetaManual(s=>!s);
+                }}
+                title={`Definir meta diária manual para ${mesLabel}`}
+              >
+                Manual
+              </button>
+            </div>
+            <div className="hk-value">{fmtFull(metaDiariaPagamento)}</div>
+            <div className="hk-sub">{metaIsManual?`Meta manual — ${mesLabel}`:`${metaPercentual}% da média diária`}</div>
 
           {showMetaManual&&(
             <div className="pc-meta-popover">
@@ -1673,8 +1788,12 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
+
+      {/* Cabeçalho da aba — posicionado ABAIXO da imagem do banner */}
+      {header}
 
       {/* COMPOSIÇÃO DAS DESPESAS — largura total, 4 colunas */}
       <div className="comp-panel painel-comp-full">
@@ -1688,14 +1807,44 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
         <div className="comp-body comp-inner-4">
           <CompGroup label="Despesas Fixas" color="#16a34a" total={totFixed} totalGeral={totalSaiMes} items={fixasAg} expand={expF} setExpand={setExpF} emptyMsg="Nenhuma despesa fixa"/>
           <CompGroup label="Despesas Variáveis" color="#d97706" total={totVar} totalGeral={totalSaiMes} items={varAg} expand={expV} setExpand={setExpV} emptyMsg="Nenhuma despesa variável"/>
-          <CompGroup label="Fornecedores" color="#2563eb" total={totForn} totalGeral={totalSaiMes} items={fornAg} expand={expForn} setExpand={setExpForn} emptyMsg="Nenhum fornecedor"/>
+          <CompGroup label="Fornecedores" color="#2979FF" total={totForn} totalGeral={totalSaiMes} items={fornAg} expand={expForn} setExpand={setExpForn} emptyMsg="Nenhum fornecedor"/>
           <CompGroup label="Despesas Financeiras" color="#7c3aed" total={totFin} totalGeral={totalSaiMes} items={finAg} expand={expFin} setExpand={setExpFin} emptyMsg="Nenhuma despesa financeira"/>
         </div>
       </div>
 
-      {/* LAYOUT INFERIOR: Calendário (esq 75%) | Custo por Segmento (dir 25%) */}
+      {/* LAYOUT INFERIOR: Pago a Fornecedores (largura total) + Calendário (largura total) */}
       <div className="painel-layout-bottom">
-        {/* CALENDÁRIO FINANCEIRO — coluna esquerda */}
+
+        {/* ── PAGO A FORNECEDORES NO MÊS — barra horizontal compacta ── */}
+        <div className="forn-pago-compact">
+          <div className="fpc-main">
+            <div className="fpc-label"><span>✓</span> Pago a Fornecedores no Mês</div>
+            <div className="fpc-value">{fmtFull(totalPagoForn)}</div>
+            <div className="fpc-sub">{MONTHS[selMonth]} {selYear}</div>
+            {totForn>0&&(
+              <div className="fpc-prog-bg">
+                <div className="fpc-prog" style={{width:Math.min(100,pctPagoForn)+'%'}}></div>
+              </div>
+            )}
+          </div>
+          <div className="fpc-cell">
+            <div className="fpc-cell-lbl">% do total</div>
+            <div className="fpc-cell-val">{pctPagoForn}%</div>
+            <div className="fpc-cell-sub">de {fmtFull(totForn)}</div>
+          </div>
+          <div className="fpc-cell">
+            <div className="fpc-cell-lbl">Restante a pagar</div>
+            <div className="fpc-cell-val">{fmtFull(totalRestanteForn)}</div>
+            <div className="fpc-cell-sub">{Math.max(0,qtdTotalFornBoletos-qtdPagosForn)} boleto{(qtdTotalFornBoletos-qtdPagosForn)===1?'':'s'}</div>
+          </div>
+          <div className="fpc-cell">
+            <div className="fpc-cell-lbl">Boletos quitados</div>
+            <div className="fpc-cell-val">{qtdPagosForn} / {qtdTotalFornBoletos}</div>
+            <div className="fpc-cell-sub">{qtdPagosForn>0?'pagamento'+(qtdPagosForn===1?'':'s')+' no mês':'nenhum pagamento'}</div>
+          </div>
+        </div>
+
+        {/* CALENDÁRIO FINANCEIRO — largura total */}
         <div className="calendario">
           <div className="cal-head">
             <div className="cal-title-wrap">
@@ -1832,9 +1981,8 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
           </div>
         </div>
 
-        {/* CUSTO POR SEGMENTO — coluna direita */}
-        <CustoSegmentos contas={contas} selYear={selYear} selMonth={selMonth}/>
       </div>
+
     </div>
   );
 }
@@ -4039,6 +4187,7 @@ function Fornecedores({contas,selectedYear,selectedMonth}){
 }
 
 
+const BANNER_SRC='imagem header.png';
 const PRX_LOGO_SRC='data:image/png;base64,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';
 
 // ══════════════════════════════════════════════════════════════
@@ -4685,6 +4834,39 @@ function App(){
 
   const nowStr=new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
   const activeTabObj=TABS.find(t=>t.id===activeTab);
+  const pageHeaderEl=(
+    <PageHeader
+      icon={activeTabObj?.icon}
+      title={activeTabObj?.label}
+      sub={TAB_META[activeTab]?.sub}
+      leftExtras={activeTab==='painel'?(
+        <React.Fragment>
+          <div className="page-hdr-sep"></div>
+          <div className="month-bar-inline">
+            <select className="year-sel" value={selectedYear} onChange={e=>setSelectedYear(parseInt(e.target.value))}>
+              {[new Date().getFullYear()-1,new Date().getFullYear(),new Date().getFullYear()+1].map(y=><option key={y} value={y}>{y}</option>)}
+            </select>
+            <div className="month-sep"></div>
+            {MONTHS_SHORT.map((m,i)=>(
+              <button key={i} className={`mchip${selectedMonth===i?' active':''}`} onClick={()=>setSelectedMonth(i)}>{m}</button>
+            ))}
+          </div>
+          <button
+            className={`page-hdr-shortcut${activeTab==='projecao'?' active':''}`}
+            onClick={()=>setActiveTab('projecao')}
+            title="Abrir Projeção de Saldo"
+          >
+            <span>📈</span><span>Projeção</span>
+          </button>
+        </React.Fragment>
+      ):null}
+      actions={(
+        <div className="page-hdr-prx" title="PRX — Gestão de recebíveis" aria-label="PRX">
+          <img src={PRX_LOGO_SRC} alt="PRX"/>
+        </div>
+      )}
+    />
+  );
   return(
     <div className="app-shell">
       <header className="app-header">
@@ -4694,8 +4876,8 @@ function App(){
           style={{
             display:'inline-flex',alignItems:'center',justifyContent:'center',
             width:30,height:30,borderRadius:6,flexShrink:0,
-            background:activeTab==='portfolio'?'var(--petronas)':'rgba(255,255,255,.07)',
-            border:activeTab==='portfolio'?'1px solid var(--petronas)':'1px solid rgba(255,255,255,.12)',
+            background:activeTab==='portfolio'?'var(--papaya)':'rgba(255,255,255,.07)',
+            border:activeTab==='portfolio'?'1px solid var(--papaya)':'1px solid rgba(255,255,255,.12)',
             cursor:'pointer',color:activeTab==='portfolio'?'#fff':'rgba(255,255,255,.55)',
             fontSize:14,transition:'all .15s',
           }}
@@ -4714,42 +4896,12 @@ function App(){
         <div className="hdr-right">
           {isSaving&&<span style={{fontSize:'11px',color:'var(--petronas)',fontWeight:'600',letterSpacing:'.04em',animation:'pulse 1s ease-in-out infinite'}}>💾 Salvando…<style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style></span>}
           <span className="hdr-date">{nowStr}</span>
-          <button className="hdr-clear" onClick={handleLogout} title="Sair do sistema" style={{borderColor:'rgba(220,38,38,.35)',color:'#fca5a5'}}>⏏ Sair</button>
+          <button className="hdr-clear" onClick={handleLogout} title="Sair do sistema">⏏ Sair</button>
         </div>
       </header>
       <div className="page-wrap">
-        <PageHeader
-          icon={activeTabObj?.icon}
-          title={activeTabObj?.label}
-          sub={TAB_META[activeTab]?.sub}
-          leftExtras={activeTab==='painel'?(
-            <React.Fragment>
-              <div className="page-hdr-sep"></div>
-              <div className="month-bar-inline">
-                <select className="year-sel" value={selectedYear} onChange={e=>setSelectedYear(parseInt(e.target.value))}>
-                  {[new Date().getFullYear()-1,new Date().getFullYear(),new Date().getFullYear()+1].map(y=><option key={y} value={y}>{y}</option>)}
-                </select>
-                <div className="month-sep"></div>
-                {MONTHS_SHORT.map((m,i)=>(
-                  <button key={i} className={`mchip${selectedMonth===i?' active':''}`} onClick={()=>setSelectedMonth(i)}>{m}</button>
-                ))}
-              </div>
-              <button
-                className={`page-hdr-shortcut${activeTab==='projecao'?' active':''}`}
-                onClick={()=>setActiveTab('projecao')}
-                title="Abrir Projeção de Saldo"
-              >
-                <span>📈</span><span>Projeção</span>
-              </button>
-            </React.Fragment>
-          ):null}
-          actions={(
-            <div className="page-hdr-prx" title="PRX — Gestão de recebíveis" aria-label="PRX">
-              <img src={PRX_LOGO_SRC} alt="PRX"/>
-            </div>
-          )}
-        />
-        {activeTab==='painel'&&<Painel entradas={entradas} contas={contasComParcelas} dividas={dividas} retiradas={retiradas} config={config} setConfig={setConfig} selectedYear={selectedYear} setSelectedYear={setSelectedYear} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth}/>}
+        {activeTab!=='painel'&&pageHeaderEl}
+        {activeTab==='painel'&&<Painel entradas={entradas} contas={contasComParcelas} dividas={dividas} retiradas={retiradas} config={config} setConfig={setConfig} selectedYear={selectedYear} setSelectedYear={setSelectedYear} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} header={pageHeaderEl}/>}
         {activeTab==='entradas'&&<Entradas entradas={entradas} setEntradas={setEntradas} contas={contasComParcelas} dividas={dividas} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
         {activeTab==='contas'&&<Contas contas={contas} setContas={setContas} contasComParcelas={contasComParcelas} mediaDiariaEntrada={mediaDiaria} dividas={dividas} setDividas={setDividas} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
         {activeTab==='fornecedores'&&<Fornecedores contas={contasComParcelas} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
