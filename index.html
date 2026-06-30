@@ -3776,6 +3776,7 @@ function App(){
   const[carregandoAuth,setCarregandoAuth]=useState(true);
   const[carregandoDados,setCarregandoDados]=useState(false);
   const[isSaving,setIsSaving]=useState(false);
+  const[clienteNome,setClienteNome]=useState(null);
 
   const[entradas,setE_]=useState([]);
   const[contas,setC_]=useState([]);
@@ -3797,7 +3798,7 @@ function App(){
   // useEffect 2: escutar eventos de auth (SIGNED_OUT, renovação de token)
   useEffect(()=>{
     const{data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
-      if(event==='SIGNED_OUT'){setAutenticado(false);EMPRESA_ID=null;}
+      if(event==='SIGNED_OUT'){setAutenticado(false);EMPRESA_ID=null;setClienteNome(null);}
     });
     return()=>subscription.unsubscribe();
   },[]);
@@ -3823,6 +3824,13 @@ function App(){
     }).finally(()=>{
       setCarregandoDados(false);
     });
+  },[autenticado]);
+
+  // useEffect 4: nome do cliente para seleção de logo (não toca loadS/saveS/useEffect 3)
+  useEffect(()=>{
+    if(!autenticado||!EMPRESA_ID)return;
+    supabase.from('empresas').select('clientes(nome)').eq('id',EMPRESA_ID).single()
+      .then(({data})=>setClienteNome(data?.clientes?.nome||null));
   },[autenticado]);
 
   // ── Setters assíncronos com optimistic update e indicador isSaving ──
@@ -3858,7 +3866,7 @@ function App(){
   return(
     <div className="app-shell">
       <header className="app-header">
-        <div className="hdr-logo"><ZanonLogo/></div>
+        <div className="hdr-logo">{clienteNome==='Picanhas Grill'?<img src="./ChatGPT Image 30 de jun. de 2026, 13_38_36.png" alt="Picanhas Grill" style={{height:'34px',width:'auto',maxWidth:'176px',display:'block',objectFit:'contain'}}/>:<ZanonLogo/>}</div>
         <div className="hdr-div"></div>
         <nav className="hdr-nav">
           <div className="hdr-grp">
