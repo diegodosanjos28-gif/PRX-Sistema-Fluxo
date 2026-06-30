@@ -829,8 +829,8 @@ textarea{resize:vertical;min-height:58px;}
 @media(max-width:1100px){.portfolio-grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:680px){.portfolio-grid{grid-template-columns:1fr;}}
 .unit-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);overflow:hidden;cursor:pointer;transition:box-shadow .18s,transform .18s,border-color .18s;position:relative;}
-.unit-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);border-color:var(--petronas);}
-.unit-card.active-unit{border-color:var(--petronas);box-shadow:0 0 0 2px var(--petronas),var(--shadow-lg);}
+.unit-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);border-color:var(--papaya);}
+.unit-card.active-unit{border-color:var(--papaya);box-shadow:0 0 0 2px var(--papaya),var(--shadow-lg);}
 .unit-card.selected-unit{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue),var(--shadow-lg);}
 .unit-card-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 14px 10px;border-bottom:1px solid var(--border);position:relative;}
 .unit-card-hdr::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:0;}
@@ -855,17 +855,50 @@ textarea{resize:vertical;min-height:58px;}
 .unit-kpi-val.a{color:var(--amber);}
 .unit-kpi-sub{font-size:10px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .unit-card-footer{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--surface-2);border-top:1px solid var(--border);}
-.unit-card-footer-btn{font-size:10.5px;font-weight:600;color:var(--petronas-dark);background:none;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-family:'DM Sans',sans-serif;letter-spacing:.03em;padding:0;}
-.unit-card-footer-btn:hover{color:var(--petronas);}
+.unit-card-footer-btn{font-size:10.5px;font-weight:600;color:var(--papaya-dark);background:none;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-family:'DM Sans',sans-serif;letter-spacing:.03em;padding:0;}
+.unit-card-footer-btn:hover{color:var(--papaya);}
 .unit-card-mes{font-size:10px;color:var(--text-muted);font-weight:500;}
 .unit-card-add{background:var(--surface);border:2px dashed var(--border);border-radius:var(--radius);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:32px 20px;cursor:pointer;transition:border-color .15s,background .15s;min-height:220px;}
-.unit-card-add:hover{border-color:var(--petronas);background:var(--petronas-soft);}
+.unit-card-add:hover{border-color:var(--papaya);background:var(--papaya-soft);}
 .unit-card-add-ico{font-size:24px;opacity:.5;}
 .unit-card-add-label{font-size:13px;font-weight:600;color:var(--text-muted);}
 .unit-card-add-sub{font-size:11px;color:var(--text-muted);opacity:.7;}
 .unit-modal-form{display:flex;flex-direction:column;gap:13px;}
 .unit-modal-form .fg{display:flex;flex-direction:column;gap:4px;}
 .unit-modal-form label{font-size:12px;font-weight:600;color:var(--text-secondary);}
+
+/* ══ PORTFÓLIO — Painel Comparativo entre Unidades ══ */
+.comp-panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;border-bottom:1px solid var(--border);}
+.comp-panel-title{font-size:13px;font-weight:700;color:var(--text-primary);letter-spacing:-.01em;text-transform:uppercase;}
+.comp-panel-periodo{font-size:11px;font-weight:500;color:var(--text-muted);letter-spacing:.02em;}
+.comp-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.comp-table{width:100%;border-collapse:collapse;min-width:420px;}
+.comp-table th,.comp-table td{padding:10px 14px;text-align:right;font-size:13px;white-space:nowrap;border-bottom:1px solid rgba(18,18,20,0.05);}
+.comp-table th{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);background:var(--surface-2);position:sticky;top:0;border-bottom:1px solid var(--border);}
+.comp-table th:first-child,.comp-table td:first-child{text-align:left;font-weight:600;color:var(--text-secondary);position:sticky;left:0;background:inherit;z-index:1;min-width:140px;}
+.comp-table th:first-child{background:var(--surface-2);}
+.comp-table td:first-child{background:var(--surface);}
+.comp-table th.comp-col-active{color:var(--papaya-dark);}
+.comp-table tbody tr:last-child td{border-bottom:none;}
+.comp-table tbody tr:hover td{background:var(--ink-50);}
+.comp-table tbody tr:hover td:first-child{background:var(--ink-50);}
+.comp-cell{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+.comp-val{font-weight:700;letter-spacing:-.02em;color:var(--text-primary);font-size:13px;}
+.comp-val.is-max{color:var(--papaya-dark);}
+.comp-bar-wrap{width:100%;max-width:110px;height:5px;background:var(--ink-100);border-radius:3px;overflow:hidden;}
+.comp-bar{height:100%;border-radius:3px;transition:width .3s ease;}
+.comp-bar.bar-ent{background:var(--papaya);}
+.comp-bar.bar-sai{background:var(--ink-400);}
+.comp-empty-state{padding:40px 20px;text-align:center;color:var(--text-muted);font-size:13px;}
+/* ══ PORTFÓLIO — Seção Acessar Unidade ══ */
+.access-section{margin-top:20px;margin-bottom:8px;}
+.access-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;}
+.access-btns{display:flex;flex-wrap:wrap;gap:10px;}
+.access-btn{padding:11px 22px;font-size:13px;font-weight:600;letter-spacing:.02em;color:#fff;background:var(--papaya);border:2px solid var(--papaya);border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s,border-color .15s,box-shadow .15s;min-width:140px;text-align:center;}
+.access-btn:hover{background:var(--papaya-dark);border-color:var(--papaya-dark);}
+.access-btn:focus{outline:2px solid var(--papaya);outline-offset:2px;}
+.access-btn.is-active{background:var(--papaya);border-color:var(--ink-900);box-shadow:0 0 0 1px var(--ink-900);color:#fff;}
+@media(max-width:600px){.access-btn{flex:1 1 calc(50% - 10px);min-width:120px;}}
 </style>
 </head>
 <body>
@@ -4295,6 +4328,17 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
     if(err){setErroExcluir(err);return;}
     setConfirmDelete(null);
   };
+  const mesLabel=MONTHS[selMonth]+'/'+selYear;
+  const indicadores=[
+    {key:'totalEntradas',label:'Entradas do Mês',barClass:'bar-ent'},
+    {key:'totalContasAbertas',label:'Contas a Pagar',barClass:'bar-sai'},
+    {key:'totalFornecedores',label:'Fornecedores',barClass:'bar-sai'},
+    {key:'saldoProjetado',label:'Saldo Projetado',barClass:'bar-ent'},
+  ];
+  const maxVals={};
+  indicadores.forEach(ind=>{
+    maxVals[ind.key]=Math.max(0,...empresas.map(u=>Math.max(0,(kpisPortfolio?.[u.id]||KPIS_EMPTY)[ind.key]||0)));
+  });
   return(
     <div className="portfolio-wrap">
       <div className="portfolio-toolbar">
@@ -4314,35 +4358,84 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           {canAdd&&(
-            <button className="btn btn-primary btn-sm" onClick={()=>setShowModal(true)} style={{background:'var(--petronas)',display:'flex',alignItems:'center',gap:5}}>
+            <button className="btn btn-primary btn-sm" onClick={()=>setShowModal(true)} style={{background:'var(--papaya)',display:'flex',alignItems:'center',gap:5}}>
               <span style={{fontSize:14,lineHeight:1}}>＋</span> Nova Unidade
             </button>
           )}
         </div>
       </div>
-      <div className="portfolio-grid">
-        {empresas.map(u=>(
-          <UnitCard
-            key={u.id}
-            unit={u}
-            selYear={selYear}
-            selMonth={selMonth}
-            isActive={empresaAtiva?.id===u.id}
-            onSelect={onSelectEmpresa}
-            kpisPortfolio={kpisPortfolio}
-            onExcluir={setConfirmDelete}
-            canDelete={canDelete}
-            isMain={u.nome.trim().toLowerCase()===u.clienteNome.trim().toLowerCase()}
-          />
-        ))}
-        {canAdd&&(
-          <div className="unit-card-add" onClick={()=>setShowModal(true)}>
-            <div className="unit-card-add-ico">＋</div>
-            <div className="unit-card-add-label">Adicionar Unidade</div>
-            <div className="unit-card-add-sub">Adicionar nova unidade ao portfólio</div>
+      {empresas.length===0?(
+        <div className="comp-panel">
+          <div className="comp-empty-state">Nenhuma unidade cadastrada. Clique em "Nova Unidade" para começar.</div>
+        </div>
+      ):(
+        <div className="comp-panel" style={{marginBottom:20}}>
+          <div className="comp-panel-hdr">
+            <div className="comp-panel-title">Comparativo entre Unidades</div>
+            <div className="comp-panel-periodo">{mesLabel}</div>
           </div>
-        )}
-      </div>
+          <div className="comp-scroll">
+            <table className="comp-table">
+              <thead>
+                <tr>
+                  <th>Indicador</th>
+                  {empresas.map(u=>(
+                    <th key={u.id} className={empresaAtiva?.id===u.id?'comp-col-active':''}>
+                      <span>{u.nome}</span>
+                      {canDelete&&empresaAtiva?.id!==u.id&&(
+                        <button onClick={e=>{e.stopPropagation();setConfirmDelete(u);}} title="Excluir unidade" style={{marginLeft:6,fontSize:9,color:'var(--text-muted)',background:'none',border:'none',cursor:'pointer',padding:'1px 3px',opacity:.6,verticalAlign:'middle'}}>✕</button>
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {indicadores.map(ind=>{
+                  const mx=maxVals[ind.key];
+                  return(
+                    <tr key={ind.key}>
+                      <td>{ind.label}</td>
+                      {empresas.map(u=>{
+                        const k=kpisPortfolio?.[u.id]||KPIS_EMPTY;
+                        const raw=k[ind.key]||0;
+                        const val=Math.max(0,raw);
+                        const isMax=mx>0&&val===mx&&empresas.filter(x=>Math.max(0,(kpisPortfolio?.[x.id]||KPIS_EMPTY)[ind.key]||0)===mx).length<empresas.length;
+                        const barW=mx>0?Math.max(0,Math.round((val/mx)*100)):0;
+                        return(
+                          <td key={u.id}>
+                            <div className="comp-cell">
+                              <span className={`comp-val${isMax?' is-max':''}`}>{fmt(val)}</span>
+                              <div className="comp-bar-wrap">
+                                <div className={`comp-bar ${ind.barClass}`} style={{width:barW+'%'}}></div>
+                              </div>
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      {empresas.length>0&&(
+        <div className="access-section">
+          <div className="access-title">Acessar unidade</div>
+          <div className="access-btns">
+            {empresas.map(u=>(
+              <button
+                key={u.id}
+                className={`access-btn${empresaAtiva?.id===u.id?' is-active':''}`}
+                onClick={()=>onSelectEmpresa(u.id)}
+              >
+                {u.nome}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {showModal&&(
         <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&fecharModal()}>
           <div className="modal" style={{maxWidth:420}}>
@@ -4378,7 +4471,7 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
                 <button className="btn btn-secondary btn-sm" onClick={fecharModal} disabled={salvandoUnidade}>Cancelar</button>
                 <button
                   className="btn btn-sm"
-                  style={{background:'var(--petronas)',color:'#fff',opacity:salvandoUnidade?0.7:1}}
+                  style={{background:'var(--papaya)',color:'#fff',opacity:salvandoUnidade?0.7:1}}
                   onClick={handleCriar}
                   disabled={!newName.trim()||salvandoUnidade}
                 >
