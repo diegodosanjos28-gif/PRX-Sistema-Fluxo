@@ -950,12 +950,12 @@ const MONTHS       = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Jul
 const MONTHS_SHORT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
 // Bills — domain enums
-const CATEGORIAS   = ['Fornecedores','Folha de Pagamento','Impostos','Aluguel','Energia','Água','Sistema','Contador','Manutenção','Marketing','Banco/Juros','Retirada dos Donos','Outros'];
+const CATEGORIAS   = ['Fornecedores','Folha de Pagamento','Impostos','Aluguel','Energia','Água','Sistema','Contador','Jurídico','Manutenção','Marketing','Banco/Juros','Retirada dos Donos','Outros'];
 const STATUS_LIST  = ['A vencer','Pago','Vencido','Renegociado'];
 const TIPO_DESPESA = ['Fixa','Variável','Fornecedor','Financeira'];
 const FORMAS_PAG   = ['PIX','Boleto','Dinheiro','Débito em conta','Cartão','Transferência','Cheque','Outro'];
 const CONTAS_SAIDA = ['Banco principal','Banco secundário','Caixa físico','Conta pessoal do sócio','Outro'];
-const SEGMENTOS    = ['Açougue','Padaria','Hortifruti','Bebidas','Mercearia Seca','Mercearia Salgada','Mercearia Doce','Lacticínios'];
+const SEGMENTOS    = ['Açougue','Padaria','Hortifruti','Bebidas','Mercearia Seca','Mercearia Salgada','Mercearia Doce','Lacticínios','Embalagens'];
 
 // Debts — domain enums
 const TIPOS_DIVIDA  = ['Capital de Giro','Cheque Especial','Empréstimo','Financiamento','Cartão','Antecipação','Renegociação','Fornecedor Renegociado','Outros'];
@@ -2478,8 +2478,13 @@ const validarLinhas=(rows,contasExistentes)=>{
     else if(!venc)erros.push('data inválida');
     if(!r.fornecedor)erros.push('fornecedor vazio');
     if(!r.descricao)erros.push('descrição vazia');
-    if(!r.segmento)erros.push('segmento vazio');
-    else if(r.segmento&&!SEGMENTOS.includes(r.segmento))erros.push(`segmento inválido: "${r.segmento}"`);
+    const exigeSegmento=!r.tipoDespesa||r.tipoDespesa==='Fornecedor';
+    if(exigeSegmento){
+      if(!r.segmento)erros.push('segmento vazio');
+      else if(!SEGMENTOS.includes(r.segmento))erros.push(`segmento inválido: "${r.segmento}"`);
+    }else if(r.segmento&&!SEGMENTOS.includes(r.segmento)){
+      erros.push(`segmento inválido: "${r.segmento}"`);
+    }
     const val=parseCurrencyBR(r.valor);
     if(!r.valor)erros.push('valor vazio');
     else if(isNaN(val)||val<=0)erros.push('valor inválido ou zero');
