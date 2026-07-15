@@ -1164,6 +1164,29 @@ const insertContasBatch=async(contas,empresaId)=>{
   if(error)throw error;
 };
 
+// ─── Dívida operations — individual, safe (no DELETE-all) ─────────────────────
+const sanitizeDividaForSupabase=(d,empresaId)=>{
+  const row={empresa_id:empresaId};
+  Object.entries(d).forEach(([k,v])=>{if(!k.startsWith('_')&&v!==undefined)row[k]=v;});
+  return row;
+};
+const insertDivida=async(divida,empresaId)=>{
+  if(!empresaId)throw new Error('EMPRESA_ID não definido');
+  const{error}=await supabase.from('dividas').insert([sanitizeDividaForSupabase(divida,empresaId)]);
+  if(error)throw error;
+};
+const updateDivida=async(divida,empresaId)=>{
+  if(!empresaId)throw new Error('EMPRESA_ID não definido');
+  const{empresa_id:_eid,id:_id,...updateData}=sanitizeDividaForSupabase(divida,empresaId);
+  const{error}=await supabase.from('dividas').update(updateData).eq('id',divida.id).eq('empresa_id',empresaId);
+  if(error)throw error;
+};
+const deleteDivida=async(id,empresaId)=>{
+  if(!empresaId)throw new Error('EMPRESA_ID não definido');
+  const{error}=await supabase.from('dividas').delete().eq('id',id).eq('empresa_id',empresaId);
+  if(error)throw error;
+};
+
 // ─────────────────────────────────────────────────────────────
 // SECTION 6 — HOOKS
 // ─────────────────────────────────────────────────────────────
@@ -2729,7 +2752,7 @@ function ContaAgendaItem({c,dividas,onPago,onEdit}){
   );
 }
 
-function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onContasImportar,contasComParcelas,mediaDiariaEntrada,dividas,setDividas,selectedYear,selectedMonth}){
+function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onContasImportar,contasComParcelas,mediaDiariaEntrada,dividas,setDividas,onDividaEditar,selectedYear,selectedMonth}){
   const now=new Date();
   // Mês/ano vêm do estado GLOBAL (Painel do Dono). Sem useState local nem seletor visual.
   const selYear=selectedYear;
@@ -2800,17 +2823,19 @@ function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onCo
     contaOpLock.current=true;
     const entry={...c,status:'Pago'};
     let nd=[...(dividas||[])];
-    if(!c.abateuDivida&&entry.dividaVinculadaId){nd=abaterDivida(entry,nd);entry.abateuDivida=true;}
-    const prev=contas;
+    let divAfetada=null;
+    if(!c.abateuDivida&&entry.dividaVinculadaId){nd=abaterDivida(entry,nd);entry.abateuDivida=true;divAfetada=nd.find(d=>d.id===entry.dividaVinculadaId)||null;}
+    const prevContas=contas;
+    const prevDividas=dividas;
+    if(divAfetada)setDividas(nd);
+    let persistConta;
     // Se é uma conta auto-gerada, promove para conta manual permanente
-    if(c._autoGerado){
-      setContas([...contas,entry]);
-      onContaCriar(entry).catch(err=>{setContas(prev);setContaErro('Erro ao marcar como pago. Operação revertida.');}).finally(()=>{contaOpLock.current=false;});
-    } else {
-      setContas(contas.map(x=>x.id===c.id?entry:x));
-      onContaEditar(entry).catch(err=>{setContas(prev);setContaErro('Erro ao marcar como pago. Operação revertida.');}).finally(()=>{contaOpLock.current=false;});
-    }
-    if(setDividas)setDividas(nd);
+    if(c._autoGerado){setContas([...contas,entry]);persistConta=onContaCriar(entry);}
+    else{setContas(contas.map(x=>x.id===c.id?entry:x));persistConta=onContaEditar(entry);}
+    persistConta
+      .then(()=>{if(divAfetada&&onDividaEditar)return onDividaEditar(divAfetada).catch(err=>{setDividas(prevDividas);setContaErro('Conta salva, mas dívida vinculada não foi atualizada. Recarregue a página.');});})
+      .catch(err=>{setContas(prevContas);if(divAfetada)setDividas(prevDividas);setContaErro('Erro ao marcar como pago. Operação revertida.');})
+      .finally(()=>{contaOpLock.current=false;});
   };
 
   const save_=()=>{
@@ -2819,21 +2844,31 @@ function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onCo
     contaOpLock.current=true;
     const entry={...form,valor:parseNum(form.valor),id:editId||genId()};
     let nd=[...(dividas||[])];
-    const prev=contas;
+    const prevContas=contas;
+    const prevDividas=dividas;
+    const divAfetadaIds=[];
     if(editId){
       const ant=contas.find(c=>c.id===editId);
       if(ant&&ant.status==='Pago'&&ant.abateuDivida&&(entry.status!=='Pago'||entry.dividaVinculadaId!==ant.dividaVinculadaId)){
         nd=reverterAbatimento(ant,nd);entry.abateuDivida=false;
+        if(ant.dividaVinculadaId)divAfetadaIds.push(ant.dividaVinculadaId);
       }
-      if(entry.status==='Pago'&&entry.dividaVinculadaId&&!entry.abateuDivida){nd=abaterDivida(entry,nd);entry.abateuDivida=true;}
+      if(entry.status==='Pago'&&entry.dividaVinculadaId&&!entry.abateuDivida){nd=abaterDivida(entry,nd);entry.abateuDivida=true;if(!divAfetadaIds.includes(entry.dividaVinculadaId))divAfetadaIds.push(entry.dividaVinculadaId);}
+      if(divAfetadaIds.length>0)setDividas(nd);
       setContas(contas.map(c=>c.id===editId?entry:c));
-      onContaEditar(entry).catch(err=>{setContas(prev);setContaErro('Erro ao salvar a conta. Alteração revertida.');}).finally(()=>{contaOpLock.current=false;});
+      onContaEditar(entry)
+        .then(()=>{if(divAfetadaIds.length>0&&onDividaEditar){const ps=divAfetadaIds.map(did=>{const d=nd.find(x=>x.id===did);return d?onDividaEditar(d):Promise.resolve();});return Promise.all(ps).catch(err=>{setDividas(prevDividas);setContaErro('Conta salva, mas dívida vinculada não foi atualizada. Recarregue a página.');});}})
+        .catch(err=>{setContas(prevContas);if(divAfetadaIds.length>0)setDividas(prevDividas);setContaErro('Erro ao salvar a conta. Alteração revertida.');})
+        .finally(()=>{contaOpLock.current=false;});
     } else {
-      if(entry.status==='Pago'&&entry.dividaVinculadaId){nd=abaterDivida(entry,nd);entry.abateuDivida=true;}
+      if(entry.status==='Pago'&&entry.dividaVinculadaId){nd=abaterDivida(entry,nd);entry.abateuDivida=true;divAfetadaIds.push(entry.dividaVinculadaId);}
+      if(divAfetadaIds.length>0)setDividas(nd);
       setContas([...contas,entry]);
-      onContaCriar(entry).catch(err=>{setContas(prev);setContaErro('Erro ao salvar a conta. Alteração revertida.');}).finally(()=>{contaOpLock.current=false;});
+      onContaCriar(entry)
+        .then(()=>{if(divAfetadaIds.length>0&&onDividaEditar){const ps=divAfetadaIds.map(did=>{const d=nd.find(x=>x.id===did);return d?onDividaEditar(d):Promise.resolve();});return Promise.all(ps).catch(err=>{setDividas(prevDividas);setContaErro('Conta salva, mas dívida vinculada não foi atualizada. Recarregue a página.');});}})
+        .catch(err=>{setContas(prevContas);if(divAfetadaIds.length>0)setDividas(prevDividas);setContaErro('Erro ao salvar a conta. Alteração revertida.');})
+        .finally(()=>{contaOpLock.current=false;});
     }
-    if(setDividas)setDividas(nd);
     setShowForm(false);setEditId(null);setForm(emptyContaForm);
   };
 
@@ -2842,11 +2877,16 @@ function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onCo
     if(confirm('Remover?')){
       const c=contas.find(x=>x.id===id);
       let nd=[...(dividas||[])];
-      if(c&&c.abateuDivida&&c.tipoDespesa==='Financeira'&&c.dividaVinculadaId){nd=reverterAbatimento(c,nd);if(setDividas)setDividas(nd);}
+      let divAfetada=null;
+      if(c&&c.abateuDivida&&c.tipoDespesa==='Financeira'&&c.dividaVinculadaId){nd=reverterAbatimento(c,nd);divAfetada=nd.find(d=>d.id===c.dividaVinculadaId)||null;if(divAfetada)setDividas(nd);}
       contaOpLock.current=true;
-      const prev=contas;
+      const prevContas=contas;
+      const prevDividas=dividas;
       setContas(contas.filter(c=>c.id!==id));
-      onContaExcluir(id).catch(err=>{setContas(prev);setContaErro('Erro ao excluir a conta. Operação revertida.');}).finally(()=>{contaOpLock.current=false;});
+      onContaExcluir(id)
+        .then(()=>{if(divAfetada&&onDividaEditar)return onDividaEditar(divAfetada).catch(err=>{setDividas(prevDividas);setContaErro('Conta excluída, mas dívida vinculada não foi atualizada. Recarregue a página.');});})
+        .catch(err=>{setContas(prevContas);if(divAfetada)setDividas(prevDividas);setContaErro('Erro ao excluir a conta. Operação revertida.');})
+        .finally(()=>{contaOpLock.current=false;});
     }
   };
 
@@ -3238,13 +3278,15 @@ function DividaPanel({d,entradaMensal,onEdit,onRemove}){
   );
 }
 
-function Dividas({dividas,setDividas,entradaMensal}){
+function Dividas({dividas,setDividas,onDividaCriar,onDividaEditar,onDividaExcluir,entradaMensal}){
   const[showForm,setShowForm]=useState(false);
   const[editId,setEditId]=useState(null);
   const emptyForm={banco:'',tipo:'Capital de Giro',valorOriginal:'',valorUtilizado:'',parcelaMensal:'',taxaJuros:'',dataContratacao:'',prazoTotal:'',parcelasPagas:'',parcelasRestantes:'',vencimento:'',status:'Ativa',obs:''};
   const[form,setForm]=useState(emptyForm);
   const[filtroStatus,setFiltroStatus]=useState('Todas');
   const[ordenacao,setOrdenacao]=useState('Maior saldo');
+  const[dividaErro,setDividaErro]=useState(null);
+  const dividaOpLock=useRef(false);
 
   const totalDivida=dividas.reduce((s,d)=>s+d.valorUtilizado,0);
   const totalParcelas=dividas.reduce((s,d)=>s+d.parcelaMensal,0);
@@ -3272,7 +3314,9 @@ function Dividas({dividas,setDividas,entradaMensal}){
   };
 
   const save_=()=>{
+    if(dividaOpLock.current)return;
     if(!form.banco||!form.valorUtilizado)return alert('Preencha banco e saldo atual.');
+    dividaOpLock.current=true;
     const entry={...form,
       valorOriginal:parseCurrencyBR(form.valorOriginal)||null,
       valorUtilizado:parseCurrencyBR(form.valorUtilizado),
@@ -3283,11 +3327,26 @@ function Dividas({dividas,setDividas,entradaMensal}){
       parcelasRestantes:parseInt(form.parcelasRestantes)||null,
       id:editId||genId()
     };
-    setDividas(editId?dividas.map(d=>d.id===editId?entry:d):[...dividas,entry]);
+    const prev=dividas;
+    if(editId){
+      setDividas(dividas.map(d=>d.id===editId?entry:d));
+      onDividaEditar(entry).catch(err=>{setDividas(prev);setDividaErro('Erro ao salvar a dívida. Alteração revertida.');}).finally(()=>{dividaOpLock.current=false;});
+    } else {
+      setDividas([...dividas,entry]);
+      onDividaCriar(entry).catch(err=>{setDividas(prev);setDividaErro('Erro ao criar a dívida. Operação revertida.');}).finally(()=>{dividaOpLock.current=false;});
+    }
     setShowForm(false);setEditId(null);setForm(emptyForm);
   };
 
-  const remove=id=>{if(confirm('Remover esta dívida?'))setDividas(dividas.filter(d=>d.id!==id));};
+  const remove=id=>{
+    if(dividaOpLock.current)return;
+    if(confirm('Remover esta dívida?')){
+      dividaOpLock.current=true;
+      const prev=dividas;
+      setDividas(dividas.filter(d=>d.id!==id));
+      onDividaExcluir(id).catch(err=>{setDividas(prev);setDividaErro('Erro ao excluir a dívida. Operação revertida.');}).finally(()=>{dividaOpLock.current=false;});
+    }
+  };
 
   // Filtro
   let lista=dividas.filter(d=>{
@@ -3302,6 +3361,7 @@ function Dividas({dividas,setDividas,entradaMensal}){
 
   return(
     <div>
+      {dividaErro&&<div className="alert alert-r" style={{marginBottom:12,display:'flex',alignItems:'center',gap:8}}><span>⚠️</span><span style={{flex:1}}>{dividaErro}</span><button onClick={()=>setDividaErro(null)} style={{background:'none',border:'none',cursor:'pointer',color:'inherit',fontWeight:700,lineHeight:1}}>✕</button></div>}
       {/* CARDS EXECUTIVOS */}
       <div className="metrics-grid" style={{gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))'}}>
         <div className="metric-card" style={{borderTop:'2px solid var(--red)'}}>
@@ -4882,7 +4942,10 @@ function App(){
   const onContaEditar=async entry=>{const eid=EMPRESA_ID;setIsSaving(true);try{await updateConta(entry,eid);}catch(err){console.error('Erro ao editar conta:',err);setIsSaving(false);throw err;}setIsSaving(false);};
   const onContaExcluir=async id=>{const eid=EMPRESA_ID;setIsSaving(true);try{await deleteConta(id,eid);}catch(err){console.error('Erro ao excluir conta:',err);setIsSaving(false);throw err;}setIsSaving(false);};
   const onContasImportar=async novos=>{const eid=EMPRESA_ID;setIsSaving(true);try{await insertContasBatch(novos,eid);}catch(err){console.error('Erro ao importar contas:',err);setIsSaving(false);throw err;}setIsSaving(false);};
-  const setDividas=async d=>{setD_(d);setIsSaving(true);try{await saveS(KEYS.dividas,d);}catch(err){console.error('Erro ao salvar dívidas:',err);}finally{setIsSaving(false);}};
+  const setDividas=d=>setD_(d);
+  const onDividaCriar=async entry=>{const eid=EMPRESA_ID;setIsSaving(true);try{await insertDivida(entry,eid);}catch(err){console.error('Erro ao criar dívida:',err);setIsSaving(false);throw err;}setIsSaving(false);};
+  const onDividaEditar=async entry=>{const eid=EMPRESA_ID;setIsSaving(true);try{await updateDivida(entry,eid);}catch(err){console.error('Erro ao editar dívida:',err);setIsSaving(false);throw err;}setIsSaving(false);};
+  const onDividaExcluir=async id=>{const eid=EMPRESA_ID;setIsSaving(true);try{await deleteDivida(id,eid);}catch(err){console.error('Erro ao excluir dívida:',err);setIsSaving(false);throw err;}setIsSaving(false);};
   const setRetiradas=async d=>{setR_(d);setIsSaving(true);try{await saveS(KEYS.retiradas,d);}catch(err){console.error('Erro ao salvar retiradas:',err);}finally{setIsSaving(false);}};
   const setConfig=async d=>{setCfg_(d);setIsSaving(true);try{await saveS(KEYS.config,d);}catch(err){console.error('Erro ao salvar config:',err);}finally{setIsSaving(false);}};
 
@@ -5053,9 +5116,9 @@ function App(){
         {activeTab!=='painel'&&pageHeaderEl}
         {activeTab==='painel'&&<Painel entradas={entradas} contas={contasComParcelas} dividas={dividas} retiradas={retiradas} config={config} setConfig={setConfig} selectedYear={selectedYear} setSelectedYear={setSelectedYear} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} header={pageHeaderEl}/>}
         {activeTab==='entradas'&&<Entradas entradas={entradas} setEntradas={setEntradas} contas={contasComParcelas} dividas={dividas} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
-        {activeTab==='contas'&&<Contas contas={contas} setContas={setContas} onContaCriar={onContaCriar} onContaEditar={onContaEditar} onContaExcluir={onContaExcluir} onContasImportar={onContasImportar} contasComParcelas={contasComParcelas} mediaDiariaEntrada={mediaDiaria} dividas={dividas} setDividas={setDividas} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
+        {activeTab==='contas'&&<Contas contas={contas} setContas={setContas} onContaCriar={onContaCriar} onContaEditar={onContaEditar} onContaExcluir={onContaExcluir} onContasImportar={onContasImportar} contasComParcelas={contasComParcelas} mediaDiariaEntrada={mediaDiaria} dividas={dividas} setDividas={setDividas} onDividaEditar={onDividaEditar} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
         {activeTab==='fornecedores'&&<Fornecedores contas={contasComParcelas} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
-        {activeTab==='dividas'&&<Dividas dividas={dividas} setDividas={setDividas} entradaMensal={totalEntMes}/>}
+        {activeTab==='dividas'&&<Dividas dividas={dividas} setDividas={setDividas} onDividaCriar={onDividaCriar} onDividaEditar={onDividaEditar} onDividaExcluir={onDividaExcluir} entradaMensal={totalEntMes}/>}
         {activeTab==='retiradas'&&<Retiradas retiradas={retiradas} setRetiradas={setRetiradas} entradaMensal={totalEntMes} config={config} setConfig={setConfig}/>}
         {activeTab==='projecao'&&<Projecao entradas={entradas} contas={contasComParcelas} config={config} setConfig={setConfig}/>}
         {activeTab==='portfolio'&&<Portfolio
