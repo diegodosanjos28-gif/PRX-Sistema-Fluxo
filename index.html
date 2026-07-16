@@ -220,6 +220,12 @@ textarea{resize:vertical;min-height:58px;}
 /* Variante específica da aba Entradas — cards um pouco maiores, com mais espaço para números */
 .metrics-grid.entradas-grid{grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:10px;}
 .metrics-grid.entradas-grid .metric-card{padding:14px 17px;}
+
+/* Seletor de categoria — cabeçalho da Agenda do Dia (Contas a Pagar) */
+.cat-chip{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);transition:background .15s,color .15s,border-color .15s;font-family:'DM Sans',sans-serif;}
+.cat-chip:hover{background:var(--surface-2);}
+.cat-chip.active{background:var(--papaya);border-color:var(--papaya);color:#ffffff;}
+.cat-chips-wrap{display:flex;flex-wrap:wrap;gap:5px;}
 .metrics-grid.entradas-grid .metric-label{font-size:11.5px;margin-bottom:5px;}
 .metrics-grid.entradas-grid .metric-value{font-size:22px;margin-bottom:4px;letter-spacing:-.035em;}
 .metrics-grid.entradas-grid .metric-sub{font-size:10.5px;line-height:1.35;white-space:normal;}
@@ -1091,6 +1097,19 @@ const MONTHS_SHORT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out
 const CATEGORIAS   = ['Fornecedores','Folha de Pagamento','Impostos','Aluguel','Energia','Água','Sistema','Contador','Jurídico','Manutenção','Marketing','Banco/Juros','Retirada dos Donos','Outros'];
 const STATUS_LIST  = ['A vencer','Pago','Vencido','Renegociado'];
 const TIPO_DESPESA = ['Fixa','Variável','Fornecedor','Financeira'];
+// Normaliza variações antigas/alternativas do campo tipoDespesa para as 4 categorias canônicas,
+// sem alterar o dado original armazenado — usado apenas para leitura/filtragem (Contas a Pagar).
+const normTipoDespesa=t=>{
+  const s=(t||'').toString().trim().toLowerCase();
+  if(['fixa','fixas','despesa fixa','despesas fixas'].includes(s))return'Fixa';
+  if(['variável','variavel','variáveis','variaveis','despesa variável','despesa variavel','despesas variáveis'].includes(s))return'Variável';
+  if(['fornecedor','fornecedores'].includes(s))return'Fornecedor';
+  if(['financeira','financeiras','despesa financeira','despesas financeiras'].includes(s))return'Financeira';
+  return'Variável';
+};
+const CATEGORIAS_TIPO=['Todas',...TIPO_DESPESA];
+const NOME_CAT_CHIP={Todas:'Todas',Fixa:'Fixas',Variável:'Variáveis',Fornecedor:'Fornecedores',Financeira:'Financeiras'};
+const NOME_CAT_FULL={Todas:'Todas as Categorias',Fixa:'Despesas Fixas',Variável:'Despesas Variáveis',Fornecedor:'Fornecedores',Financeira:'Despesas Financeiras'};
 const FORMAS_PAG   = ['PIX','Boleto','Dinheiro','Débito em conta','Cartão','Transferência','Cheque','Outro'];
 const CONTAS_SAIDA = ['Banco principal','Banco secundário','Caixa físico','Conta pessoal do sócio','Outro'];
 const SEGMENTOS    = ['Açougue','Padaria','Hortifruti','Bebidas','Mercearia Seca','Mercearia Salgada','Mercearia Doce','Lacticínios','Embalagens'];
@@ -2901,6 +2920,9 @@ function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onCo
   const[showImport,setShowImport]=useState(false);
   const[contaErro,setContaErro]=useState(null);
   const contaOpLock=useRef(false);
+  // Categoria (tipoDespesa) selecionada nos chips do cabeçalho da Agenda do Dia — estado único,
+  // combinado (não substitui) com filtroStatus, data/mês e afeta toda a aba.
+  const[categoriaSelecionada,setCategoriaSelecionada]=useState('Todas');
   // Agenda inicia no dia atual se ele estiver no mês selecionado, senão no 1º dia do mês
   const isMesAtual=now.getFullYear()===selYear&&now.getMonth()===selMonth;
   const dataInicialAgenda=isMesAtual?today():monthStart(selYear,selMonth);
@@ -2921,16 +2943,20 @@ function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onCo
 
   // Universo: SOMENTE contas do mês selecionado (filtro mensal estrito)
   const contasNoMes=contasComParcelas.filter(c=>c.vencimento>=iniMes&&c.vencimento<=fimMes);
+  // Filtro de categoria (tipoDespesa) — combinado (não substitui) com o filtro mensal acima.
+  // "Todas" não restringe; qualquer outra categoria filtra pelo tipoDespesa normalizado.
+  const matchCategoria=c=>categoriaSelecionada==='Todas'||normTipoDespesa(c.tipoDespesa)===categoriaSelecionada;
+  const contasNoMesCat=contasNoMes.filter(matchCategoria);
 
-  const pendentes=contasNoMes.filter(c=>c.status!=='Pago'&&c.status!=='Renegociado');
+  const pendentes=contasNoMesCat.filter(c=>c.status!=='Pago'&&c.status!=='Renegociado');
   const tHoje=pendentes.filter(c=>c.vencimento===hoje);
   const tHojeTotal=tHoje.reduce((s,c)=>s+c.valor,0);
   const t7tot=pendentes.filter(c=>c.vencimento>hoje&&c.vencimento<=em7).reduce((s,c)=>s+c.valor,0);
   const t15tot=pendentes.filter(c=>c.vencimento>hoje&&c.vencimento<=em15).reduce((s,c)=>s+c.valor,0);
   const tMes=pendentes.filter(c=>c.vencimento<=fimMes).reduce((s,c)=>s+c.valor,0);
-  // "Total vencido": só contas vencidas DENTRO do mês selecionado
-  const tvenc=contasNoMes.filter(c=>c.vencimento<hoje&&c.status!=='Pago'&&c.status!=='Renegociado').reduce((s,c)=>s+c.valor,0);
-  const nVenc=contasNoMes.filter(c=>c.vencimento<hoje&&c.status!=='Pago'&&c.status!=='Renegociado').length;
+  // "Total vencido": só contas vencidas DENTRO do mês selecionado (já considerando a categoria)
+  const tvenc=contasNoMesCat.filter(c=>c.vencimento<hoje&&c.status!=='Pago'&&c.status!=='Renegociado').reduce((s,c)=>s+c.valor,0);
+  const nVenc=contasNoMesCat.filter(c=>c.vencimento<hoje&&c.status!=='Pago'&&c.status!=='Renegociado').length;
 
   const pressaoDia=c=>{
     if(mediaDiariaEntrada===0)return null;
@@ -3036,7 +3062,7 @@ function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onCo
     onContasImportar(novos).catch(err=>{setContas(prev);setContaErro('Erro ao importar contas. Importação revertida.');}).finally(()=>{contaOpLock.current=false;});
   };
 
-  const contasFiltradas=[...contasNoMes]
+  const contasFiltradas=[...contasNoMesCat]
     .filter(c=>{
       if(filtroStatus==='Todos')return true;
       if(filtroStatus==='Vencido')return c.vencimento<hoje&&c.status!=='Pago'&&c.status!=='Renegociado';
@@ -3044,10 +3070,8 @@ function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onCo
     })
     .sort((a,b)=>a.vencimento.localeCompare(b.vencimento));
 
-  const maioresMes=[...contasNoMes].sort((a,b)=>b.valor-a.valor).slice(0,5);
-
-  // ── AGENDA DO DIA ──
-  const contasDoDia=[...contasComParcelas].filter(c=>c.vencimento===dataAgenda)
+  // ── AGENDA DO DIA ── (também respeita a categoria selecionada)
+  const contasDoDia=[...contasComParcelas].filter(c=>c.vencimento===dataAgenda).filter(matchCategoria)
     .sort((a,b)=>{
       // ordena por status (a vencer/vencido primeiro), depois por valor desc
       const rank=s=>s==='Pago'?2:s==='Renegociado'?1:0;
@@ -3096,85 +3120,61 @@ function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onCo
         <div className="metric-card" style={{borderTop:'2px solid var(--amber)'}}>
           <div className="metric-label">Falta Pagar no Mês</div>
           <div className="metric-value amber">{fmtFull(pendentes.reduce((s,c)=>s+c.valor,0))}</div>
-          <div style={{marginTop:3}}><div style={{height:3,background:'var(--ink-100)',borderRadius:2,overflow:'hidden'}}><div style={{height:'100%',borderRadius:2,background:'var(--amber)',width:(()=>{const total=contasNoMes.reduce((s,c)=>s+c.valor,0);const pago=contasNoMes.filter(c=>c.status==='Pago').reduce((s,c)=>s+c.valor,0);return total>0?pct(pago,total)+'%':'0%';})()}}></div></div><div className="metric-sub" style={{marginTop:2}}>{pendentes.length} conta(s) restante(s)</div></div>
+          <div style={{marginTop:3}}><div style={{height:3,background:'var(--ink-100)',borderRadius:2,overflow:'hidden'}}><div style={{height:'100%',borderRadius:2,background:'var(--amber)',width:(()=>{const total=contasNoMesCat.reduce((s,c)=>s+c.valor,0);const pago=contasNoMesCat.filter(c=>c.status==='Pago').reduce((s,c)=>s+c.valor,0);return total>0?pct(pago,total)+'%':'0%';})()}}></div></div><div className="metric-sub" style={{marginTop:2}}>{pendentes.length} conta(s) restante(s)</div></div>
         </div>
       </div>
 
-      {/* ── AGENDA + MAIORES ── */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
-        <div className="card" style={{minWidth:0}}>
-          {/* Cabeçalho da Agenda do Dia */}
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:8,flexWrap:'wrap'}}>
-            <div className="card-title" style={{marginBottom:0}}>📅 Agenda do Dia</div>
-            <div style={{display:'flex',alignItems:'center',gap:4}}>
-              <button className="btn btn-secondary btn-sm" style={{fontSize:11,padding:'4px 9px'}} onClick={irDiaAnterior} title="Dia anterior">← Anterior</button>
-              <button className="btn btn-secondary btn-sm" style={{fontSize:11,padding:'4px 9px',color:dataAgenda===hoje?'var(--ink-900)':'var(--text-muted)',borderColor:dataAgenda===hoje?'var(--ink-900)':'var(--border)',fontWeight:dataAgenda===hoje?700:500}} onClick={irHoje} title="Voltar para hoje">Hoje</button>
-              <button className="btn btn-secondary btn-sm" style={{fontSize:11,padding:'4px 9px'}} onClick={irProximoDia} title="Próximo dia">Próximo →</button>
-            </div>
+      {/* ── AGENDA DO DIA (largura total, com filtro de categoria no cabeçalho) ── */}
+      <div className="card" style={{minWidth:0,marginBottom:12}}>
+        {/* Cabeçalho da Agenda do Dia */}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,marginBottom:8,flexWrap:'wrap'}}>
+          <div className="card-title" style={{marginBottom:0}}>📅 Agenda do Dia</div>
+          <div style={{display:'flex',alignItems:'center',gap:4}}>
+            <button className="btn btn-secondary btn-sm" style={{fontSize:11,padding:'4px 9px'}} onClick={irDiaAnterior} title="Dia anterior">← Anterior</button>
+            <button className="btn btn-secondary btn-sm" style={{fontSize:11,padding:'4px 9px',color:dataAgenda===hoje?'var(--ink-900)':'var(--text-muted)',borderColor:dataAgenda===hoje?'var(--ink-900)':'var(--border)',fontWeight:dataAgenda===hoje?700:500}} onClick={irHoje} title="Voltar para hoje">Hoje</button>
+            <button className="btn btn-secondary btn-sm" style={{fontSize:11,padding:'4px 9px'}} onClick={irProximoDia} title="Próximo dia">Próximo →</button>
           </div>
-          {/* Indicação da data selecionada */}
-          <div style={{fontSize:11,fontWeight:700,color:corLabelAgenda,textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8,paddingBottom:6,borderBottom:'1px solid var(--border)'}}>
+        </div>
+        {/* Indicação da data selecionada + seletor de categorias (tipoDespesa), lado a lado à esquerda */}
+        <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap',marginBottom:8,paddingBottom:6,borderBottom:'1px solid var(--border)'}}>
+          <div style={{fontSize:11,fontWeight:700,color:corLabelAgenda,textTransform:'uppercase',letterSpacing:'.06em',whiteSpace:'nowrap'}}>
             {labelAgenda} — {fmtDate(dataAgenda)}
           </div>
-          {/* Resumo financeiro do dia */}
-          {contasDoDia.length>0&&(
-            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,marginBottom:10,padding:'8px 10px',background:'var(--ink-50)',borderRadius:6}}>
-              <div>
-                <div style={{fontSize:10,color:'var(--text-muted)',fontWeight:500,textTransform:'uppercase',letterSpacing:'.05em'}}>Total do dia</div>
-                <div style={{fontSize:14,fontWeight:700,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{fmtFull(totalDia)}</div>
-              </div>
-              <div>
-                <div style={{fontSize:10,color:'var(--text-muted)',fontWeight:500,textTransform:'uppercase',letterSpacing:'.05em'}}>Pago</div>
-                <div style={{fontSize:14,fontWeight:700,color:'var(--green)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{fmtFull(totalPagoDia)}</div>
-              </div>
-              <div>
-                <div style={{fontSize:10,color:'var(--text-muted)',fontWeight:500,textTransform:'uppercase',letterSpacing:'.05em'}}>Em aberto</div>
-                <div style={{fontSize:14,fontWeight:700,color:totalAbertoDia>0?'var(--amber)':'var(--text-muted)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{fmtFull(totalAbertoDia)}</div>
-              </div>
-              <div>
-                <div style={{fontSize:10,color:'var(--text-muted)',fontWeight:500,textTransform:'uppercase',letterSpacing:'.05em'}}>Contas</div>
-                <div style={{fontSize:14,fontWeight:700,whiteSpace:'nowrap'}}>{contasDoDia.length}</div>
-              </div>
-            </div>
-          )}
-          {/* Lista de contas do dia */}
-          {contasDoDia.length===0?(
-            <div style={{fontSize:13,color:'var(--text-muted)',padding:'18px 0',textAlign:'center'}}>Nenhum pagamento registrado para esta data.</div>
-          ):(
-            <div className={contasDoDia.length>5?'agenda-dia-lista':''}>
-              {contasDoDia.map(c=><ContaAgendaItem key={c.id} c={c} dividas={dividas} onPago={marcarPago} onEdit={openForm}/>)}
-            </div>
-          )}
+          <div className="cat-chips-wrap">
+            {CATEGORIAS_TIPO.map(cat=>(
+              <button key={cat} className={`cat-chip${categoriaSelecionada===cat?' active':''}`} onClick={()=>setCategoriaSelecionada(cat)} title={NOME_CAT_FULL[cat]}>{NOME_CAT_CHIP[cat]}</button>
+            ))}
+          </div>
         </div>
-
-        <div className="card" style={{minWidth:0}}>
-          <div className="card-title">💸 Maiores Pagamentos — {MONTHS[selMonth]} {selYear}</div>
-          {maioresMes.length===0?(
-            <div style={{fontSize:13,color:'var(--text-muted)',padding:'12px 0',textAlign:'center'}}>Nenhum pagamento no mês</div>
-          ):(
+        {/* Resumo financeiro do dia */}
+        {contasDoDia.length>0&&(
+          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,marginBottom:10,padding:'8px 10px',background:'var(--ink-50)',borderRadius:6}}>
             <div>
-              {maioresMes.map((c,i)=>{
-                const isVenc=c.vencimento<hoje&&c.status!=='Pago';
-                const tipoBadge=c.tipoDespesa==='Fixa'?'bg':c.tipoDespesa==='Fornecedor'?'bb':c.tipoDespesa==='Financeira'?'bp':'ba';
-                const stBadge=c.status==='Pago'?'bg':isVenc?'br':c.status==='Renegociado'?'ba':'bb';
-                return(
-                  <div key={c.id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:i<maioresMes.length-1?'1px solid var(--border)':'none'}}>
-                    <div style={{width:22,height:22,borderRadius:'50%',background:i===0?'var(--red)':i===1?'var(--amber)':'var(--ink-200)',color:i<2?'white':'var(--text-muted)',fontSize:11,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{i+1}</div>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:13,fontWeight:600,color:'var(--text-primary)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{c.descricao}</div>
-                      <div style={{display:'flex',alignItems:'center',gap:5,marginTop:2,flexWrap:'wrap'}}>
-                        <span style={{fontSize:11,color:'var(--text-muted)'}}>{fmtDate(c.vencimento)}</span>
-                        <span className={`badge ${tipoBadge}`}>{c.tipoDespesa}</span>
-                        <span className={`badge ${stBadge}`}>{isVenc&&c.status!=='Pago'?'Vencido':c.status}</span>
-                      </div>
-                    </div>
-                    <div style={{fontWeight:700,fontSize:14,color:isVenc?'var(--red)':'var(--text-primary)',flexShrink:0}}>{fmtFull(c.valor)}</div>
-                  </div>
-                );
-              })}
+              <div style={{fontSize:10,color:'var(--text-muted)',fontWeight:500,textTransform:'uppercase',letterSpacing:'.05em'}}>Total do dia</div>
+              <div style={{fontSize:14,fontWeight:700,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{fmtFull(totalDia)}</div>
             </div>
-          )}
-        </div>
+            <div>
+              <div style={{fontSize:10,color:'var(--text-muted)',fontWeight:500,textTransform:'uppercase',letterSpacing:'.05em'}}>Pago</div>
+              <div style={{fontSize:14,fontWeight:700,color:'var(--green)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{fmtFull(totalPagoDia)}</div>
+            </div>
+            <div>
+              <div style={{fontSize:10,color:'var(--text-muted)',fontWeight:500,textTransform:'uppercase',letterSpacing:'.05em'}}>Em aberto</div>
+              <div style={{fontSize:14,fontWeight:700,color:totalAbertoDia>0?'var(--amber)':'var(--text-muted)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{fmtFull(totalAbertoDia)}</div>
+            </div>
+            <div>
+              <div style={{fontSize:10,color:'var(--text-muted)',fontWeight:500,textTransform:'uppercase',letterSpacing:'.05em'}}>Contas</div>
+              <div style={{fontSize:14,fontWeight:700,whiteSpace:'nowrap'}}>{contasDoDia.length}</div>
+            </div>
+          </div>
+        )}
+        {/* Lista de contas do dia */}
+        {contasDoDia.length===0?(
+          <div style={{fontSize:13,color:'var(--text-muted)',padding:'18px 0',textAlign:'center'}}>{categoriaSelecionada==='Todas'?'Nenhum pagamento registrado para esta data.':'Nenhuma conta desta categoria para a data selecionada.'}</div>
+        ):(
+          <div className={contasDoDia.length>5?'agenda-dia-lista':''}>
+            {contasDoDia.map(c=><ContaAgendaItem key={c.id} c={c} dividas={dividas} onPago={marcarPago} onEdit={openForm}/>)}
+          </div>
+        )}
       </div>
 
       {/* ── TABELA PRINCIPAL COM FILTROS ── */}
@@ -5468,7 +5468,7 @@ function App(){
             fontSize:14,transition:'all .15s',
           }}
         >🏢</button>
-        <div className="hdr-logo">{(()=>{const n=(empresaAtiva?.clienteNome||empresaAtiva?.nome||'').trim().toLowerCase();return n==='picanhas grill'?<img src="./ChatGPT Image 30 de jun. de 2026, 13_38_36.png" alt="Picanhas Grill" style={{height:'34px',width:'auto',maxWidth:'176px',display:'block',objectFit:'contain'}}/>:<ZanonLogo/>;})()}</div>
+        <div className="hdr-logo">{(()=>{const n=(empresaAtiva?.clienteNome||empresaAtiva?.nome||'').trim().toLowerCase();if(n==='mercado doca')return null;return n==='picanhas grill'?<img src="./ChatGPT Image 30 de jun. de 2026, 13_38_36.png" alt="Picanhas Grill" style={{height:'34px',width:'auto',maxWidth:'176px',display:'block',objectFit:'contain'}}/>:<ZanonLogo/>;})()}</div>
         <div className="hdr-div"></div>
         <nav className="hdr-nav">
           <div className="hdr-grp">
