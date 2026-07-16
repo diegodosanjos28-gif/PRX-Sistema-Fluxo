@@ -5468,7 +5468,17 @@ function App(){
             fontSize:14,transition:'all .15s',
           }}
         >🏢</button>
-        <div className="hdr-logo">{(()=>{const n=(empresaAtiva?.clienteNome||empresaAtiva?.nome||'').trim().toLowerCase();if(n==='mercado doca')return null;return n==='picanhas grill'?<img src="./ChatGPT Image 30 de jun. de 2026, 13_38_36.png" alt="Picanhas Grill" style={{height:'34px',width:'auto',maxWidth:'176px',display:'block',objectFit:'contain'}}/>:<ZanonLogo/>;})()}</div>
+        <div className="hdr-logo">{(()=>{
+          // Identificação do cliente ativo a partir de TODAS as fontes já carregadas em empresaAtiva
+          // (clienteNome vem do join com `clientes`; nome é o nome da própria empresa/unidade).
+          // Checadas de forma independente — no fluxo do usuário padrão (via usuarios_empresas),
+          // clienteNome pode não resolver da mesma forma que no fluxo admin (EmpresaSelector),
+          // então não basta usar clienteNome com fallback único para nome.
+          const nomesCliente=[empresaAtiva?.clienteNome,empresaAtiva?.nome].map(v=>String(v||'').trim().toLowerCase());
+          if(nomesCliente.some(v=>v.includes('mercado doca')))return null;
+          const n=nomesCliente[0]||nomesCliente[1]||'';
+          return n==='picanhas grill'?<img src="./ChatGPT Image 30 de jun. de 2026, 13_38_36.png" alt="Picanhas Grill" style={{height:'34px',width:'auto',maxWidth:'176px',display:'block',objectFit:'contain'}}/>:<ZanonLogo/>;
+        })()}</div>
         <div className="hdr-div"></div>
         <nav className="hdr-nav">
           <div className="hdr-grp">
