@@ -73,6 +73,10 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
   border-radius:7px;
   box-shadow:0 1px 2px rgba(18,18,20,.22),0 0 0 1px rgba(255,255,255,.04);
 }
+/* Logo exclusiva do cliente Picanhas Grill — proporção própria (emblema ~1.88:1), não usada por outros clientes */
+.hdr-logo-picanhas{height:38px;width:auto;max-width:72px;display:block;object-fit:contain;object-position:center;}
+/* Container da logo do Picanhas Grill: sem caixa branca — funde ao header escuro (não afeta .hdr-logo padrão dos demais clientes) */
+.hdr-logo.hdr-logo-picanhas-wrap{background:transparent;box-shadow:none;}
 .hdr-div{width:1px;height:30px;background:var(--header-border);flex-shrink:0;}
 .hdr-nav{display:flex;align-items:stretch;gap:2px;flex:1;overflow:hidden;height:100%;}
 .hdr-grp{display:flex;align-items:stretch;gap:2px;height:100%;}
@@ -5468,17 +5472,22 @@ function App(){
             fontSize:14,transition:'all .15s',
           }}
         >🏢</button>
-        <div className="hdr-logo">{(()=>{
+        {(()=>{
           // Identificação do cliente ativo a partir de TODAS as fontes já carregadas em empresaAtiva
           // (clienteNome vem do join com `clientes`; nome é o nome da própria empresa/unidade).
           // Checadas de forma independente — no fluxo do usuário padrão (via usuarios_empresas),
           // clienteNome pode não resolver da mesma forma que no fluxo admin (EmpresaSelector),
           // então não basta usar clienteNome com fallback único para nome.
           const nomesCliente=[empresaAtiva?.clienteNome,empresaAtiva?.nome].map(v=>String(v||'').trim().toLowerCase());
-          if(nomesCliente.some(v=>v.includes('mercado doca')))return null;
+          if(nomesCliente.some(v=>v.includes('mercado doca')))return <div className="hdr-logo"></div>;
           const n=nomesCliente[0]||nomesCliente[1]||'';
-          return n==='picanhas grill'?<img src="./ChatGPT Image 30 de jun. de 2026, 13_38_36.png" alt="Picanhas Grill" style={{height:'34px',width:'auto',maxWidth:'176px',display:'block',objectFit:'contain'}}/>:<ZanonLogo/>;
-        })()}</div>
+          const isPicanhas=n==='picanhas grill';
+          return(
+            <div className={`hdr-logo${isPicanhas?' hdr-logo-picanhas-wrap':''}`}>
+              {isPicanhas?<img className="hdr-logo-picanhas" src="./picanhas-grill-logo.png" alt="Picanhas Grill"/>:<ZanonLogo/>}
+            </div>
+          );
+        })()}
         <div className="hdr-div"></div>
         <nav className="hdr-nav">
           <div className="hdr-grp">
