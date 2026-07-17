@@ -3457,19 +3457,51 @@ function Dividas({dividas,setDividas,onDividaCriar,onDividaEditar,onDividaExclui
 
   const save_=()=>{
     if(dividaOpLock.current)return;
-    if(!form.banco||!form.valorUtilizado)return alert('Preencha banco e saldo atual.');
+    // 1) Ler e normalizar os valores do formulário
+    const bancoNorm=String(form.banco||'').trim();
+    const tipoNorm=String(form.tipo||'').trim();
+    const valorOriginalNum=parseCurrencyBR(form.valorOriginal);
+    const parcelaMensalNum=parseCurrencyBR(form.parcelaMensal);
+    const vencimentoNorm=String(form.vencimento||'').trim();
+    const dataContratacaoNorm=String(form.dataContratacao||'').trim();
+    const prazoTotalRaw=String(form.prazoTotal||'').trim();
+    const prazoTotalFloat=Number(prazoTotalRaw);
+    const prazoTotalValido=prazoTotalRaw!==''&&Number.isFinite(prazoTotalFloat)&&Number.isInteger(prazoTotalFloat)&&prazoTotalFloat>0;
+
+    // 2) Validar campos obrigatórios (Banco/Credor, Tipo, Valor Original, Parcela Mensal, Vencimento da Parcela, Prazo Total)
+    const faltantes=[];
+    if(!bancoNorm)faltantes.push('Banco / Credor');
+    if(!tipoNorm)faltantes.push('Tipo da dívida');
+    if(!(valorOriginalNum>0))faltantes.push('Valor Original');
+    if(!(parcelaMensalNum>0))faltantes.push('Parcela Mensal');
+    if(!vencimentoNorm)faltantes.push('Vencimento da Parcela');
+    if(!prazoTotalValido)faltantes.push('Prazo Total');
+
+    // 3) Se houver campo obrigatório ausente/inválido: interrompe, mantém modal aberto e dados preenchidos
+    if(faltantes.length>0){
+      const listaFaltantes=faltantes.length===1?faltantes[0]:faltantes.slice(0,-1).join(', ')+' e '+faltantes[faltantes.length-1];
+      alert('Preencha os campos obrigatórios: '+listaFaltantes+'.');
+      return;
+    }
+
+    // 4) Data de Contratação: usa a informada; se vazia, usa o Vencimento da Parcela (já validado no passo 2)
+    const dataContratacaoFinal=dataContratacaoNorm||vencimentoNorm;
+
     dividaOpLock.current=true;
+    // 5) Construir o objeto da dívida usando a estrutura atual
     const entry={...form,
-      valorOriginal:parseCurrencyBR(form.valorOriginal)||null,
+      dataContratacao:dataContratacaoFinal,
+      valorOriginal:valorOriginalNum||null,
       valorUtilizado:parseCurrencyBR(form.valorUtilizado),
-      parcelaMensal:parseCurrencyBR(form.parcelaMensal),
+      parcelaMensal:parcelaMensalNum,
       taxaJuros:parsePercentBR(form.taxaJuros),
-      prazoTotal:parseInt(form.prazoTotal)||null,
+      prazoTotal:prazoTotalFloat,
       parcelasPagas:parseInt(form.parcelasPagas)||null,
       parcelasRestantes:parseInt(form.parcelasRestantes)||null,
       id:editId||genId()
     };
     const prev=dividas;
+    // 6) Persistir usando a função existente
     if(editId){
       setDividas(dividas.map(d=>d.id===editId?entry:d));
       onDividaEditar(entry).catch(err=>{setDividas(prev);setDividaErro('Erro ao salvar a dívida. Alteração revertida.');}).finally(()=>{dividaOpLock.current=false;});
@@ -3580,18 +3612,18 @@ function Dividas({dividas,setDividas,onDividaCriar,onDividaEditar,onDividaExclui
       {showForm&&(
         <Modal title={editId?'Editar Dívida':'Nova Dívida'} onClose={()=>{setShowForm(false);setEditId(null);setForm(emptyForm);}}>
           <div className="form-grid">
-            <div className="fg full"><label>Banco / Credor</label><input type="text" placeholder="Ex: Sicredi, Bradesco, Sicoob..." value={form.banco} onChange={e=>setForm({...form,banco:e.target.value})}/></div>
-            <div className="fg"><label>Tipo da dívida</label><select value={form.tipo} onChange={e=>setForm({...form,tipo:e.target.value})}>{TIPOS_DIVIDA.map(t=><option key={t}>{t}</option>)}</select></div>
+            <div className="fg full"><label>Banco / Credor *</label><input type="text" placeholder="Ex: Sicredi, Bradesco, Sicoob..." value={form.banco} onChange={e=>setForm({...form,banco:e.target.value})}/></div>
+            <div className="fg"><label>Tipo da dívida *</label><select value={form.tipo} onChange={e=>setForm({...form,tipo:e.target.value})}>{TIPOS_DIVIDA.map(t=><option key={t}>{t}</option>)}</select></div>
             <div className="fg"><label>Status</label><select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}>{STATUS_DIVIDA.map(s=><option key={s}>{s}</option>)}</select></div>
-            <div className="fg"><label>Valor Original (R$)</label><input type="text" placeholder="Ex: 500.000,00" value={form.valorOriginal} onChange={e=>setForm({...form,valorOriginal:e.target.value})}/></div>
+            <div className="fg"><label>Valor Original (R$) *</label><input type="text" placeholder="Ex: 500.000,00" value={form.valorOriginal} onChange={e=>setForm({...form,valorOriginal:e.target.value})}/></div>
             <div className="fg"><label>Saldo Atual (R$)</label><input type="text" placeholder="Ex: 399.306,00" value={form.valorUtilizado} onChange={e=>setForm({...form,valorUtilizado:e.target.value})}/></div>
-            <div className="fg"><label>Parcela Mensal (R$)</label><input type="text" placeholder="Ex: 14.210,00" value={form.parcelaMensal} onChange={e=>setForm({...form,parcelaMensal:e.target.value})}/></div>
+            <div className="fg"><label>Parcela Mensal (R$) *</label><input type="text" placeholder="Ex: 14.210,00" value={form.parcelaMensal} onChange={e=>setForm({...form,parcelaMensal:e.target.value})}/></div>
             <div className="fg"><label>Taxa a.m. (%)</label><input type="text" placeholder="Ex: 1,43" value={form.taxaJuros} onChange={e=>setForm({...form,taxaJuros:e.target.value})}/></div>
             <div className="fg"><label>Data de Contratação</label><input type="date" value={form.dataContratacao} onChange={e=>setForm({...form,dataContratacao:e.target.value})}/></div>
-            <div className="fg"><label>Prazo Total (meses)</label><input type="number" placeholder="0" value={form.prazoTotal} onChange={e=>setForm({...form,prazoTotal:e.target.value})}/></div>
+            <div className="fg"><label>Prazo Total (meses) *</label><input type="number" placeholder="0" value={form.prazoTotal} onChange={e=>setForm({...form,prazoTotal:e.target.value})}/></div>
             <div className="fg"><label>Parcelas Pagas</label><input type="number" placeholder="0" value={form.parcelasPagas} onChange={e=>setForm({...form,parcelasPagas:e.target.value})}/></div>
             <div className="fg"><label>Parcelas Restantes</label><input type="number" placeholder="0" value={form.parcelasRestantes} onChange={e=>setForm({...form,parcelasRestantes:e.target.value})}/></div>
-            <div className="fg"><label>Vencimento da Parcela</label><input type="date" value={form.vencimento} onChange={e=>setForm({...form,vencimento:e.target.value})}/></div>
+            <div className="fg"><label>Vencimento da Parcela *</label><input type="date" value={form.vencimento} onChange={e=>setForm({...form,vencimento:e.target.value})}/></div>
             <div className="fg full"><label>Observação</label><textarea placeholder="Condições, renegociações, notas..." value={form.obs} onChange={e=>setForm({...form,obs:e.target.value})}/></div>
           </div>
           <div style={{marginTop:12,display:'flex',gap:8,justifyContent:'flex-end'}}>
