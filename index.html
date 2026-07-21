@@ -1066,6 +1066,10 @@ textarea{resize:vertical;min-height:58px;}
    o box da logo ficaria alto o suficiente para tornar a logo inacessível (fora da área
    visível, mesmo com rolagem) em praticamente qualquer notebook/desktop comum. */
 .auth-screen-logo img{width:150px!important;}
+/* Logo dentro do card de Login — exclusiva desta instância, não afeta .auth-screen-logo
+   (usada pela tela de Seleção de Clientes, que permanece com a logo acima do painel). */
+.login-panel-logo{display:flex;justify-content:center;margin-bottom:10px;}
+.login-panel-logo img{width:90px!important;}
 </style>
 </head>
 <body>
@@ -5118,11 +5122,10 @@ function LoginScreen({onLogin}){
   return(
     <div className="auth-screen">
       <div style={{width:'100%',maxWidth:'380px',padding:'0 16px',position:'relative'}}>
-        <div className="auth-screen-logo">
-          <PRXLogo/>
-        </div>
-        <div style={{background:'var(--surface)',borderRadius:'var(--radius)',boxShadow:'var(--shadow-md)',padding:'32px'}}>
-          <h2 style={{fontSize:'18px',fontWeight:'700',color:'var(--text-primary)',marginBottom:'6px',letterSpacing:'-.02em'}}>Entrar no sistema</h2>
+        <div style={{background:'var(--surface)',borderRadius:'var(--radius)',boxShadow:'var(--shadow-md)',padding:'20px 32px 32px'}}>
+          <div className="login-panel-logo">
+            <PRXLogo/>
+          </div>
           <p style={{fontSize:'13px',color:'var(--text-muted)',marginBottom:'24px'}}>PRX — Gestão de Caixa</p>
           <form onSubmit={handleLogin}>
             <div style={{marginBottom:'14px'}}>
