@@ -1255,6 +1255,27 @@ const fornNome = c =>
 const loadLocalS = k    => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
 const saveLocalS = (k, d) => { try { localStorage.setItem(k, JSON.stringify(d)); } catch {} };
 
+// Busca TODAS as páginas de uma consulta Supabase via .range(), contornando o limite padrão
+// de linhas por resposta da API (ex.: 1000) — sem isso, tabelas que crescem além desse limite
+// teriam parte dos registros silenciosamente ausente do array carregado em memória.
+// queryFactory(from,to) deve retornar uma NOVA query (com .range(from,to) já aplicado) a cada
+// chamada — um query builder do Supabase é de uso único e não pode ser reaproveitado entre páginas.
+const SUPABASE_PAGE_SIZE = 1000;
+const fetchAllPages = async queryFactory => {
+  let all = [];
+  let from = 0;
+  while (true) {
+    const to = from + SUPABASE_PAGE_SIZE - 1;
+    const { data, error } = await queryFactory(from, to);
+    if (error) throw error;
+    const rows = data || [];
+    all = all.concat(rows);
+    if (rows.length < SUPABASE_PAGE_SIZE) break; // última página (veio incompleta ou vazia)
+    from += SUPABASE_PAGE_SIZE;
+  }
+  return all;
+};
+
 // Async load: Supabase for registered TABELAS keys, localStorage for everything else
 const loadS = async chave => {
   const tabela = TABELAS[chave];
@@ -1265,9 +1286,10 @@ const loadS = async chave => {
     if (error) throw error;
     return data || null;
   }
-  const { data, error } = await supabase.from(tabela).select('*').eq('empresa_id', EMPRESA_ID);
-  if (error) throw error;
-  return data || [];
+  // Captura a empresa ativa ANTES do carregamento paginado (múltiplos awaits em sequência),
+  // garantindo que uma eventual troca de empresa durante o carregamento não misture registros.
+  const empresaIdCapturada = EMPRESA_ID;
+  return await fetchAllPages((from, to) => supabase.from(tabela).select('*').eq('empresa_id', empresaIdCapturada).range(from, to));
 };
 
 // Async save: upsert for config, DELETE + INSERT for array tables (full replacement per company)
@@ -5313,11 +5335,13 @@ function App(){
         const ids=empresasDisponiveis.map(e=>e.id);
         const mStart=monthStart(selectedYear,selectedMonth);
         const mEnd=monthEnd(selectedYear,selectedMonth);
-        const[{data:rawEnt},{data:rawCon},{data:rawDiv},{data:rawRet},{data:rawCfg}]=await Promise.all([
-          supabase.from('entradas').select('empresa_id,total,data').in('empresa_id',ids).gte('data',mStart).lte('data',mEnd),
-          supabase.from('contas').select('empresa_id,valor,status,vencimento,tipoDespesa').in('empresa_id',ids).gte('vencimento',mStart).lte('vencimento',mEnd),
-          supabase.from('dividas').select('empresa_id,parcelaMensal,status').in('empresa_id',ids).eq('status','Ativa'),
-          supabase.from('retiradas').select('empresa_id,valor,data').in('empresa_id',ids).gte('data',mStart).lte('data',mEnd),
+        // entradas/contas/dividas/retiradas usam fetchAllPages: o total do portfólio (soma de várias
+        // empresas) pode ultrapassar o limite padrão de linhas por resposta da API do Supabase.
+        const[rawEnt,rawCon,rawDiv,rawRet,{data:rawCfg}]=await Promise.all([
+          fetchAllPages((from,to)=>supabase.from('entradas').select('empresa_id,total,data').in('empresa_id',ids).gte('data',mStart).lte('data',mEnd).range(from,to)),
+          fetchAllPages((from,to)=>supabase.from('contas').select('empresa_id,valor,status,vencimento,tipoDespesa').in('empresa_id',ids).gte('vencimento',mStart).lte('vencimento',mEnd).range(from,to)),
+          fetchAllPages((from,to)=>supabase.from('dividas').select('empresa_id,parcelaMensal,status').in('empresa_id',ids).eq('status','Ativa').range(from,to)),
+          fetchAllPages((from,to)=>supabase.from('retiradas').select('empresa_id,valor,data').in('empresa_id',ids).gte('data',mStart).lte('data',mEnd).range(from,to)),
           supabase.from('config').select('empresa_id,saldoInicial').in('empresa_id',ids),
         ]);
         const kpis={};
