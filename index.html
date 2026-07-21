@@ -850,7 +850,7 @@ textarea{resize:vertical;min-height:58px;}
 .pf-section-title::before{content:'';width:3px;height:14px;background:var(--papaya);border-radius:2px;}
 
 /* — Visão Consolidada — composição assimétrica: 1 card principal + 3 auxiliares — */
-.pf-consol{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:13px;align-items:stretch;}
+.pf-consol{display:grid;grid-template-columns:1.7fr 1fr 1fr;gap:13px;align-items:stretch;}
 .pf-kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow);position:relative;overflow:hidden;display:flex;flex-direction:column;}
 .pf-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
 .pf-kpi.g::before{background:var(--green);}
@@ -4713,9 +4713,11 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
     a.totalEntradas+=u.kpi.totalEntradas;
     a.totalContasAbertas+=u.kpi.totalContasAbertas;
     a.totalFornecedores+=u.kpi.totalFornecedores;
-    a.saldoProjetado+=u.kpi.saldoProjetado;
     return a;
-  },{totalEntradas:0,totalContasAbertas:0,totalFornecedores:0,saldoProjetado:0});
+  },{totalEntradas:0,totalContasAbertas:0,totalFornecedores:0});
+  // Saldo Projetado Consolidado = Entradas Consolidadas − Contas a Pagar (exclusivo do consolidado;
+  // o saldoProjetado de cada unidade individual não é alterado por esta regra).
+  consol.saldoProjetado=consol.totalEntradas-consol.totalContasAbertas;
   const consolStatus=PF_STATUS_META[pfClassifyStatus(consol.totalEntradas,consol.totalContasAbertas,consol.saldoProjetado)];
   const consolTone=pfTone(consolStatus.key);
   const pctFornContas=consol.totalContasAbertas>0?(consol.totalFornecedores/consol.totalContasAbertas*100):0;
@@ -4732,6 +4734,9 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
   const comMov=compData.filter(u=>u.kpi.status!=='empty');
   const bestUnit=comMov.length?comMov.reduce((a,b)=>b.kpi.saldoProjetado>a.kpi.saldoProjetado?b:a):null;
   const worstUnit=comMov.length?comMov.reduce((a,b)=>b.kpi.saldoProjetado<a.kpi.saldoProjetado?b:a):null;
+  // Unidade com maior soma de entradas (mesmo campo que compõe Entradas Consolidadas) — usada exclusivamente
+  // no rótulo "Maior entrada" do card Entradas Consolidadas. Não usar para "Melhor saldo"/"Exige atenção".
+  const bestEntradaUnit=comMov.length?comMov.reduce((a,b)=>b.kpi.totalEntradas>a.kpi.totalEntradas?b:a):null;
 
   // Contagem por status (para os chips de filtro).
   const statusCounts=compData.reduce((a,u)=>{a[u.status.key]=(a[u.status.key]||0)+1;return a;},{});
@@ -4883,28 +4888,20 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
                 <div className="pf-kpi-label">Entradas Consolidadas</div>
               </div>
               <div className={`pf-kpi-val ${consol.totalEntradas>0?'g':''}`}>{fmt(consol.totalEntradas)}</div>
-              <div className="pf-kpi-sub">{bestUnit?<>Maior entrada: <strong>{bestUnit.nome}</strong></>:'Somatório de todas as unidades'}</div>
+              <div className="pf-kpi-sub">{bestEntradaUnit?<>Maior entrada: <strong>{bestEntradaUnit.nome}</strong></>:'Somatório de todas as unidades'}</div>
             </div>
 
-            {/* Contas a Pagar — vermelho */}
+            {/* Contas a Pagar — vermelho (Fornecedores exibido como informação complementar, sem somar de novo) */}
             <div className="pf-kpi r">
               <div className="pf-kpi-head">
                 <div className="pf-kpi-ico r">{PFIcon.sai}</div>
                 <div className="pf-kpi-label">Contas a Pagar</div>
               </div>
               <div className={`pf-kpi-val ${consol.totalContasAbertas>0?'r':''}`}>{fmt(consol.totalContasAbertas)}</div>
-              <div className="pf-kpi-sub">Compromissos do período em todas as unidades</div>
-            </div>
-
-            {/* Fornecedores — papaya */}
-            <div className="pf-kpi p">
-              <div className="pf-kpi-head">
-                <div className="pf-kpi-ico p">{PFIcon.forn}</div>
-                <div className="pf-kpi-label">Total a Fornecedores</div>
+              <div className="pf-metric" style={{marginTop:8}}>
+                <div className="pf-metric-top"><span className="pf-metric-lbl">Fornecedores</span>
+                  <span className={`pf-metric-val ${consol.totalFornecedores>0?'p':'muted'}`}>{fmt(consol.totalFornecedores)}</span></div>
               </div>
-              <div className={`pf-kpi-val ${consol.totalFornecedores>0?'p':''}`}>{fmt(consol.totalFornecedores)}</div>
-              <div className="pf-mini-bar"><i style={{width:(consol.totalContasAbertas>0?Math.min(100,pctFornContas):0)+'%',background:'var(--papaya)'}}></i></div>
-              <div className="pf-kpi-sub"><strong>{fmtPct(pctFornContas)}</strong> das contas a pagar</div>
             </div>
           </div>
 
