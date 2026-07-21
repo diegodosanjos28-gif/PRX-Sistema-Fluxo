@@ -2934,7 +2934,7 @@ function pressaoLabel(p){
   return{txt:'⚠️ Crítico',color:'var(--red)'};
 }
 
-function ContaAgendaItem({c,dividas,onPago,onEdit}){
+function ContaAgendaItem({c,dividas,onPago,onEdit,onRemove}){
   const isVenc=c.vencimento<today()&&c.status!=='Pago';
   const divVinc=c.dividaVinculadaId?(dividas||[]).find(d=>d.id===c.dividaVinculadaId):null;
   const tipoBadge=c.tipoDespesa==='Fixa'?'bg':c.tipoDespesa==='Fornecedor'?'bb':c.tipoDespesa==='Financeira'?'bp':'ba';
@@ -2955,6 +2955,7 @@ function ContaAgendaItem({c,dividas,onPago,onEdit}){
         <span style={{fontWeight:700,fontSize:14,color:isVenc?'var(--red)':'var(--text-primary)'}}>{fmtFull(c.valor)}</span>
         {c.status!=='Pago'&&<button className="btn btn-secondary btn-sm" style={{fontSize:11,padding:'3px 8px',color:'var(--green)',borderColor:'var(--green)'}} onClick={()=>onPago(c)}>✓ Pago</button>}
         {!c._autoGerado&&<button className="btn btn-secondary btn-sm" style={{fontSize:11,padding:'3px 8px'}} onClick={()=>onEdit(c)}>✏️</button>}
+        {!c._autoGerado&&<button className="btn btn-danger btn-sm" style={{fontSize:11,padding:'3px 8px'}} onClick={()=>onRemove(c.id)}>✕</button>}
       </div>
     </div>
   );
@@ -3223,7 +3224,7 @@ function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onCo
           <div style={{fontSize:13,color:'var(--text-muted)',padding:'18px 0',textAlign:'center'}}>{categoriaSelecionada==='Todas'?'Nenhum pagamento registrado para esta data.':'Nenhuma conta desta categoria para a data selecionada.'}</div>
         ):(
           <div className={contasDoDia.length>5?'agenda-dia-lista':''}>
-            {contasDoDia.map(c=><ContaAgendaItem key={c.id} c={c} dividas={dividas} onPago={marcarPago} onEdit={openForm}/>)}
+            {contasDoDia.map(c=><ContaAgendaItem key={c.id} c={c} dividas={dividas} onPago={marcarPago} onEdit={openForm} onRemove={remove}/>)}
           </div>
         )}
       </div>
