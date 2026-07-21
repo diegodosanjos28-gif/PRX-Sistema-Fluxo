@@ -5416,27 +5416,33 @@ function App(){
         const mEnd=monthEnd(selectedYear,selectedMonth);
         // entradas/contas/dividas/retiradas usam fetchAllPages: o total do portfólio (soma de várias
         // empresas) pode ultrapassar o limite padrão de linhas por resposta da API do Supabase.
+        // contas/dividas: sem filtro de vencimento na query — mergeContasComParcelas precisa do
+        // histórico completo (uma dívida/fixa de meses atrás pode gerar parcela no mês selecionado).
+        // Mesma exigência que já vale para o Painel do Dono (contas/dividas carregadas por inteiro).
         const[rawEnt,rawCon,rawDiv,rawRet,{data:rawCfg}]=await Promise.all([
           fetchAllPages((from,to)=>supabase.from('entradas').select('empresa_id,total,data').in('empresa_id',ids).gte('data',mStart).lte('data',mEnd).range(from,to)),
-          fetchAllPages((from,to)=>supabase.from('contas').select('empresa_id,valor,status,vencimento,tipoDespesa').in('empresa_id',ids).gte('vencimento',mStart).lte('vencimento',mEnd).range(from,to)),
-          fetchAllPages((from,to)=>supabase.from('dividas').select('empresa_id,parcelaMensal,status').in('empresa_id',ids).eq('status','Ativa').range(from,to)),
+          fetchAllPages((from,to)=>supabase.from('contas').select('id,empresa_id,valor,status,vencimento,tipoDespesa,dividaVinculadaId,descricao').in('empresa_id',ids).range(from,to)),
+          fetchAllPages((from,to)=>supabase.from('dividas').select('id,empresa_id,parcelaMensal,status,vencimento,valorUtilizado,banco,tipo').in('empresa_id',ids).eq('status','Ativa').range(from,to)),
           fetchAllPages((from,to)=>supabase.from('retiradas').select('empresa_id,valor,data').in('empresa_id',ids).gte('data',mStart).lte('data',mEnd).range(from,to)),
           supabase.from('config').select('empresa_id,saldoInicial').in('empresa_id',ids),
         ]);
         const kpis={};
         ids.forEach(id=>{
           const ent=(rawEnt||[]).filter(r=>r.empresa_id===id);
-          const con=(rawCon||[]).filter(r=>r.empresa_id===id);
+          const conAll=(rawCon||[]).filter(r=>r.empresa_id===id);
+          const con=conAll.filter(r=>r.vencimento>=mStart&&r.vencimento<=mEnd);
           const div=(rawDiv||[]).filter(r=>r.empresa_id===id);
           const ret=(rawRet||[]).filter(r=>r.empresa_id===id);
           const cfg=(rawCfg||[]).find(r=>r.empresa_id===id);
           const totalEntradas=ent.reduce((s,r)=>s+(r.total||0),0);
           const totalContasAbertas=con.filter(r=>r.status!=='Pago').reduce((s,r)=>s+(r.valor||0),0);
           const totalFornecedores=con.filter(r=>r.tipoDespesa==='Fornecedor').reduce((s,r)=>s+(r.valor||0),0);
-          // Total geral de despesas do período (todas as categorias, qualquer status) — reaproveita o
-          // mesmo array `con` já carregado; usado exclusivamente pelo card "Contas a Pagar" do Portfólio
-          // Consolidado. Não afeta totalContasAbertas (uso individual/"em aberto", inalterado).
-          const totalDespesasPeriodo=con.reduce((s,r)=>s+(r.valor||0),0);
+          // Total de despesas do período — MESMA fonte usada em "Saídas do Mês" (Painel do Dono):
+          // reaproveita mergeContasComParcelas (contas manuais + parcelas automáticas de dívidas +
+          // recorrências de despesas Fixas), depois filtra pelo período (vencimento). Alimenta o card
+          // "Contas a Pagar" (unidade) e "Despesas Consolidadas" (Portfólio). Não afeta
+          // totalContasAbertas (baseado só em `con`, sem sintéticos — inalterado).
+          const totalDespesasPeriodo=mergeContasComParcelas(conAll,div).filter(r=>r.vencimento>=mStart&&r.vencimento<=mEnd).reduce((s,r)=>s+(r.valor||0),0);
           const totalDividasAtivas=div.reduce((s,r)=>s+parseCurrencyBR(r.parcelaMensal),0);
           const totalRetiradas=ret.reduce((s,r)=>s+(r.valor||0),0);
           const saldoInicial=Number(cfg?.saldoInicial)||defaultConfig.saldoInicial;
