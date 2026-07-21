@@ -4748,7 +4748,7 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
 
   // Máximos para barras proporcionais — sobre todas as unidades (comparação real).
   const maxEnt=Math.max(0,...compData.map(u=>u.kpi.totalEntradas));
-  const maxCon=Math.max(0,...compData.map(u=>u.kpi.totalContasAbertas));
+  const maxCon=Math.max(0,...compData.map(u=>u.kpi.totalDespesasPeriodo));
   const maxForn=Math.max(0,...compData.map(u=>u.kpi.totalFornecedores));
 
   // Melhor unidade (maior saldo) e a que exige mais atenção (menor saldo), só entre as com movimento.
@@ -4772,7 +4772,7 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
   const sortFns={
     saldo:(a,b)=>b.kpi.saldoProjetado-a.kpi.saldoProjetado,
     entradas:(a,b)=>b.kpi.totalEntradas-a.kpi.totalEntradas,
-    contas:(a,b)=>b.kpi.totalContasAbertas-a.kpi.totalContasAbertas,
+    contas:(a,b)=>b.kpi.totalDespesasPeriodo-a.kpi.totalDespesasPeriodo,
     fornecedores:(a,b)=>b.kpi.totalFornecedores-a.kpi.totalFornecedores,
     nome:(a,b)=>a.nome.localeCompare(b.nome,'pt-BR'),
   };
@@ -4815,8 +4815,8 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
           </div>
           <div className="pf-metric">
             <div className="pf-metric-top"><span className="pf-metric-lbl">Contas a Pagar</span>
-              <span className={`pf-metric-val ${k.totalContasAbertas>0?'r':'muted'}`} title={fmt(k.totalContasAbertas)}>{fmt(k.totalContasAbertas)}</span></div>
-            <div className="pf-bar"><i className="r" style={{width:barPct(k.totalContasAbertas,maxCon)+'%'}}></i></div>
+              <span className={`pf-metric-val ${k.totalDespesasPeriodo>0?'r':'muted'}`} title={fmt(k.totalDespesasPeriodo)}>{fmt(k.totalDespesasPeriodo)}</span></div>
+            <div className="pf-bar"><i className="r" style={{width:barPct(k.totalDespesasPeriodo,maxCon)+'%'}}></i></div>
           </div>
           <div className="pf-metric">
             <div className="pf-metric-top"><span className="pf-metric-lbl">Fornecedores</span>
@@ -5007,7 +5007,7 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
                         <tr key={u.id} style={{cursor:'pointer'}} onClick={()=>onSelectEmpresa(u.id)} title={'Abrir '+u.nome}>
                           <td>{u.nome}</td>
                           <td><span className="comp-val" style={{color:k.totalEntradas>0?'var(--green-dim)':'var(--text-muted)'}}>{fmt(k.totalEntradas)}</span></td>
-                          <td><span className="comp-val" style={{color:k.totalContasAbertas>0?'var(--red)':'var(--text-muted)'}}>{fmt(k.totalContasAbertas)}</span></td>
+                          <td><span className="comp-val" style={{color:k.totalDespesasPeriodo>0?'var(--red)':'var(--text-muted)'}}>{fmt(k.totalDespesasPeriodo)}</span></td>
                           <td><span className="comp-val" style={{color:k.totalFornecedores>0?'var(--papaya-dark)':'var(--text-muted)'}}>{fmt(k.totalFornecedores)}</span></td>
                           <td><span className="comp-val" style={{color:toneVar(tone)}}>{fmt(k.saldoProjetado)}</span></td>
                           <td style={{textAlign:'center'}}><span className={`pf-pill ${u.status.key}`}><span className="dot"></span>{pillLabel(u.status.key)}</span></td>
