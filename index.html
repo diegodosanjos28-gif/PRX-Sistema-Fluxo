@@ -948,6 +948,8 @@ textarea{resize:vertical;min-height:58px;}
 .pf-unit-seg{font-size:10.5px;color:var(--text-muted);font-weight:500;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .pf-unit-del{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:11px;padding:2px 5px;opacity:.5;border-radius:4px;line-height:1;flex-shrink:0;font-family:inherit;}
 .pf-unit-del:hover{opacity:1;color:var(--red);background:var(--red-light);}
+.pf-unit-edit{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:11px;padding:2px 5px;opacity:.5;border-radius:4px;line-height:1;flex-shrink:0;font-family:inherit;}
+.pf-unit-edit:hover{opacity:1;color:var(--papaya-dark);background:var(--papaya-soft);}
 .pf-unit-body{padding:12px 15px 13px 18px;display:flex;flex-direction:column;gap:11px;flex:1;}
 .pf-metric-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:5px;}
 .pf-metric-lbl{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);}
@@ -4565,7 +4567,7 @@ const MAX_UNITS=100;
 
 // BLOCO 4.6 — KPIs reais do Portfólio. Lê do mapa kpisPortfolio pré-calculado via Supabase.
 // Se a unidade ainda não tiver dados carregados, retorna objeto empty como fallback seguro.
-const KPIS_EMPTY={totalEntradas:0,totalContasAbertas:0,totalDividasAtivas:0,totalRetiradas:0,totalFornecedores:0,saldoProjetado:0,status:'empty'};
+const KPIS_EMPTY={totalEntradas:0,totalContasAbertas:0,totalDespesasPeriodo:0,totalDividasAtivas:0,totalRetiradas:0,totalFornecedores:0,saldoProjetado:0,status:'empty'};
 const calcUnitKPIs=(unit,kpisPortfolio)=>kpisPortfolio?.[unit.id]||KPIS_EMPTY;
 
 // Classificação única de status financeiro — mesma regra usada no BLOCO 4.6 (useEffect de KPIs),
@@ -4657,7 +4659,7 @@ function UnitCard({unit,selYear,selMonth,onSelect,isActive,kpisPortfolio,onExclu
   );
 }
 
-function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiva,onSelectEmpresa,kpisPortfolio,onCriarUnidade,onExcluirUnidade,roleGlobal}){
+function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiva,onSelectEmpresa,kpisPortfolio,onCriarUnidade,onExcluirUnidade,onRenomearUnidade,roleGlobal}){
   const[showModal,setShowModal]=useState(false);
   const[newName,setNewName]=useState('');
   const[newSeg,setNewSeg]=useState('');
@@ -4666,6 +4668,10 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
   const[confirmDelete,setConfirmDelete]=useState(null);
   const[excluindoUnidade,setExcluindoUnidade]=useState(false);
   const[erroExcluir,setErroExcluir]=useState('');
+  const[editUnit,setEditUnit]=useState(null);
+  const[editName,setEditName]=useState('');
+  const[salvandoEdicao,setSalvandoEdicao]=useState(false);
+  const[erroEdicao,setErroEdicao]=useState('');
   // Estado da comparação — apenas interface, não afeta cálculos nem persistência.
   const[viewMode,setViewMode]=useState('cards'); // 'cards' | 'tabela'
   const[search,setSearch]=useState('');
@@ -4692,6 +4698,17 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
     if(err){setErroExcluir(err);return;}
     setConfirmDelete(null);
   };
+  const abrirEdicao=u=>{setEditUnit(u);setEditName(u.nome);setErroEdicao('');};
+  const fecharEdicao=()=>{if(salvandoEdicao)return;setEditUnit(null);setEditName('');setErroEdicao('');};
+  const handleSalvarNome=async()=>{
+    if(!editUnit)return;
+    setErroEdicao('');
+    setSalvandoEdicao(true);
+    const err=await onRenomearUnidade(editUnit.id,editName);
+    setSalvandoEdicao(false);
+    if(err){setErroEdicao(err);return;}
+    setEditUnit(null);setEditName('');
+  };
   const mesLabel=MONTHS[selMonth]+'/'+selYear;
 
   // Formatação BR de percentual (duas casas quando necessário).
@@ -4709,9 +4726,12 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
   });
 
   // Consolidado = soma de todas as unidades no período selecionado.
+  // "Contas a Pagar" do consolidado usa totalDespesasPeriodo (todas as categorias, qualquer status —
+  // representa o total geral de despesas do período) e não totalContasAbertas (que permanece "em
+  // aberto" e é usado, sem alteração, pelos cards/ordenação/comparação individuais das unidades).
   const consol=compData.reduce((a,u)=>{
     a.totalEntradas+=u.kpi.totalEntradas;
-    a.totalContasAbertas+=u.kpi.totalContasAbertas;
+    a.totalContasAbertas+=u.kpi.totalDespesasPeriodo;
     a.totalFornecedores+=u.kpi.totalFornecedores;
     return a;
   },{totalEntradas:0,totalContasAbertas:0,totalFornecedores:0});
@@ -4778,6 +4798,8 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
           </div>
           <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
             <span className={`pf-pill ${u.status.key}`}><span className="dot"></span>{pillLabel(u.status.key)}</span>
+            <button className="pf-unit-edit" title="Editar nome da unidade"
+              onClick={e=>{e.stopPropagation();abrirEdicao(u);}}>✏️</button>
             {podeExcluir&&(
               <button className="pf-unit-del" title="Remover unidade"
                 onClick={e=>{e.stopPropagation();setConfirmDelete(u);}}>✕</button>
@@ -4895,7 +4917,7 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
             <div className="pf-kpi r">
               <div className="pf-kpi-head">
                 <div className="pf-kpi-ico r">{PFIcon.sai}</div>
-                <div className="pf-kpi-label">Contas a Pagar</div>
+                <div className="pf-kpi-label">Despesas Consolidadas</div>
               </div>
               <div className={`pf-kpi-val ${consol.totalContasAbertas>0?'r':''}`}>{fmt(consol.totalContasAbertas)}</div>
               <div className="pf-metric" style={{marginTop:8}}>
@@ -5081,6 +5103,41 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
                 onClick={handleExcluir}
                 disabled={excluindoUnidade}
               >{excluindoUnidade?'Excluindo…':'Confirmar exclusão'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {editUnit&&(
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&fecharEdicao()}>
+          <div className="modal" style={{maxWidth:420}}>
+            <div className="flex items-center justify-between" style={{marginBottom:16}}>
+              <div style={{fontSize:15,fontWeight:700}}>✏️ Editar Unidade</div>
+              <button className="btn btn-secondary btn-sm" onClick={fecharEdicao} disabled={salvandoEdicao}>✕</button>
+            </div>
+            <div className="unit-modal-form">
+              <div className="fg">
+                <label>Nome da unidade *</label>
+                <input
+                  autoFocus
+                  value={editName}
+                  onChange={e=>{setEditName(e.target.value);setErroEdicao('');}}
+                  onKeyDown={e=>{if(e.key==='Enter'&&editName.trim()&&!salvandoEdicao)handleSalvarNome();}}
+                  maxLength={60}
+                  disabled={salvandoEdicao}
+                />
+              </div>
+              {erroEdicao&&<div className="alert alert-r" style={{marginBottom:0}}><span>⚠️</span><span>{erroEdicao}</span></div>}
+              <div className="flex gap-2" style={{justifyContent:'flex-end',marginTop:8}}>
+                <button className="btn btn-secondary btn-sm" onClick={fecharEdicao} disabled={salvandoEdicao}>Cancelar</button>
+                <button
+                  className="btn btn-sm"
+                  style={{background:'var(--papaya)',color:'#fff',opacity:salvandoEdicao?0.7:1}}
+                  onClick={handleSalvarNome}
+                  disabled={!editName.trim()||salvandoEdicao}
+                >
+                  {salvandoEdicao?'Salvando…':'Salvar'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -5375,12 +5432,16 @@ function App(){
           const totalEntradas=ent.reduce((s,r)=>s+(r.total||0),0);
           const totalContasAbertas=con.filter(r=>r.status!=='Pago').reduce((s,r)=>s+(r.valor||0),0);
           const totalFornecedores=con.filter(r=>r.tipoDespesa==='Fornecedor').reduce((s,r)=>s+(r.valor||0),0);
+          // Total geral de despesas do período (todas as categorias, qualquer status) — reaproveita o
+          // mesmo array `con` já carregado; usado exclusivamente pelo card "Contas a Pagar" do Portfólio
+          // Consolidado. Não afeta totalContasAbertas (uso individual/"em aberto", inalterado).
+          const totalDespesasPeriodo=con.reduce((s,r)=>s+(r.valor||0),0);
           const totalDividasAtivas=div.reduce((s,r)=>s+parseCurrencyBR(r.parcelaMensal),0);
           const totalRetiradas=ret.reduce((s,r)=>s+(r.valor||0),0);
           const saldoInicial=Number(cfg?.saldoInicial)||defaultConfig.saldoInicial;
           const saldoProjetado=saldoInicial+totalEntradas-totalContasAbertas-totalRetiradas;
           const status=pfClassifyStatus(totalEntradas,totalContasAbertas,saldoProjetado);
-          kpis[id]={totalEntradas,totalContasAbertas,totalDividasAtivas,totalRetiradas,totalFornecedores,saldoProjetado,status};
+          kpis[id]={totalEntradas,totalContasAbertas,totalDespesasPeriodo,totalDividasAtivas,totalRetiradas,totalFornecedores,saldoProjetado,status};
         });
         setKpisPortfolio(kpis);
       }catch(err){
@@ -5474,6 +5535,26 @@ function App(){
       return null;
     }catch(err){
       return err.message||'Erro inesperado ao excluir unidade.';
+    }
+  };
+
+  // BLOCO 4.9 — Renomear unidade pelo Portfólio. Atualiza somente empresas.nome — o id (identidade
+  // real da unidade, usado por entradas/contas/retiradas/dívidas/config) não é alterado.
+  // Retorna null em caso de sucesso ou string de erro para exibir ao usuário.
+  const renomearUnidade=async(empresaId,novoNome)=>{
+    const nomeTrimmed=novoNome.trim();
+    if(!nomeTrimmed)return'Nome não pode estar vazio.';
+    if(empresasDisponiveis.some(e=>e.id!==empresaId&&e.nome.trim().toLowerCase()===nomeTrimmed.toLowerCase())){
+      return'Já existe uma unidade com este nome.';
+    }
+    try{
+      const{error}=await supabase.from('empresas').update({nome:nomeTrimmed}).eq('id',empresaId);
+      if(error)return error.message||'Erro ao renomear unidade.';
+      setEmpresasDisponiveis(prev=>prev.map(e=>e.id===empresaId?{...e,nome:nomeTrimmed}:e));
+      setEmpresaAtiva(prev=>prev&&prev.id===empresaId?{...prev,nome:nomeTrimmed}:prev);
+      return null;
+    }catch(err){
+      return err.message||'Erro inesperado ao renomear unidade.';
     }
   };
 
@@ -5601,6 +5682,7 @@ function App(){
           kpisPortfolio={kpisPortfolio}
           onCriarUnidade={criarUnidade}
           onExcluirUnidade={excluirUnidade}
+          onRenomearUnidade={renomearUnidade}
           roleGlobal={roleGlobal}
         />}
       </div>
