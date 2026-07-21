@@ -1047,6 +1047,25 @@ textarea{resize:vertical;min-height:58px;}
 .access-btn:focus{outline:2px solid var(--papaya);outline-offset:2px;}
 .access-btn.is-active{background:var(--papaya);border-color:var(--ink-900);box-shadow:0 0 0 1px var(--ink-900);color:#fff;}
 @media(max-width:600px){.access-btn{flex:1 1 calc(50% - 10px);min-width:120px;}}
+
+/* ══ TELAS DE AUTENTICAÇÃO (Login PRX e Seleção de Cliente) ══
+   Classes exclusivas destas 2 telas — sem impacto em outros componentes.
+   O painel é o elemento centralizado verticalmente; a logo fica posicionada
+   acima dele via position:absolute, sem participar do cálculo de centralização.
+   padding vertical simétrico (190px) reserva espaço suficiente para a logo (150px)
+   + o espaçamento (20px) acima do painel; como é simétrico, não desloca a centralização
+   quando o conteúdo cabe na tela. align-items:safe center (com fallback para center em
+   navegadores sem suporte) garante que, se o painel for maior que o espaço disponível
+   (tela baixa ou lista de clientes longa), ele nunca seja empurrado para fora da área
+   visível — passa a alinhar pelo topo do espaço reservado em vez de ficar inacessível. */
+.auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:190px 0;background:var(--bg);}
+.auth-screen{align-items:safe center;}
+.auth-screen-logo{position:absolute;left:0;right:0;bottom:calc(100% + 20px);display:flex;justify-content:center;}
+/* Ajuste mínimo indispensável: a imagem da logo é um canvas quadrado de 360px com grande
+   espaço em branco embutido acima/abaixo da marca visível — sem reduzir a exibição aqui,
+   o box da logo ficaria alto o suficiente para tornar a logo inacessível (fora da área
+   visível, mesmo com rolagem) em praticamente qualquer notebook/desktop comum. */
+.auth-screen-logo img{width:150px!important;}
 </style>
 </head>
 <body>
@@ -5097,9 +5116,9 @@ function LoginScreen({onLogin}){
     finally{setLoading(false);}
   };
   return(
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',background:'var(--bg)'}}>
-      <div style={{width:'100%',maxWidth:'380px',padding:'0 16px'}}>
-        <div style={{display:'flex',justifyContent:'center',marginBottom:'40px'}}>
+    <div className="auth-screen">
+      <div style={{width:'100%',maxWidth:'380px',padding:'0 16px',position:'relative'}}>
+        <div className="auth-screen-logo">
           <PRXLogo/>
         </div>
         <div style={{background:'var(--surface)',borderRadius:'var(--radius)',boxShadow:'var(--shadow-md)',padding:'32px'}}>
@@ -5168,9 +5187,9 @@ function EmpresaSelector({empresas,roleGlobal,onSelect}){
     onSelect(principal.id);
   };
   return(
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',background:'var(--bg)'}}>
-      <div style={{width:'100%',maxWidth:'520px',padding:'0 16px'}}>
-        <div style={{display:'flex',justifyContent:'center',marginBottom:'40px'}}>
+    <div className="auth-screen">
+      <div style={{width:'100%',maxWidth:'520px',padding:'0 16px',position:'relative'}}>
+        <div className="auth-screen-logo">
           <PRXLogo/>
         </div>
         <div style={{background:'var(--surface)',borderRadius:'var(--radius)',boxShadow:'var(--shadow-md)',padding:'28px 32px'}}>
