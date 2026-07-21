@@ -1058,7 +1058,7 @@ textarea{resize:vertical;min-height:58px;}
    navegadores sem suporte) garante que, se o painel for maior que o espaço disponível
    (tela baixa ou lista de clientes longa), ele nunca seja empurrado para fora da área
    visível — passa a alinhar pelo topo do espaço reservado em vez de ficar inacessível. */
-.auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:190px 0;background:var(--bg);}
+.auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:190px 0;background-image:url('./imagem_login_fluxo.png');background-size:cover;background-position:center;background-repeat:no-repeat;}
 .auth-screen{align-items:safe center;}
 .auth-screen-logo{position:absolute;left:0;right:0;bottom:calc(100% + 20px);display:flex;justify-content:center;}
 /* Ajuste mínimo indispensável: a imagem da logo é um canvas quadrado de 360px com grande
@@ -5132,7 +5132,7 @@ function LoginScreen({onLogin}){
                 value={email} onChange={e=>setEmail(e.target.value)}
                 placeholder="seu@email.com"
                 style={{width:'100%',padding:'9px 12px',borderRadius:'var(--radius-sm)',border:'1px solid var(--border)',fontSize:'14px',background:'var(--ink-50)',color:'var(--text-primary)',outline:'none',fontFamily:'inherit',transition:'border-color .15s'}}
-                onFocus={e=>e.target.style.borderColor='var(--petronas)'}
+                onFocus={e=>e.target.style.borderColor='#FF8000'}
                 onBlur={e=>e.target.style.borderColor='var(--border)'}
               />
             </div>
@@ -5143,14 +5143,16 @@ function LoginScreen({onLogin}){
                 value={senha} onChange={e=>setSenha(e.target.value)}
                 placeholder="••••••••"
                 style={{width:'100%',padding:'9px 12px',borderRadius:'var(--radius-sm)',border:'1px solid var(--border)',fontSize:'14px',background:'var(--ink-50)',color:'var(--text-primary)',outline:'none',fontFamily:'inherit',transition:'border-color .15s'}}
-                onFocus={e=>e.target.style.borderColor='var(--petronas)'}
+                onFocus={e=>e.target.style.borderColor='#FF8000'}
                 onBlur={e=>e.target.style.borderColor='var(--border)'}
               />
             </div>
             {erro&&<div style={{background:'var(--red-light)',border:'1px solid #fecaca',borderRadius:'var(--radius-xs)',padding:'9px 12px',fontSize:'13px',color:'var(--red-dim)',marginBottom:'14px'}}>{erro}</div>}
             <button
               type="submit" disabled={loading}
-              style={{width:'100%',padding:'10px',background:loading?'var(--petronas-dark)':'var(--petronas)',color:'#fff',border:'none',borderRadius:'var(--radius-sm)',fontSize:'14px',fontWeight:'700',letterSpacing:'.04em',cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',transition:'background .15s',opacity:loading?0.8:1}}
+              style={{width:'100%',padding:'10px',background:loading?'#E67300':'#FF8000',color:'#fff',border:'none',borderRadius:'var(--radius-sm)',fontSize:'14px',fontWeight:'700',letterSpacing:'.04em',cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',transition:'background .15s',opacity:loading?0.8:1}}
+              onMouseEnter={e=>{if(!loading)e.currentTarget.style.background='#E67300';}}
+              onMouseLeave={e=>{if(!loading)e.currentTarget.style.background='#FF8000';}}
             >{loading?'Entrando…':'Entrar'}</button>
           </form>
         </div>
@@ -5194,8 +5196,8 @@ function EmpresaSelector({empresas,roleGlobal,onSelect}){
         </div>
         <div style={{background:'var(--surface)',borderRadius:'var(--radius)',boxShadow:'var(--shadow-md)',padding:'28px 32px'}}>
           <div style={{marginBottom:'20px'}}>
-            <div style={{display:'inline-flex',alignItems:'center',padding:'3px 10px',background:'var(--petronas-soft)',borderRadius:'20px',marginBottom:'10px'}}>
-              <span style={{fontSize:'11px',fontWeight:'700',letterSpacing:'.08em',textTransform:'uppercase',color:'var(--petronas-dark)'}}>{roleLbl}</span>
+            <div style={{display:'inline-flex',alignItems:'center',padding:'3px 10px',background:'rgba(255, 128, 0, 0.10)',borderRadius:'20px',marginBottom:'10px'}}>
+              <span style={{fontSize:'11px',fontWeight:'700',letterSpacing:'.08em',textTransform:'uppercase',color:'#C95F00'}}>{roleLbl}</span>
             </div>
             <h2 style={{fontSize:'18px',fontWeight:'700',color:'var(--text-primary)',marginBottom:'4px',letterSpacing:'-.02em'}}>Selecionar cliente</h2>
             <p style={{fontSize:'13px',color:'var(--text-muted)'}}>Escolha o cliente que deseja acessar.</p>
@@ -5216,7 +5218,7 @@ function EmpresaSelector({empresas,roleGlobal,onSelect}){
                     fontFamily:'DM Sans,sans-serif',
                     transition:'all .15s',textAlign:'left',
                   }}
-                  onMouseEnter={e=>{ e.currentTarget.style.background='var(--petronas-soft)'; e.currentTarget.style.borderColor='var(--petronas)'; }}
+                  onMouseEnter={e=>{ e.currentTarget.style.background='rgba(255, 128, 0, 0.10)'; e.currentTarget.style.borderColor='#FF8000'; }}
                   onMouseLeave={e=>{ e.currentTarget.style.background='var(--ink-50)'; e.currentTarget.style.borderColor='var(--border)'; }}
                 >
                   <div>
