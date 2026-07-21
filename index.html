@@ -1773,7 +1773,7 @@ function CustoSegmentos({contas,selYear,selMonth}){
 // ══════════════════
 // PAINEL DO DONO
 // ══════════════════
-function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear,setSelectedYear,selectedMonth,setSelectedMonth,header}){
+function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear,setSelectedYear,selectedMonth,setSelectedMonth,header,nomeUnidadeAtiva}){
   const now=new Date();
   // Alias locais para manter o código existente legível — sem useState próprio.
   const selYear=selectedYear;
@@ -1950,7 +1950,7 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
             <img src={PRX_LOGO_SRC} alt="PRX"/>
           </div>
           <div className="painel-hero-body">
-            <div className="painel-hero-eyebrow">Mercado Zanon · Visão do Dono</div>
+            <div className="painel-hero-eyebrow">{`${String(nomeUnidadeAtiva||'Unidade').toUpperCase()} · Visão do Dono`}</div>
             <div className="painel-hero-title">A saúde financeira do mês em <b>um só olhar</b></div>
             <div className="painel-hero-sub">Entradas, saídas, médias diárias e a meta de pagamento — tudo o que move o caixa, reunido no topo do painel.</div>
           </div>
@@ -5586,7 +5586,7 @@ function App(){
       </header>
       <div className="page-wrap">
         {activeTab!=='painel'&&pageHeaderEl}
-        {activeTab==='painel'&&<Painel entradas={entradas} contas={contasComParcelas} dividas={dividas} retiradas={retiradas} config={config} setConfig={setConfig} selectedYear={selectedYear} setSelectedYear={setSelectedYear} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} header={pageHeaderEl}/>}
+        {activeTab==='painel'&&<Painel entradas={entradas} contas={contasComParcelas} dividas={dividas} retiradas={retiradas} config={config} setConfig={setConfig} selectedYear={selectedYear} setSelectedYear={setSelectedYear} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} header={pageHeaderEl} nomeUnidadeAtiva={empresaAtiva?.nome}/>}
         {activeTab==='entradas'&&<Entradas entradas={entradas} setEntradas={setEntradas} contas={contasComParcelas} dividas={dividas} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
         {activeTab==='contas'&&<Contas contas={contas} setContas={setContas} onContaCriar={onContaCriar} onContaEditar={onContaEditar} onContaExcluir={onContaExcluir} onContasImportar={onContasImportar} contasComParcelas={contasComParcelas} mediaDiariaEntrada={mediaDiaria} dividas={dividas} setDividas={setDividas} onDividaEditar={onDividaEditar} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
         {activeTab==='fornecedores'&&<Fornecedores contas={contasComParcelas} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
