@@ -1816,6 +1816,12 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
   else{diasCorridosBase=totalDiasMes;}
   const mediaDiariaEnt=(totalEnt>0&&diasCorridosBase>0)?totalEnt/diasCorridosBase:0;
   const contasMes=contas.filter(c=>c.vencimento>=mStart&&c.vencimento<=mEnd);
+  // AUDITORIA TEMPORÁRIA — remover antes de concluir a tarefa. Ativado só com window.__PRX_AUDIT__=true.
+  if(typeof window!=='undefined'&&window.__PRX_AUDIT__){
+    console.log('[PRX_AUDIT_A]',JSON.stringify({empresa_id:EMPRESA_ID,mStart,mEnd,qtd:contasMes.length,total:contasMes.reduce((s,c)=>s+c.valor,0),registros:contasMes.map(c=>({id:c.id,empresa_id:c.empresa_id,descricao:c.descricao,tipoDespesa:c.tipoDespesa,vencimento:c.vencimento,status:c.status,valor:c.valor,dividaVinculadaId:c.dividaVinculadaId||'',_autoGerado:!!c._autoGerado}))}));
+    console.log('[PRX_AUDIT_A_SCHEMA_CONTAS]',JSON.stringify(Object.keys(contas[0]||{})));
+    console.log('[PRX_AUDIT_A_SCHEMA_DIVIDAS]',JSON.stringify(Object.keys(dividas[0]||{})));
+  }
   const totalSaiMes=contasMes.reduce((s,c)=>s+c.valor,0);
   const totalSaidoAteAgora=contasMes.filter(c=>c.status==='Pago').reduce((s,c)=>s+c.valor,0);
   const contasFaltaPagar=contasMes.filter(c=>c.status!=='Pago'&&c.vencimento>=todayStr);
@@ -4739,6 +4745,14 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
   // Saldo Projetado Consolidado = Entradas Consolidadas − Contas a Pagar (exclusivo do consolidado;
   // o saldoProjetado de cada unidade individual não é alterado por esta regra).
   consol.saldoProjetado=consol.totalEntradas-consol.totalContasAbertas;
+  // AUDITORIA TEMPORÁRIA — remover antes de concluir a tarefa. Ativado só com window.__PRX_AUDIT__=true.
+  // Rastreia exclusivamente a propagação kpisPortfolio → compData → consol → fmt(), sem repetir
+  // a auditoria de dados/queries já validada.
+  if(typeof window!=='undefined'&&window.__PRX_AUDIT__){
+    console.log('[PRX_AUDIT_C_COMPDATA]',JSON.stringify(compData.map(u=>({id:u.id,nome:u.nome,totalDespesasPeriodo:u.kpi.totalDespesasPeriodo}))));
+    console.log('[PRX_AUDIT_C_CONSOL]',JSON.stringify({totalEntradas:consol.totalEntradas,totalContasAbertas:consol.totalContasAbertas,totalFornecedores:consol.totalFornecedores,saldoProjetado:consol.saldoProjetado}));
+    console.log('[PRX_AUDIT_C_FMT]',fmt(consol.totalContasAbertas));
+  }
   const consolStatus=PF_STATUS_META[pfClassifyStatus(consol.totalEntradas,consol.totalContasAbertas,consol.saldoProjetado)];
   const consolTone=pfTone(consolStatus.key);
   const pctFornContas=consol.totalContasAbertas>0?(consol.totalFornecedores/consol.totalContasAbertas*100):0;
@@ -5389,11 +5403,16 @@ function App(){
             .select('empresas!inner(id,nome,clientes(nome))').eq('empresas.ativo',true);
           if(error)throw error;
           if(data){
-            const units=data.map(r=>({
+            const unitsRaw=data.map(r=>({
               id:r.empresas.id,
               nome:r.empresas.nome,
               clienteNome:r.empresas.clientes?.nome||'',
             }));
+            // Deduplicação por id — se houver mais de um vínculo em usuarios_empresas para a
+            // mesma empresa, evita que o Portfólio Consolidado some a mesma unidade 2x
+            // (cada card individual já lê por id e não duplicava; só a soma consolidada era afetada).
+            const seenIds=new Set();
+            const units=unitsRaw.filter(u=>seenIds.has(u.id)?false:(seenIds.add(u.id),true));
             setEmpresasDisponiveis(units);
             setEmpresaAtiva(units.find(e=>e.id===EMPRESA_ID)||null);
           }
@@ -5442,7 +5461,14 @@ function App(){
           // recorrências de despesas Fixas), depois filtra pelo período (vencimento). Alimenta o card
           // "Contas a Pagar" (unidade) e "Despesas Consolidadas" (Portfólio). Não afeta
           // totalContasAbertas (baseado só em `con`, sem sintéticos — inalterado).
-          const totalDespesasPeriodo=mergeContasComParcelas(conAll,div).filter(r=>r.vencimento>=mStart&&r.vencimento<=mEnd).reduce((s,r)=>s+(r.valor||0),0);
+          const despesasPeriodoRegistros=mergeContasComParcelas(conAll,div).filter(r=>r.vencimento>=mStart&&r.vencimento<=mEnd);
+          const totalDespesasPeriodo=despesasPeriodoRegistros.reduce((s,r)=>s+(r.valor||0),0);
+          // AUDITORIA TEMPORÁRIA — remover antes de concluir a tarefa. Ativado só com window.__PRX_AUDIT__=true.
+          if(typeof window!=='undefined'&&window.__PRX_AUDIT__){
+            console.log('[PRX_AUDIT_B]',id,JSON.stringify({empresa_id:id,mStart,mEnd,qtd:despesasPeriodoRegistros.length,total:totalDespesasPeriodo,registros:despesasPeriodoRegistros.map(r=>({id:r.id,empresa_id:r.empresa_id||id,descricao:r.descricao,tipoDespesa:r.tipoDespesa,vencimento:r.vencimento,status:r.status,valor:r.valor,dividaVinculadaId:r.dividaVinculadaId||'',_autoGerado:!!r._autoGerado}))}));
+            console.log('[PRX_AUDIT_B_SCHEMA_CONTAS]',id,JSON.stringify(Object.keys(conAll[0]||{})));
+            console.log('[PRX_AUDIT_B_SCHEMA_DIVIDAS]',id,JSON.stringify(Object.keys(div[0]||{})));
+          }
           const totalDividasAtivas=div.reduce((s,r)=>s+parseCurrencyBR(r.parcelaMensal),0);
           const totalRetiradas=ret.reduce((s,r)=>s+(r.valor||0),0);
           const saldoInicial=Number(cfg?.saldoInicial)||defaultConfig.saldoInicial;
@@ -5584,7 +5610,7 @@ function App(){
   );
   if(carregandoAuth)return <Spinner msg="Verificando sessão…"/>;
   if(!autenticado&&!aguardandoSelecaoEmpresa)return <LoginScreen onLogin={(rg,emps)=>{setRoleGlobal(rg);if(rg==='prx_admin'||rg==='prx_editor'){setEmpresasSeletorPRX(emps);setAguardandoSelecaoEmpresa(true);}else{setAutenticado(true);}}}/>;
-  if(aguardandoSelecaoEmpresa)return <EmpresaSelector empresas={empresasSeletorPRX} roleGlobal={roleGlobal} onSelect={(eid)=>{EMPRESA_ID=eid;const emp=empresasSeletorPRX.find(e=>e.id===eid);const cid=emp?.cliente_id;const unidades=cid?empresasSeletorPRX.filter(e=>e.cliente_id===cid):[emp].filter(Boolean);setEmpresasDisponiveis(unidades.map(e=>({id:e.id,nome:e.nome,clienteNome:e.clientes?.nome||''})));setEmpresaAtiva({id:emp?.id,nome:emp?.nome,clienteNome:emp?.clientes?.nome||''});setAguardandoSelecaoEmpresa(false);setAutenticado(true);}}/>;
+  if(aguardandoSelecaoEmpresa)return <EmpresaSelector empresas={empresasSeletorPRX} roleGlobal={roleGlobal} onSelect={(eid)=>{EMPRESA_ID=eid;const emp=empresasSeletorPRX.find(e=>e.id===eid);const cid=emp?.cliente_id;const unidadesRaw=cid?empresasSeletorPRX.filter(e=>e.cliente_id===cid):[emp].filter(Boolean);const seenIds=new Set();const unidades=unidadesRaw.filter(e=>seenIds.has(e.id)?false:(seenIds.add(e.id),true));setEmpresasDisponiveis(unidades.map(e=>({id:e.id,nome:e.nome,clienteNome:e.clientes?.nome||''})));setEmpresaAtiva({id:emp?.id,nome:emp?.nome,clienteNome:emp?.clientes?.nome||''});setAguardandoSelecaoEmpresa(false);setAutenticado(true);}}/>;
   if(carregandoDados)return <Spinner msg="Carregando dados…"/>;
 
   const nowStr=new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
