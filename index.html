@@ -1367,6 +1367,42 @@ const __prxAuditRegister = (side, empresaId, mesKey, list) => {
   }
 };
 
+// ── PRX_ZANON_AUDIT — auditoria específica desta tarefa (Mercado Zanon, julho/2026). ──
+// Store isolado do __prxAuditStore geral para não misturar com outras investigações.
+if (typeof window !== 'undefined') window.__prxZanonAuditStore = window.__prxZanonAuditStore || { PANEL: {}, PORTFOLIO_UNIT: {} };
+const __prxZanonAuditDiff = (empresaId, mesKey, listPanel, listPortfolio) => {
+  const mapA = new Map(listPanel.map(r => [r.id, r]));
+  const mapB = new Map(listPortfolio.map(r => [r.id, r]));
+  const somenteNoPainel = [...mapA.keys()].filter(k => !mapB.has(k));
+  const somenteNoPortfolio = [...mapB.keys()].filter(k => !mapA.has(k));
+  const emAmbos = [...mapA.keys()].filter(k => mapB.has(k));
+  const valorDiferente = [], tipoDespesaDiferente = [], statusDiferente = [], vencimentoDiferente = [];
+  emAmbos.forEach(id => {
+    const a = mapA.get(id), b = mapB.get(id);
+    if (a.valor !== b.valor) valorDiferente.push({ id, painel: a.valor, portfolio: b.valor });
+    if ((a.tipoDespesa||'') !== (b.tipoDespesa||'')) tipoDespesaDiferente.push({ id, painel: a.tipoDespesa, portfolio: b.tipoDespesa });
+    if ((a.status||'') !== (b.status||'')) statusDiferente.push({ id, painel: a.status, portfolio: b.status });
+    if (a.vencimento !== b.vencimento) vencimentoDiferente.push({ id, painel: a.vencimento, portfolio: b.vencimento });
+  });
+  console.log('PRX_ZANON_AUDIT_DIFF', JSON.stringify({
+    empresaId, mesKey,
+    idsSomenteNoPainel: somenteNoPainel,
+    idsSomenteNoPortfolio: somenteNoPortfolio,
+    qtdEmAmbos: emAmbos.length,
+    valorDiferente, tipoDespesaDiferente, statusDiferente, vencimentoDiferente,
+  }));
+};
+const __prxZanonAuditRegister = (side, empresaId, mesKey, list) => {
+  if (typeof window === 'undefined') return;
+  const chave = empresaId + '|' + mesKey;
+  window.__prxZanonAuditStore[side][chave] = list;
+  const outro = side === 'PANEL' ? 'PORTFOLIO_UNIT' : 'PANEL';
+  const contraparte = window.__prxZanonAuditStore[outro][chave];
+  if (contraparte) {
+    __prxZanonAuditDiff(empresaId, mesKey, side === 'PANEL' ? list : contraparte, side === 'PANEL' ? contraparte : list);
+  }
+};
+
 // Async load: Supabase for registered TABELAS keys, localStorage for everything else
 const loadS = async chave => {
   const tabela = TABELAS[chave];
@@ -1963,6 +1999,21 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
   // Fornecedores em Destaque (filtra contas do mês com tipoDespesa='Fornecedor')
   const contasForn=contasMes.filter(c=>c.tipoDespesa==='Fornecedor');
   const totalFornMes=contasForn.reduce((s,c)=>s+c.valor,0);
+  // PRX_ZANON_AUDIT_PANEL — auditoria temporária (window.__PRX_AUDIT__=true), remover ao final.
+  if(typeof window!=='undefined'&&window.__PRX_AUDIT__){
+    const __mesKey=`${selYear}-${String(selMonth+1).padStart(2,'0')}`;
+    console.log('PRX_ZANON_AUDIT_PANEL',JSON.stringify({
+      empresa_id:EMPRESA_ID,mes:__mesKey,
+      qtdContas:contasMes.length,totalGeral:totalSaiMes,
+      qtdFornecedores:contasForn.length,totalFornecedores:totalFornMes,
+      qtdFixas:porTipo['Fixa'].length,totalFixas:totFixed,
+      qtdVariaveis:porTipo['Variável'].length,totalVariaveis:totVar,
+      qtdFinanceiras:porTipo['Financeira'].length,totalFinanceiras:totFin,
+      idsRegistros:contasMes.map(c=>c.id),
+      idsFornecedores:contasForn.map(c=>c.id),
+    }));
+    if(typeof __prxZanonAuditRegister==='function')__prxZanonAuditRegister('PANEL',EMPRESA_ID,__mesKey,contasMes);
+  }
   const fornNome=c=>(c.fornecedor&&c.fornecedor.trim())?c.fornecedor.trim():(c.descricao||'Sem identificação').trim();
   const fornMap={};
   contasForn.forEach(c=>{
@@ -5548,6 +5599,15 @@ function App(){
         const ids=empresasDisponiveis.map(e=>e.id);
         const mStart=monthStart(selectedYear,selectedMonth);
         const mEnd=monthEnd(selectedYear,selectedMonth);
+        // PRX_ZANON_AUDIT_STATE — auditoria temporária (window.__PRX_AUDIT__=true), remover ao final.
+        if(__auditOn){
+          console.log('PRX_ZANON_AUDIT_STATE',JSON.stringify({
+            EMPRESA_ID,empresaAtivaId:empresaAtiva?.id||null,
+            selectedYear,selectedMonth,mesDaRequisicao:__auditMesKey,
+            idsEmpresasConsolidadas:ids,
+            nomesEmpresasConsolidadas:empresasDisponiveis.map(e=>({id:e.id,nome:e.nome})),
+          }));
+        }
         // entradas/contas/dividas/retiradas usam fetchAllPages: o total do portfólio (soma de várias
         // empresas) pode ultrapassar o limite padrão de linhas por resposta da API do Supabase.
         // contas/dividas: sem filtro de vencimento na query — mergeContasComParcelas precisa do
@@ -5583,6 +5643,25 @@ function App(){
             const __nomeEmpresa=(empresasDisponiveis.find(e=>e.id===id)||{}).nome||'?';
             console.log('PRX_AUDIT_03 — Empresa no consolidado',JSON.stringify({reqId:__auditReqId,empresa_id:id,nome:__nomeEmpresa,mesKey:__auditMesKey,qtd:despesasPeriodoRegistros.length,total:totalDespesasPeriodo}));
             if(typeof __prxAuditRegister==='function')__prxAuditRegister('B',id,__auditMesKey,despesasPeriodoRegistros);
+          }
+          // PRX_ZANON_AUDIT_PORTFOLIO_UNIT — auditoria temporária desta tarefa, remover ao final.
+          if(__auditOn){
+            const __nomeEmpresaZ=(empresasDisponiveis.find(e=>e.id===id)||{}).nome||'?';
+            const __fornZ=despesasPeriodoRegistros.filter(r=>r.tipoDespesa==='Fornecedor');
+            const __fixaZ=despesasPeriodoRegistros.filter(r=>r.tipoDespesa==='Fixa');
+            const __varZ=despesasPeriodoRegistros.filter(r=>r.tipoDespesa==='Variável');
+            const __finZ=despesasPeriodoRegistros.filter(r=>r.tipoDespesa==='Financeira');
+            console.log('PRX_ZANON_AUDIT_PORTFOLIO_UNIT',JSON.stringify({
+              empresa_id:id,nome:__nomeEmpresaZ,mes:__auditMesKey,
+              qtdContas:despesasPeriodoRegistros.length,totalGeral:totalDespesasPeriodo,
+              qtdFornecedores:__fornZ.length,totalFornecedores:__fornZ.reduce((s,r)=>s+(r.valor||0),0),
+              qtdFixas:__fixaZ.length,totalFixas:__fixaZ.reduce((s,r)=>s+(r.valor||0),0),
+              qtdVariaveis:__varZ.length,totalVariaveis:__varZ.reduce((s,r)=>s+(r.valor||0),0),
+              qtdFinanceiras:__finZ.length,totalFinanceiras:__finZ.reduce((s,r)=>s+(r.valor||0),0),
+              idsRegistros:despesasPeriodoRegistros.map(r=>r.id),
+              idsFornecedores:__fornZ.map(r=>r.id),
+            }));
+            if(typeof __prxZanonAuditRegister==='function')__prxZanonAuditRegister('PORTFOLIO_UNIT',id,__auditMesKey,despesasPeriodoRegistros);
           }
           const totalDividasAtivas=div.reduce((s,r)=>s+parseCurrencyBR(r.parcelaMensal),0);
           const totalRetiradas=ret.reduce((s,r)=>s+(r.valor||0),0);
