@@ -1301,6 +1301,72 @@ const fetchAllPages = async queryFactory => {
   return all;
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// AUDITORIA FORENSE TEMPORÁRIA (PRX_AUDIT) — remover ao final da investigação.
+// Só produz efeito (logs) quando window.__PRX_AUDIT__===true é setado manualmente
+// no console do navegador. Nenhuma função abaixo altera cálculo, filtro, query,
+// reducer, estado React ou JSX — apenas observa e compara dados já produzidos
+// pelo sistema. Com a flag desligada (padrão), estas definições ficam inertes.
+// ═══════════════════════════════════════════════════════════════════════════
+if (typeof window !== 'undefined') {
+  window.__prxAuditStore = window.__prxAuditStore || { A: {}, B: {} };
+  window.__prxAuditSeq = window.__prxAuditSeq || 0;
+  window.__prxAuditMaxSeqFinished = window.__prxAuditMaxSeqFinished || 0;
+}
+// Chave estável por registro — usa o id real quando disponível; para sintéticos
+// sem id confiável, cai para uma composição empresa+origem+vencimento+valor.
+const __prxAuditKey = r => {
+  if (r && r.id) return `id:${r.id}`;
+  if (!r) return 'null';
+  const origem = r.dividaVinculadaId ? `divida:${r.dividaVinculadaId}` : `desc:${r.descricao||''}`;
+  return `auto:${r.empresa_id||''}:${origem}:${r.vencimento}:${r.valor}`;
+};
+const __prxAuditDupCount = arr => {
+  const seen = new Map();
+  arr.forEach(r => { const k = __prxAuditKey(r); seen.set(k, (seen.get(k)||0)+1); });
+  return [...seen.entries()].filter(([,c]) => c > 1).map(([k,c]) => ({ key: k, ocorrencias: c }));
+};
+const __prxAuditFields = r => ({
+  id: r.id, empresa_id: r.empresa_id, descricao: r.descricao, tipoDespesa: r.tipoDespesa,
+  vencimento: r.vencimento, status: r.status, valor: r.valor,
+  dividaVinculadaId: r.dividaVinculadaId || '', _autoGerado: !!r._autoGerado,
+});
+const __prxAuditCompare = (empresaId, mesKey, listA, listB) => {
+  const mapA = new Map(listA.map(r => [__prxAuditKey(r), r]));
+  const mapB = new Map(listB.map(r => [__prxAuditKey(r), r]));
+  const apenasA = [...mapA.keys()].filter(k => !mapB.has(k)).map(k => mapA.get(k));
+  const apenasB = [...mapB.keys()].filter(k => !mapA.has(k)).map(k => mapB.get(k));
+  const valoresDiferentes = [], datasDiferentes = [], statusDiferentes = [];
+  mapA.forEach((ra, k) => {
+    const rb = mapB.get(k);
+    if (!rb) return;
+    if (ra.valor !== rb.valor) valoresDiferentes.push({ key: k, painel: ra.valor, portfolio: rb.valor });
+    if (ra.vencimento !== rb.vencimento) datasDiferentes.push({ key: k, painel: ra.vencimento, portfolio: rb.vencimento });
+    if ((ra.status||'') !== (rb.status||'')) statusDiferentes.push({ key: k, painel: ra.status, portfolio: rb.status });
+  });
+  console.log('PRX_AUDIT_07 — Diferenças de registros', JSON.stringify({
+    empresaId, mesKey,
+    qtdA: listA.length, totalA: listA.reduce((s,r)=>s+(r.valor||0),0),
+    qtdB: listB.length, totalB: listB.reduce((s,r)=>s+(r.valor||0),0),
+    apenasNoPainel: apenasA.map(__prxAuditFields),
+    apenasNoPortfolio: apenasB.map(__prxAuditFields),
+    duplicadosEmA: __prxAuditDupCount(listA),
+    duplicadosEmB: __prxAuditDupCount(listB),
+    valoresDiferentes, datasDiferentes, statusDiferentes,
+  }));
+};
+// Registra o conjunto A ou B para uma empresa+mês; quando o par completo existir, compara.
+const __prxAuditRegister = (side, empresaId, mesKey, list) => {
+  if (typeof window === 'undefined') return;
+  const chave = empresaId + '|' + mesKey;
+  window.__prxAuditStore[side][chave] = list;
+  const outro = side === 'A' ? 'B' : 'A';
+  const contraparte = window.__prxAuditStore[outro][chave];
+  if (contraparte) {
+    __prxAuditCompare(empresaId, mesKey, side === 'A' ? list : contraparte, side === 'A' ? contraparte : list);
+  }
+};
+
 // Async load: Supabase for registered TABELAS keys, localStorage for everything else
 const loadS = async chave => {
   const tabela = TABELAS[chave];
@@ -1816,11 +1882,12 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
   else{diasCorridosBase=totalDiasMes;}
   const mediaDiariaEnt=(totalEnt>0&&diasCorridosBase>0)?totalEnt/diasCorridosBase:0;
   const contasMes=contas.filter(c=>c.vencimento>=mStart&&c.vencimento<=mEnd);
-  // AUDITORIA TEMPORÁRIA — remover antes de concluir a tarefa. Ativado só com window.__PRX_AUDIT__=true.
+  // PRX_AUDIT_01 — Carregamento do Painel (auditoria temporária, ver window.__PRX_AUDIT__).
   if(typeof window!=='undefined'&&window.__PRX_AUDIT__){
-    console.log('[PRX_AUDIT_A]',JSON.stringify({empresa_id:EMPRESA_ID,mStart,mEnd,qtd:contasMes.length,total:contasMes.reduce((s,c)=>s+c.valor,0),registros:contasMes.map(c=>({id:c.id,empresa_id:c.empresa_id,descricao:c.descricao,tipoDespesa:c.tipoDespesa,vencimento:c.vencimento,status:c.status,valor:c.valor,dividaVinculadaId:c.dividaVinculadaId||'',_autoGerado:!!c._autoGerado}))}));
-    console.log('[PRX_AUDIT_A_SCHEMA_CONTAS]',JSON.stringify(Object.keys(contas[0]||{})));
-    console.log('[PRX_AUDIT_A_SCHEMA_DIVIDAS]',JSON.stringify(Object.keys(dividas[0]||{})));
+    const __mesKey=`${selYear}-${String(selMonth+1).padStart(2,'0')}`;
+    console.log('PRX_AUDIT_01 — Carregamento do Painel',JSON.stringify({empresa_id:EMPRESA_ID,mesKey:__mesKey,mStart,mEnd,timestamp:Date.now(),totalRegistrosContasComParcelas:contas.length,qtd:contasMes.length,total:contasMes.reduce((s,c)=>s+c.valor,0)}));
+    console.log('PRX_AUDIT_01 — Registros (Painel)',JSON.stringify(contasMes.map(c=>({id:c.id,empresa_id:c.empresa_id,descricao:c.descricao,tipoDespesa:c.tipoDespesa,vencimento:c.vencimento,status:c.status,valor:c.valor,dividaVinculadaId:c.dividaVinculadaId||'',_autoGerado:!!c._autoGerado}))));
+    if(typeof __prxAuditRegister==='function')__prxAuditRegister('A',EMPRESA_ID,__mesKey,contasMes);
   }
   const totalSaiMes=contasMes.reduce((s,c)=>s+c.valor,0);
   const totalSaidoAteAgora=contasMes.filter(c=>c.status==='Pago').reduce((s,c)=>s+c.valor,0);
@@ -4131,13 +4198,14 @@ const gerarVencimentosMensais=(base,qtdMeses)=>{
 // Gera TODAS as parcelas mensais recorrentes da dívida em janela ampla (24 meses à frente).
 // As parcelas têm IDs distintos por vencimento e podem ser marcadas como pagas individualmente.
 const gerarParcelasDivida=d=>{
-  if(!d.parcelaMensal||d.parcelaMensal<=0)return[];
-  if(!d.vencimento)return[];
-  if(d.status!=='Ativa')return[];
-  if((d.valorUtilizado||0)<=0)return[];
+  const __auditDescarte=motivo=>{if(typeof window!=='undefined'&&window.__PRX_AUDIT__)console.log('PRX_AUDIT_05 — Parcela descartada',JSON.stringify({dividaId:d.id,banco:d.banco,empresa_id:d.empresa_id,motivo,parcelaMensal:d.parcelaMensal,vencimento:d.vencimento,status:d.status,valorUtilizado:d.valorUtilizado}));};
+  if(!d.parcelaMensal||d.parcelaMensal<=0){__auditDescarte('parcelaMensal ausente ou <= 0');return[];}
+  if(!d.vencimento){__auditDescarte('vencimento ausente');return[];}
+  if(d.status!=='Ativa'){__auditDescarte('status != "Ativa" (case-sensitive)');return[];}
+  if((d.valorUtilizado||0)<=0){__auditDescarte('valorUtilizado <= 0');return[];}
   // Janela: do mês de início até 24 meses à frente
   const vencs=gerarVencimentosMensais(d.vencimento,24);
-  return vencs.map((venc,idx)=>({
+  const __geradas=vencs.map((venc,idx)=>({
     id:`${dividaToContaId(d)}__${venc}`,
     descricao:`Parcela ${d.banco}`,
     categoria:'Banco/Juros',
@@ -4152,6 +4220,8 @@ const gerarParcelasDivida=d=>{
     _autoGerado:true,
     _parcelaSeq:idx+1,
   }));
+  if(typeof window!=='undefined'&&window.__PRX_AUDIT__)console.log('PRX_AUDIT_05 — Parcelas geradas',JSON.stringify({dividaId:d.id,banco:d.banco,empresa_id:d.empresa_id,qtdGeradas:__geradas.length,janelaInicio:vencs[0],janelaFim:vencs[vencs.length-1],parcelaMensal:d.parcelaMensal}));
+  return __geradas;
 };
 
 // Mantém compatibilidade com chamadas antigas (retorna 1ª parcela)
@@ -4164,8 +4234,10 @@ const expandirFixasRecorrentes=contas=>{
   const fixas=contas.filter(c=>c.tipoDespesa==='Fixa'&&c.vencimento);
   if(fixas.length===0)return[];
   const result=[];
+  const __auditLog=(evento,dados)=>{if(typeof window!=='undefined'&&window.__PRX_AUDIT__)console.log('PRX_AUDIT_06 — '+evento,JSON.stringify(dados));};
   fixas.forEach(f=>{
     const vencs=gerarVencimentosMensais(f.vencimento,24);
+    let __geradas=0,__descartadas=0;
     // primeira posição é o próprio mês original — já está em "contas", pula
     for(let i=1;i<vencs.length;i++){
       const venc=vencs[i];
@@ -4176,7 +4248,12 @@ const expandirFixasRecorrentes=contas=>{
         monthOf(c.vencimento)===monthOf(venc)&&
         c.id!==f.id
       );
-      if(jaExiste)continue;
+      if(jaExiste){
+        __descartadas++;
+        __auditLog('Recorrência descartada',{origemId:f.id,descricao:f.descricao,empresa_id:f.empresa_id,mesAlvo:monthOf(venc),vencimentoAlvo:venc,motivo:'já existe conta manual da mesma Fixa (mesma descrição) nesse mês',contaManualConflitante:jaExiste.id});
+        continue;
+      }
+      __geradas++;
       result.push({
         ...f,
         id:`${f.id}__fixa_${venc}`,
@@ -4187,6 +4264,7 @@ const expandirFixasRecorrentes=contas=>{
         obs:(f.obs||'')+(f.obs?' · ':'')+`Recorrência automática (mês ${monthOf(venc)})`,
       });
     }
+    __auditLog('Recorrência processada',{origemId:f.id,descricao:f.descricao,empresa_id:f.empresa_id,vencimentoOrigem:f.vencimento,janelaMeses:vencs.length,geradas:__geradas,descartadas:__descartadas});
   });
   return result;
 };
@@ -4194,24 +4272,42 @@ const expandirFixasRecorrentes=contas=>{
 const gerarParcelaDividaLegacy=null; // legado removido
 // Mescla contas manuais com parcelas automáticas de dívidas + fixas recorrentes (sem duplicar)
 const mergeContasComParcelas=(contas,dividas)=>{
+  const __auditOn=typeof window!=='undefined'&&window.__PRX_AUDIT__;
   const manuaisIds=new Set(contas.map(c=>c.id));
-  const autoContas=dividas
-    .flatMap(gerarParcelasDivida)
-    .filter(c=>!manuaisIds.has(c.id));
+  const autoContasGeradas=dividas.flatMap(gerarParcelasDivida);
+  const autoContas=autoContasGeradas.filter(c=>!manuaisIds.has(c.id));
   const resultado=[...contas];
+  let __autoDescartadasPorConflito=0;
   autoContas.forEach(auto=>{
     // Se já existe conta manual vinculada à mesma dívida no mesmo vencimento, não duplica
     const jaExiste=contas.find(c=>
       c.dividaVinculadaId===auto.dividaVinculadaId&&
       c.vencimento===auto.vencimento
     );
-    if(!jaExiste)resultado.push(auto);
+    if(!jaExiste){resultado.push(auto);}
+    else{
+      __autoDescartadasPorConflito++;
+      if(__auditOn)console.log('PRX_AUDIT_04 — Parcela automática descartada no merge',JSON.stringify({parcelaId:auto.id,dividaVinculadaId:auto.dividaVinculadaId,vencimento:auto.vencimento,motivo:'já existe conta manual com mesma dividaVinculadaId+vencimento',contaManualConflitante:jaExiste.id}));
+    }
   });
   // Adiciona instâncias mensais recorrentes das despesas Fixas
   const fixasRecorrentes=expandirFixasRecorrentes(contas);
+  let __fixasDescartadasPorIdColisao=0;
   fixasRecorrentes.forEach(f=>{
-    if(!manuaisIds.has(f.id))resultado.push(f);
+    if(!manuaisIds.has(f.id)){resultado.push(f);}
+    else __fixasDescartadasPorIdColisao++;
   });
+  if(__auditOn)console.log('PRX_AUDIT_04 — Merge (resumo)',JSON.stringify({
+    qtdContasManuais:contas.length,
+    qtdDividas:dividas.length,
+    qtdAutoContasGeradasBruto:autoContasGeradas.length,
+    qtdAutoContasJaExistiamComoManual:autoContasGeradas.length-autoContas.length,
+    qtdAutoContasDescartadasPorConflitoVencimento:__autoDescartadasPorConflito,
+    qtdAutoContasIncluidas:autoContas.length-__autoDescartadasPorConflito,
+    qtdFixasRecorrentesGeradas:fixasRecorrentes.length,
+    qtdFixasDescartadasPorIdColisao:__fixasDescartadasPorIdColisao,
+    qtdFinalResultado:resultado.length,
+  }));
   return resultado;
 };
 
@@ -4745,13 +4841,22 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
   // Saldo Projetado Consolidado = Entradas Consolidadas − Contas a Pagar (exclusivo do consolidado;
   // o saldoProjetado de cada unidade individual não é alterado por esta regra).
   consol.saldoProjetado=consol.totalEntradas-consol.totalContasAbertas;
-  // AUDITORIA TEMPORÁRIA — remover antes de concluir a tarefa. Ativado só com window.__PRX_AUDIT__=true.
-  // Rastreia exclusivamente a propagação kpisPortfolio → compData → consol → fmt(), sem repetir
-  // a auditoria de dados/queries já validada.
+  // PRX_AUDIT_08/09/10 — rastreia exclusivamente a propagação kpisPortfolio → compData → consol →
+  // fmt() → renderização, e correlaciona com o mês/ano LIVE selecionado (props selYear/selMonth)
+  // para provar (ou descartar) que o card está exibindo dado de uma requisição desatualizada.
   if(typeof window!=='undefined'&&window.__PRX_AUDIT__){
-    console.log('[PRX_AUDIT_C_COMPDATA]',JSON.stringify(compData.map(u=>({id:u.id,nome:u.nome,totalDespesasPeriodo:u.kpi.totalDespesasPeriodo}))));
-    console.log('[PRX_AUDIT_C_CONSOL]',JSON.stringify({totalEntradas:consol.totalEntradas,totalContasAbertas:consol.totalContasAbertas,totalFornecedores:consol.totalFornecedores,saldoProjetado:consol.saldoProjetado}));
-    console.log('[PRX_AUDIT_C_FMT]',fmt(consol.totalContasAbertas));
+    const __mesKeyAtual=`${selYear}-${String(selMonth+1).padStart(2,'0')}`;
+    console.log('PRX_AUDIT_08 — Estado React (kpisPortfolio bruto)',JSON.stringify(
+      Object.fromEntries(Object.entries(kpisPortfolio||{}).map(([k,v])=>[k,{totalDespesasPeriodo:v.totalDespesasPeriodo,totalEntradas:v.totalEntradas,status:v.status}]))
+    ));
+    console.log('PRX_AUDIT_08 — compData (renderização)',JSON.stringify(compData.map(u=>({id:u.id,nome:u.nome,totalDespesasPeriodo:u.kpi.totalDespesasPeriodo}))));
+    console.log('PRX_AUDIT_08 — consol (renderização)',JSON.stringify({totalEntradas:consol.totalEntradas,totalContasAbertas:consol.totalContasAbertas,totalFornecedores:consol.totalFornecedores,saldoProjetado:consol.saldoProjetado}));
+    console.log('PRX_AUDIT_09 — Valor renderizado no card "Despesas Consolidadas"',fmt(consol.totalContasAbertas),'(bruto:',consol.totalContasAbertas,')');
+    console.log('PRX_AUDIT_10 — Resumo (mês live vs. última requisição finalizada)',JSON.stringify({
+      mesAtualNaTela:__mesKeyAtual,
+      ultimaRequisicaoSeqFinalizada:window.__prxAuditMaxSeqFinished||0,
+      totalConsolidadoExibidoAgora:consol.totalContasAbertas,
+    }));
   }
   const consolStatus=PF_STATUS_META[pfClassifyStatus(consol.totalEntradas,consol.totalContasAbertas,consol.saldoProjetado)];
   const consolTone=pfTone(consolStatus.key);
@@ -5428,6 +5533,16 @@ function App(){
   // Não altera EMPRESA_ID, loadS, saveS nem useEffect 3.
   useEffect(()=>{
     if(activeTab!=='portfolio'||!autenticado||empresasDisponiveis.length===0)return;
+    // PRX_AUDIT_02 — identifica esta invocação do efeito p/ detectar corrida entre requisições.
+    // __auditMySeq é monotônico: se uma requisição com seq MENOR terminar (setKpisPortfolio) DEPOIS
+    // de uma com seq MAIOR já ter terminado, isso PROVA sobrescrita de dados novos por dados velhos.
+    const __auditOn=typeof window!=='undefined'&&window.__PRX_AUDIT__;
+    const __auditMesKey=`${selectedYear}-${String(selectedMonth+1).padStart(2,'0')}`;
+    if(__auditOn)window.__prxAuditSeq=(window.__prxAuditSeq||0)+1;
+    const __auditMySeq=__auditOn?window.__prxAuditSeq:0;
+    const __auditReqId=`${__auditMesKey}-seq${__auditMySeq}`;
+    const __auditStartedAt=Date.now();
+    if(__auditOn)console.log('PRX_AUDIT_02 — Requisição do Portfólio INICIADA',JSON.stringify({reqId:__auditReqId,seq:__auditMySeq,mesSolicitado:__auditMesKey,timestamp:__auditStartedAt}));
     (async()=>{
       try{
         const ids=empresasDisponiveis.map(e=>e.id);
@@ -5463,11 +5578,11 @@ function App(){
           // totalContasAbertas (baseado só em `con`, sem sintéticos — inalterado).
           const despesasPeriodoRegistros=mergeContasComParcelas(conAll,div).filter(r=>r.vencimento>=mStart&&r.vencimento<=mEnd);
           const totalDespesasPeriodo=despesasPeriodoRegistros.reduce((s,r)=>s+(r.valor||0),0);
-          // AUDITORIA TEMPORÁRIA — remover antes de concluir a tarefa. Ativado só com window.__PRX_AUDIT__=true.
-          if(typeof window!=='undefined'&&window.__PRX_AUDIT__){
-            console.log('[PRX_AUDIT_B]',id,JSON.stringify({empresa_id:id,mStart,mEnd,qtd:despesasPeriodoRegistros.length,total:totalDespesasPeriodo,registros:despesasPeriodoRegistros.map(r=>({id:r.id,empresa_id:r.empresa_id||id,descricao:r.descricao,tipoDespesa:r.tipoDespesa,vencimento:r.vencimento,status:r.status,valor:r.valor,dividaVinculadaId:r.dividaVinculadaId||'',_autoGerado:!!r._autoGerado}))}));
-            console.log('[PRX_AUDIT_B_SCHEMA_CONTAS]',id,JSON.stringify(Object.keys(conAll[0]||{})));
-            console.log('[PRX_AUDIT_B_SCHEMA_DIVIDAS]',id,JSON.stringify(Object.keys(div[0]||{})));
+          // PRX_AUDIT_03 — empresa individual dentro do consolidado; registra array B p/ PRX_AUDIT_07.
+          if(__auditOn){
+            const __nomeEmpresa=(empresasDisponiveis.find(e=>e.id===id)||{}).nome||'?';
+            console.log('PRX_AUDIT_03 — Empresa no consolidado',JSON.stringify({reqId:__auditReqId,empresa_id:id,nome:__nomeEmpresa,mesKey:__auditMesKey,qtd:despesasPeriodoRegistros.length,total:totalDespesasPeriodo}));
+            if(typeof __prxAuditRegister==='function')__prxAuditRegister('B',id,__auditMesKey,despesasPeriodoRegistros);
           }
           const totalDividasAtivas=div.reduce((s,r)=>s+parseCurrencyBR(r.parcelaMensal),0);
           const totalRetiradas=ret.reduce((s,r)=>s+(r.valor||0),0);
@@ -5476,6 +5591,31 @@ function App(){
           const status=pfClassifyStatus(totalEntradas,totalContasAbertas,saldoProjetado);
           kpis[id]={totalEntradas,totalContasAbertas,totalDespesasPeriodo,totalDividasAtivas,totalRetiradas,totalFornecedores,saldoProjetado,status};
         });
+        // PRX_AUDIT_03 — total consolidado desta requisição (soma de totalDespesasPeriodo de todas as empresas).
+        if(__auditOn){
+          const __totalConsolReq=ids.reduce((s,id)=>s+(kpis[id]?.totalDespesasPeriodo||0),0);
+          console.log('PRX_AUDIT_03 — Total consolidado da requisição',JSON.stringify({reqId:__auditReqId,mesKey:__auditMesKey,qtdEmpresas:ids.length,empresas:ids,totalConsolidado:__totalConsolReq}));
+        }
+        // PRX_AUDIT_02 — requisição concluída. window.__prxAuditMaxSeqFinished guarda o maior "seq"
+        // que já chamou setKpisPortfolio. Se __auditMySeq < esse máximo, uma requisição MAIS NOVA
+        // (mês solicitado depois deste) JÁ terminou antes — e este setKpisPortfolio, ao rodar agora,
+        // SOBRESCREVE dados mais novos com dados mais velhos. Isso prova (ou descarta) a Hipótese 2.
+        if(__auditOn){
+          const __finishedAt=Date.now();
+          const __maxSeqFinishedAntes=window.__prxAuditMaxSeqFinished||0;
+          const __sobrescritaForaDeOrdem=__auditMySeq<__maxSeqFinishedAntes;
+          console.log('PRX_AUDIT_02 — Requisição do Portfólio CONCLUÍDA',JSON.stringify({
+            reqId:__auditReqId,seq:__auditMySeq,mesSolicitado:__auditMesKey,
+            timestampInicio:__auditStartedAt,timestampFim:__finishedAt,duracaoMs:__finishedAt-__auditStartedAt,
+            mesAtualSelecionadoAgora:`${selectedYear}-${String(selectedMonth+1).padStart(2,'0')}`,
+            maxSeqJaFinalizadoAntesDeste:__maxSeqFinishedAntes,
+            SOBRESCRITA_FORA_DE_ORDEM_CONFIRMADA:__sobrescritaForaDeOrdem,
+          }));
+          if(__sobrescritaForaDeOrdem){
+            console.warn('PRX_AUDIT_02 — ALERTA: esta requisição (seq '+__auditMySeq+', mês '+__auditMesKey+') está prestes a SOBRESCREVER kpisPortfolio com dados mais antigos que uma requisição já concluída (seq '+__maxSeqFinishedAntes+').');
+          }
+          window.__prxAuditMaxSeqFinished=Math.max(__maxSeqFinishedAntes,__auditMySeq);
+        }
         setKpisPortfolio(kpis);
       }catch(err){
         console.error('Erro ao calcular KPIs do Portfólio:',err);
