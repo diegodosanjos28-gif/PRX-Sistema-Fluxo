@@ -3512,7 +3512,7 @@ function statusDividaBadge(s){
   return'bb';
 }
 
-function DividaPanel({d,entradaMensal,onEdit,onRemove}){
+function DividaPanel({d,entradaMensal,onEdit,onRemove,onQuitar}){
   const[open,setOpen]=useState(false);
   const pIndPct=entradaMensal>0?Math.round((d.parcelaMensal/entradaMensal)*100):0;
   const pInfo=pressaoInfo(pIndPct);
@@ -3570,6 +3570,7 @@ function DividaPanel({d,entradaMensal,onEdit,onRemove}){
               {l:'Parcelas Restantes',v:d.parcelasRestantes?d.parcelasRestantes:'—'},
               {l:'Vencimento da Parcela',v:d.vencimento?fmtDate(d.vencimento):'—'},
               {l:'Status',v:d.status},
+              ...(d.quitada_em?[{l:'Quitada em',v:monthOf(d.quitada_em).split('-').reverse().join('/'),color:'var(--green-dim)'}]:[]),
             ].map(({l,v,color})=>(
               <div key={l}>
                 <div style={{fontSize:10,color:'var(--text-muted)',fontWeight:500,marginBottom:2}}>{l}</div>
@@ -3584,6 +3585,7 @@ function DividaPanel({d,entradaMensal,onEdit,onRemove}){
           )}
           <div style={{display:'flex',gap:7,justifyContent:'flex-end'}}>
             <button className="btn btn-secondary btn-sm" onClick={e=>{e.stopPropagation();onEdit(d);}}>✏️ Editar</button>
+            {d.status!=='Quitada'&&!d.quitada_em&&<button className="btn btn-primary btn-sm" onClick={e=>{e.stopPropagation();onQuitar(d);}}>✓ Quitada</button>}
             <button className="btn btn-danger btn-sm" onClick={e=>{e.stopPropagation();onRemove(d.id);}}>✕ Remover</button>
           </div>
         </div>
@@ -3600,6 +3602,11 @@ function Dividas({dividas,setDividas,onDividaCriar,onDividaEditar,onDividaExclui
   const[filtroStatus,setFiltroStatus]=useState('Todas');
   const[ordenacao,setOrdenacao]=useState('Maior saldo');
   const[dividaErro,setDividaErro]=useState(null);
+  // Modal de quitação (registra apenas mês/ano de corte). Não altera o fluxo de edição/remoção.
+  const[quitarTarget,setQuitarTarget]=useState(null);
+  const[quitarMes,setQuitarMes]=useState('');
+  const[quitarAno,setQuitarAno]=useState('');
+  const[quitarErro,setQuitarErro]=useState('');
   const dividaOpLock=useRef(false);
 
   const totalDivida=dividas.reduce((s,d)=>s+d.valorUtilizado,0);
@@ -3694,6 +3701,39 @@ function Dividas({dividas,setDividas,onDividaCriar,onDividaEditar,onDividaExclui
     }
   };
 
+  // ── Quitação: registra mês/ano de corte, marca status 'Quitada' e persiste (sem excluir) ──
+  const abrirQuitacao=d=>{
+    const now=new Date();
+    setQuitarTarget(d);
+    setQuitarMes(String(now.getMonth()+1));
+    setQuitarAno(String(now.getFullYear()));
+    setQuitarErro('');
+  };
+  const fecharQuitacao=()=>{if(dividaOpLock.current)return;setQuitarTarget(null);setQuitarErro('');};
+  const confirmarQuitacao=()=>{
+    if(!quitarTarget||dividaOpLock.current)return;
+    const mes=parseInt(quitarMes,10);
+    const ano=parseInt(quitarAno,10);
+    if(!Number.isInteger(mes)||mes<1||mes>12){setQuitarErro('Informe um mês válido (1 a 12).');return;}
+    if(!Number.isInteger(ano)||ano<1000||ano>9999){setQuitarErro('Informe um ano válido com quatro dígitos.');return;}
+    // Data de corte no 1º dia do mês informado — representa apenas o mês, não o dia real.
+    const corte=`${ano}-${String(mes).padStart(2,'0')}-01`;
+    // Impede quitação anterior à data de contratação (quando existir e for válida).
+    const contrat=quitarTarget.dataContratacao;
+    if(contrat&&/^\d{4}-\d{2}-\d{2}$/.test(contrat)&&monthOf(corte)<monthOf(contrat)){
+      setQuitarErro('O mês de quitação não pode ser anterior à data de contratação da dívida.');return;
+    }
+    dividaOpLock.current=true;
+    setQuitarErro('');
+    const entry={...quitarTarget,status:'Quitada',quitada_em:corte};
+    const prev=dividas;
+    setDividas(dividas.map(d=>d.id===quitarTarget.id?entry:d));
+    onDividaEditar(entry)
+      .then(()=>{setQuitarTarget(null);})
+      .catch(err=>{setDividas(prev);setQuitarErro('Erro ao registrar a quitação. Nenhuma alteração foi salva.');})
+      .finally(()=>{dividaOpLock.current=false;});
+  };
+
   // Filtro
   let lista=dividas.filter(d=>{
     if(filtroStatus==='Todas')return true;
@@ -3776,7 +3816,7 @@ function Dividas({dividas,setDividas,onDividaCriar,onDividaEditar,onDividaExclui
         </div>
       ):(
         lista.map(d=>(
-          <DividaPanel key={d.id} d={d} entradaMensal={entradaMensal} onEdit={openForm} onRemove={remove}/>
+          <DividaPanel key={d.id} d={d} entradaMensal={entradaMensal} onEdit={openForm} onRemove={remove} onQuitar={abrirQuitacao}/>
         ))
       )}
 
@@ -3801,6 +3841,22 @@ function Dividas({dividas,setDividas,onDividaCriar,onDividaEditar,onDividaExclui
           <div style={{marginTop:12,display:'flex',gap:8,justifyContent:'flex-end'}}>
             <button className="btn btn-secondary" onClick={()=>{setShowForm(false);setEditId(null);setForm(emptyForm);}}>Cancelar</button>
             <button className="btn btn-primary" onClick={save_}>Salvar</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL QUITAÇÃO — solicita apenas mês e ano do corte */}
+      {quitarTarget&&(
+        <Modal title="Registrar quitação da dívida" onClose={fecharQuitacao}>
+          <p style={{fontSize:13,color:'var(--text-muted)',marginBottom:12}}>Informe o mês e o ano em que esta dívida foi quitada. A partir desse mês, ela deixará de ser considerada nos cálculos financeiros.</p>
+          {quitarErro&&<div className="alert alert-r" style={{marginBottom:12}}>{quitarErro}</div>}
+          <div className="form-grid">
+            <div className="fg"><label>Mês da quitação *</label><select value={quitarMes} onChange={e=>setQuitarMes(e.target.value)}>{MONTHS.map((m,i)=><option key={i} value={i+1}>{m}</option>)}</select></div>
+            <div className="fg"><label>Ano da quitação *</label><input type="number" placeholder="Ex: 2026" value={quitarAno} onChange={e=>setQuitarAno(e.target.value)}/></div>
+          </div>
+          <div style={{marginTop:12,display:'flex',gap:8,justifyContent:'flex-end'}}>
+            <button className="btn btn-secondary" onClick={fecharQuitacao}>Cancelar</button>
+            <button className="btn btn-primary" onClick={confirmarQuitacao}>Confirmar quitação</button>
           </div>
         </Modal>
       )}
@@ -4252,7 +4308,10 @@ const gerarParcelasDivida=d=>{
   const __auditDescarte=motivo=>{if(typeof window!=='undefined'&&window.__PRX_AUDIT__)console.log('PRX_AUDIT_05 — Parcela descartada',JSON.stringify({dividaId:d.id,banco:d.banco,empresa_id:d.empresa_id,motivo,parcelaMensal:d.parcelaMensal,vencimento:d.vencimento,status:d.status,valorUtilizado:d.valorUtilizado}));};
   if(!d.parcelaMensal||d.parcelaMensal<=0){__auditDescarte('parcelaMensal ausente ou <= 0');return[];}
   if(!d.vencimento){__auditDescarte('vencimento ausente');return[];}
-  if(d.status!=='Ativa'){__auditDescarte('status != "Ativa" (case-sensitive)');return[];}
+  // Dívida com quitada_em (quitada por corte de mês) continua gerando as parcelas dos meses
+  // ANTERIORES ao corte, mesmo com status 'Quitada' — o corte é aplicado no final desta função.
+  // Sem quitada_em, mantém a regra atual (apenas status 'Ativa' gera parcelas).
+  if(d.status!=='Ativa'&&!d.quitada_em){__auditDescarte('status != "Ativa" (case-sensitive)');return[];}
   if((d.valorUtilizado||0)<=0){__auditDescarte('valorUtilizado <= 0');return[];}
   // Janela: do mês de início até 24 meses à frente
   const vencs=gerarVencimentosMensais(d.vencimento,24);
@@ -4272,6 +4331,14 @@ const gerarParcelasDivida=d=>{
     _parcelaSeq:idx+1,
   }));
   if(typeof window!=='undefined'&&window.__PRX_AUDIT__)console.log('PRX_AUDIT_05 — Parcelas geradas',JSON.stringify({dividaId:d.id,banco:d.banco,empresa_id:d.empresa_id,qtdGeradas:__geradas.length,janelaInicio:vencs[0],janelaFim:vencs[vencs.length-1],parcelaMensal:d.parcelaMensal}));
+  // CORTE POR QUITAÇÃO (ponto central único) — a partir do mês de quitada_em, INCLUSIVE, a dívida
+  // deixa de gerar parcelas. Como todo cálculo financeiro (Painel, Portfólio, Projeção, Contas)
+  // consome parcelas por esta função, o corte propaga para todas as telas de uma só vez.
+  // Comparação por chave 'YYYY-MM' (monthOf) — estável, sem conversão de Date nem fuso horário.
+  if(d.quitada_em){
+    const corteMes=monthOf(d.quitada_em);
+    return __geradas.filter(p=>monthOf(p.vencimento)<corteMes);
+  }
   return __geradas;
 };
 
@@ -5616,7 +5683,7 @@ function App(){
         const[rawEnt,rawCon,rawDiv,rawRet,{data:rawCfg}]=await Promise.all([
           fetchAllPages((from,to)=>supabase.from('entradas').select('empresa_id,total,data').in('empresa_id',ids).gte('data',mStart).lte('data',mEnd).range(from,to)),
           fetchAllPages((from,to)=>supabase.from('contas').select('id,empresa_id,valor,status,vencimento,tipoDespesa,dividaVinculadaId,descricao').in('empresa_id',ids).range(from,to)),
-          fetchAllPages((from,to)=>supabase.from('dividas').select('id,empresa_id,parcelaMensal,status,vencimento,valorUtilizado,banco,tipo').in('empresa_id',ids).eq('status','Ativa').range(from,to)),
+          fetchAllPages((from,to)=>supabase.from('dividas').select('id,empresa_id,parcelaMensal,status,vencimento,valorUtilizado,banco,tipo,quitada_em').in('empresa_id',ids).in('status',['Ativa','Quitada']).range(from,to)),
           fetchAllPages((from,to)=>supabase.from('retiradas').select('empresa_id,valor,data').in('empresa_id',ids).gte('data',mStart).lte('data',mEnd).range(from,to)),
           supabase.from('config').select('empresa_id,saldoInicial').in('empresa_id',ids),
         ]);
@@ -5663,7 +5730,9 @@ function App(){
             }));
             if(typeof __prxZanonAuditRegister==='function')__prxZanonAuditRegister('PORTFOLIO_UNIT',id,__auditMesKey,despesasPeriodoRegistros);
           }
-          const totalDividasAtivas=div.reduce((s,r)=>s+parseCurrencyBR(r.parcelaMensal),0);
+          // Só dívidas 'Ativa' compõem este KPI (a query agora também traz 'Quitada' p/ o corte
+          // histórico das parcelas, mas Quitada não conta como dívida ativa neste indicador).
+          const totalDividasAtivas=div.filter(r=>r.status==='Ativa').reduce((s,r)=>s+parseCurrencyBR(r.parcelaMensal),0);
           const totalRetiradas=ret.reduce((s,r)=>s+(r.valor||0),0);
           const saldoInicial=Number(cfg?.saldoInicial)||defaultConfig.saldoInicial;
           const saldoProjetado=saldoInicial+totalEntradas-totalContasAbertas-totalRetiradas;
