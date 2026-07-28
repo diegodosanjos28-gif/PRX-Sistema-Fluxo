@@ -1285,20 +1285,46 @@ const saveLocalS = (k, d) => { try { localStorage.setItem(k, JSON.stringify(d));
 // teriam parte dos registros silenciosamente ausente do array carregado em memória.
 // queryFactory(from,to) deve retornar uma NOVA query (com .range(from,to) já aplicado) a cada
 // chamada — um query builder do Supabase é de uso único e não pode ser reaproveitado entre páginas.
+// ORDENAÇÃO ESTÁVEL (obrigatória): .range() vira LIMIT/OFFSET no PostgreSQL, que NÃO garante
+// ordem entre execuções sem ORDER BY. Sem isso, a página 2 pode repetir linhas já vistas na
+// página 1 e omitir outras (um UPDATE realoca fisicamente a tupla no heap). Cada queryFactory
+// abaixo aplica .order('id',{ascending:true}) ANTES de .range(from,to) — a ordenação precisa
+// estar DENTRO da factory porque cada página monta uma query nova.
 const SUPABASE_PAGE_SIZE = 1000;
-const fetchAllPages = async queryFactory => {
+const fetchAllPages = async (queryFactory, contexto) => {
   let all = [];
   let from = 0;
+  let paginas = 0;
   while (true) {
     const to = from + SUPABASE_PAGE_SIZE - 1;
     const { data, error } = await queryFactory(from, to);
     if (error) throw error;
+    paginas++;
     const rows = data || [];
     all = all.concat(rows);
     if (rows.length < SUPABASE_PAGE_SIZE) break; // última página (veio incompleta ou vazia)
     from += SUPABASE_PAGE_SIZE;
   }
-  return all;
+  // DEDUPLICAÇÃO DEFENSIVA por id — rede de segurança para o caso de a ordenação não cobrir
+  // alguma fronteira de página. Preserva a PRIMEIRA ocorrência e a ordem original; não toca nos
+  // objetos; registros sem id passam intactos (nunca deduplicados por composição de campos).
+  const seen = new Set();
+  const unique = all.filter(row => {
+    if (!row || !row.id) return true;
+    if (seen.has(row.id)) return false;
+    seen.add(row.id);
+    return true;
+  });
+  if (typeof window !== 'undefined' && window.__PRX_AUDIT__) {
+    console.log('PRX_AUDIT_11 — Paginação', JSON.stringify({
+      contexto: contexto || '(sem contexto)',
+      paginas,
+      totalBruto: all.length,
+      totalAposDedup: unique.length,
+      duplicadosRemovidos: all.length - unique.length,
+    }));
+  }
+  return unique;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1416,7 +1442,7 @@ const loadS = async chave => {
   // Captura a empresa ativa ANTES do carregamento paginado (múltiplos awaits em sequência),
   // garantindo que uma eventual troca de empresa durante o carregamento não misture registros.
   const empresaIdCapturada = EMPRESA_ID;
-  return await fetchAllPages((from, to) => supabase.from(tabela).select('*').eq('empresa_id', empresaIdCapturada).range(from, to));
+  return await fetchAllPages((from, to) => supabase.from(tabela).select('*').eq('empresa_id', empresaIdCapturada).order('id', { ascending: true }).range(from, to), 'loadS:' + tabela);
 };
 
 // Async save: upsert for config, DELETE + INSERT for array tables (full replacement per company)
@@ -2784,6 +2810,22 @@ const parseDateBR=v=>{
   return null;
 };
 
+// ── Identidade canônica da despesa (espelho EXATO da função SQL contas_identidade) ──
+// Usada SOMENTE para deduplicação dentro do arquivo e pré-checagem/preview no front.
+// A autoridade final é o banco (RPC importar_contas + índice único parcial).
+// Regras: texto → trim + minúsculas + remove acentos (NFD) + colapsa espaços (mantém pontuação,
+// para não fundir nomes legitimamente diferentes); data → 'YYYY-MM-DD'; valor → centavos inteiros.
+const normalizeIdentityText=v=>(v==null?'':String(v)).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ');
+const normalizeIdentityDate=v=>parseDateBR(v); // 'YYYY-MM-DD' ou null
+const normalizeIdentityAmount=v=>{const n=parseCurrencyBR(v);return Number.isFinite(n)?Math.round(n*100):null;};
+// Retorna a chave lógica ou null quando data/valor não são confiáveis (sem identidade estável).
+const buildContaIdentityKey=(c,empresaId)=>{
+  const d=normalizeIdentityDate(c.vencimento);
+  const cents=normalizeIdentityAmount(c.valor);
+  if(!d||cents==null)return null;
+  return [empresaId||'',d,cents,normalizeIdentityText(c.fornecedor),normalizeIdentityText(c.descricao)].join('|');
+};
+
 // Gera CSV modelo para download
 const downloadModeloCSV=()=>{
   const headers=['Vencimento','Fornecedor','Descrição','Segmento','Valor','Categoria','Tipo de Despesa','Status','Forma de Pagamento','Conta de Saída','Observação'];
@@ -2851,8 +2893,19 @@ const parseCSV=text=>{
   return rows;
 };
 
-const validarLinhas=(rows,contasExistentes)=>{
-  const validas=[];const invalidas=[];const duplicadas=[];
+// Deduplicação em camadas (front) — a AUTORIDADE FINAL é o banco (RPC importar_contas):
+//  • invalidas             → falha de validação de campos
+//  • duplicadasNoArquivo   → mesma identidade repetida DENTRO do próprio arquivo (guarda a 1ª linha)
+//  • duplicadasNoBanco     → identidade já existe em contas PERSISTIDAS (não sintéticas)
+//  • conflitosSinteticos   → identidade coincide com registro CALCULADO (parcela de dívida / fixa
+//                            recorrente) que ainda não está persistido — apenas aviso, não é do banco
+//  • validas               → seguem para a RPC decidir de forma atômica
+const validarLinhas=(rows,contasPersistidas,contasSinteticas,empresaId)=>{
+  const validas=[];const invalidas=[];const duplicadasNoArquivo=[];const duplicadasNoBanco=[];const conflitosSinteticos=[];
+  // Índices por identidade canônica (mesma regra usada pela função SQL contas_identidade).
+  const persistByKey=new Map();(contasPersistidas||[]).forEach(c=>{const k=buildContaIdentityKey(c,empresaId);if(k&&!persistByKey.has(k))persistByKey.set(k,c);});
+  const syntByKey=new Map();(contasSinteticas||[]).forEach(c=>{const k=buildContaIdentityKey(c,empresaId);if(k&&!syntByKey.has(k))syntByKey.set(k,c);});
+  const seenNoArquivo=new Map(); // key → _linha da 1ª ocorrência
   rows.forEach(r=>{
     const erros=[];
     const venc=parseDateBR(r.vencimento);
@@ -2871,15 +2924,27 @@ const validarLinhas=(rows,contasExistentes)=>{
     if(!r.valor)erros.push('valor vazio');
     else if(isNaN(val)||val<=0)erros.push('valor inválido ou zero');
     if(erros.length>0){invalidas.push({...r,erros});return;}
-    // Check duplicidade
-    const dup=contasExistentes.find(c=>
-      c.vencimento===venc&&
-      c.fornecedor===r.fornecedor&&
-      c.descricao===r.descricao&&
-      Math.abs(c.valor-val)<0.01
-    );
-    if(dup){duplicadas.push({...r,vencimento:venc,valor:val});return;}
-    validas.push({...r,vencimento:venc,valor:val,
+    const norm={...r,vencimento:venc,valor:val};
+    const key=buildContaIdentityKey(norm,empresaId);
+    // 1) Duplicidade DENTRO do arquivo (só a primeira ocorrência é candidata)
+    if(key&&seenNoArquivo.has(key)){
+      duplicadasNoArquivo.push({...norm,_motivo:`Duplicada dentro do arquivo: mesma identidade da linha ${seenNoArquivo.get(key)}.`,_primeiraLinha:seenNoArquivo.get(key)});
+      return;
+    }
+    // 2) Duplicidade contra contas PERSISTIDAS (banco)
+    if(key&&persistByKey.has(key)){
+      const ex=persistByKey.get(key);
+      duplicadasNoBanco.push({...norm,_motivo:'Já existe no banco (mesma identidade financeira).',_existenteId:ex.id,_existenteStatus:ex.status||''});
+      return;
+    }
+    // 3) Conflito com registro SINTÉTICO (recorrência/dívida calculada, não persistida) — apenas aviso
+    if(key&&syntByKey.has(key)){
+      const ex=syntByKey.get(key);
+      conflitosSinteticos.push({...norm,_motivo:'Coincide com despesa recorrente/parcela calculada pelo sistema (não persistida).',_existenteDescricao:ex.descricao||''});
+      return;
+    }
+    if(key)seenNoArquivo.set(key,r._linha);
+    validas.push({...norm,
       categoria:r.categoria||'Fornecedores',
       tipoDespesa:r.tipoDespesa||'Fornecedor',
       status:r.status||'A vencer',
@@ -2888,15 +2953,17 @@ const validarLinhas=(rows,contasExistentes)=>{
       obs:r.obs||'',
     });
   });
-  return{validas,invalidas,duplicadas};
+  return{validas,invalidas,duplicadasNoArquivo,duplicadasNoBanco,conflitosSinteticos};
 };
 
 // ── MODAL DE IMPORTAÇÃO ──
-function ImportModal({onClose,onConfirm,contasExistentes}){
+function ImportModal({onClose,onConfirm,contasPersistidas,contasSinteticas,empresaId}){
   const[step,setStep]=useState('upload');// upload | preview | done
   const[dragging,setDragging]=useState(false);
   const[preview,setPreview]=useState(null);
   const[resultado,setResultado]=useState(null);
+  const[processando,setProcessando]=useState(false);// bloqueia clique duplo durante a RPC
+  const[erroEnvio,setErroEnvio]=useState('');
   const fileRef=useRef(null);
 
   const processFile=file=>{
@@ -2908,12 +2975,13 @@ function ImportModal({onClose,onConfirm,contasExistentes}){
       const text=e.target.result;
       const rows=parseCSV(text);
       if(rows.length===0)return alert('O arquivo parece estar vazio ou no formato incorreto.');
-      const{validas,invalidas,duplicadas}=validarLinhas(rows,contasExistentes);
+      const{validas,invalidas,duplicadasNoArquivo,duplicadasNoBanco,conflitosSinteticos}=validarLinhas(rows,contasPersistidas,contasSinteticas,empresaId);
       const totalValor=validas.reduce((s,r)=>s+r.valor,0);
       const datas=validas.map(r=>r.vencimento).sort();
       const porSeg={};
       validas.forEach(r=>{if(r.segmento){porSeg[r.segmento]=(porSeg[r.segmento]||0)+r.valor;}});
-      setPreview({validas,invalidas,duplicadas,totalValor,dataMin:datas[0]||null,dataMax:datas[datas.length-1]||null,porSeg});
+      setErroEnvio('');
+      setPreview({validas,invalidas,duplicadasNoArquivo,duplicadasNoBanco,conflitosSinteticos,totalLido:rows.length,totalValor,dataMin:datas[0]||null,dataMax:datas[datas.length-1]||null,porSeg});
       setStep('preview');
     };
     reader.readAsText(file,'UTF-8');
@@ -2922,10 +2990,13 @@ function ImportModal({onClose,onConfirm,contasExistentes}){
   const onDrop=e=>{e.preventDefault();setDragging(false);const f=e.dataTransfer.files[0];if(f)processFile(f);};
   const onFileChange=e=>{const f=e.target.files[0];if(f)processFile(f);};
 
-  const confirmar=()=>{
-    if(!preview||preview.validas.length===0)return;
+  // Envio ASSÍNCRONO: a RPC do banco é a autoridade final. O passo 'done' só aparece após a
+  // resposta real. Clique duplo é bloqueado por `processando`. Em erro, o modal permanece aberto.
+  const confirmar=async()=>{
+    if(processando||!preview||preview.validas.length===0)return;
     const novos=preview.validas.map(r=>({
       id:genId(),
+      linha:r._linha,
       vencimento:r.vencimento,
       fornecedor:r.fornecedor,
       descricao:r.descricao,
@@ -2938,9 +3009,36 @@ function ImportModal({onClose,onConfirm,contasExistentes}){
       contaSaida:r.contaSaida,
       obs:r.obs,
     }));
-    setResultado({adicionados:novos.length,duplicados:preview.duplicadas.length,invalidos:preview.invalidas.length});
-    onConfirm(novos);
-    setStep('done');
+    setProcessando(true);setErroEnvio('');
+    try{
+      // onConfirm devolve o relatório real do banco: {inseridos, duplicados, erros}
+      const rep=await onConfirm(novos);
+      const inseridos=(rep&&rep.inseridos)||[];
+      const dupBanco=(rep&&rep.duplicados)||[];
+      const errBanco=(rep&&rep.erros)||[];
+      setResultado({
+        totalLido:preview.totalLido,
+        enviados:novos.length,
+        inseridos:inseridos.length,
+        duplicadosNoArquivo:preview.duplicadasNoArquivo.length,
+        duplicadosNoBanco:preview.duplicadasNoBanco.length+dupBanco.length,
+        conflitosSinteticos:preview.conflitosSinteticos.length,
+        invalidos:preview.invalidas.length,
+        rejeitadosPeloBanco:dupBanco.length+errBanco.length,
+        rejeicoesBanco:[...dupBanco,...errBanco],
+      });
+      setStep('done');
+    }catch(err){
+      const msg=String(err&&(err.message||err.details||err.hint)||'');
+      // Função ausente no Supabase (RPC ainda não instalada) → 42883 / "could not find function"
+      if(/42883|could not find function|function .*importar_contas.* does not exist|schema cache/i.test(msg)){
+        setErroEnvio('A estrutura de importação segura ainda não foi instalada no Supabase. Aplique o SQL da RPC "importar_contas" antes de usar o importador.');
+      }else{
+        setErroEnvio('Falha ao importar: '+(msg||'erro desconhecido')+'. Nenhum registro foi inserido.');
+      }
+    }finally{
+      setProcessando(false);
+    }
   };
 
   return(
@@ -2989,9 +3087,12 @@ function ImportModal({onClose,onConfirm,contasExistentes}){
           <>
             <div className="imp-preview">
               <div className="imp-preview-title">Prévia da Importação</div>
-              <div className="imp-stat"><span className="imp-stat-label">✅ Boletos válidos</span><span className="imp-stat-val green">{preview.validas.length}</span></div>
+              <div className="imp-stat"><span className="imp-stat-label">📄 Total lido</span><span className="imp-stat-val">{preview.totalLido}</span></div>
+              <div className="imp-stat"><span className="imp-stat-label">✅ Válidos para envio</span><span className="imp-stat-val green">{preview.validas.length}</span></div>
               <div className="imp-stat"><span className="imp-stat-label">❌ Linhas com erro</span><span className="imp-stat-val red">{preview.invalidas.length}</span></div>
-              {preview.duplicadas.length>0&&<div className="imp-stat"><span className="imp-stat-label">⚠️ Duplicados (serão ignorados)</span><span className="imp-stat-val amber">{preview.duplicadas.length}</span></div>}
+              {preview.duplicadasNoArquivo.length>0&&<div className="imp-stat"><span className="imp-stat-label">🔁 Duplicados no arquivo</span><span className="imp-stat-val amber">{preview.duplicadasNoArquivo.length}</span></div>}
+              {preview.duplicadasNoBanco.length>0&&<div className="imp-stat"><span className="imp-stat-label">🏦 Duplicados já no banco</span><span className="imp-stat-val amber">{preview.duplicadasNoBanco.length}</span></div>}
+              {preview.conflitosSinteticos.length>0&&<div className="imp-stat"><span className="imp-stat-label">🧮 Conflito c/ recorrência calculada</span><span className="imp-stat-val amber">{preview.conflitosSinteticos.length}</span></div>}
               <div className="imp-stat"><span className="imp-stat-label">💰 Total a importar</span><span className="imp-stat-val">{fmtFull(preview.totalValor)}</span></div>
               {preview.dataMin&&<div className="imp-stat"><span className="imp-stat-label">📅 Período</span><span className="imp-stat-val">{fmtDate(preview.dataMin)} a {fmtDate(preview.dataMax)}</span></div>}
             </div>
@@ -3016,19 +3117,35 @@ function ImportModal({onClose,onConfirm,contasExistentes}){
               </div>
             )}
 
+            {(preview.duplicadasNoArquivo.length>0||preview.duplicadasNoBanco.length>0||preview.conflitosSinteticos.length>0)&&(
+              <details style={{marginTop:8}}>
+                <summary style={{fontSize:12,fontWeight:700,color:'var(--amber-dim)',cursor:'pointer'}}>Ver duplicidades e conflitos ({preview.duplicadasNoArquivo.length+preview.duplicadasNoBanco.length+preview.conflitosSinteticos.length})</summary>
+                <div style={{marginTop:6,padding:'10px 14px',background:'var(--amber-light)',border:'1px solid var(--amber)',borderRadius:'var(--radius-xs)'}}>
+                  {[...preview.duplicadasNoArquivo,...preview.duplicadasNoBanco,...preview.conflitosSinteticos].map((r,i)=>(
+                    <div key={i} className="imp-err-item" style={{marginBottom:4}}>
+                      Linha {r._linha} · {r.descricao} · {r.fornecedor} · {fmtDate(r.vencimento)} · {fmtFull(r.valor)} · {r.tipoDespesa||'—'}<br/>
+                      <span style={{color:'var(--amber-dim)'}}>{r._motivo}{r._existenteId?` (ID existente: ${r._existenteId}${r._existenteStatus?', status: '+r._existenteStatus:''})`:''}</span>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
+
+            {erroEnvio&&<div className="alert alert-r" style={{marginTop:10}}>{erroEnvio}</div>}
+
             {preview.validas.length===0?(
-              <div style={{marginTop:10,padding:'10px',background:'var(--amber-light)',border:'1px solid var(--amber)',borderRadius:'var(--radius-xs)',fontSize:13,color:'var(--amber-dim)',textAlign:'center'}}>
-                Nenhum boleto válido encontrado para importar.
-              </div>
+              <>
+                <div style={{marginTop:10,padding:'10px',background:'var(--amber-light)',border:'1px solid var(--amber)',borderRadius:'var(--radius-xs)',fontSize:13,color:'var(--amber-dim)',textAlign:'center'}}>
+                  Nenhum boleto válido encontrado para importar.
+                </div>
+                <div style={{marginTop:8,display:'flex',justifyContent:'flex-end'}}>
+                  <button className="btn btn-secondary" onClick={()=>setStep('upload')} disabled={processando}>← Voltar</button>
+                </div>
+              </>
             ):(
               <div style={{marginTop:12,display:'flex',gap:8,justifyContent:'flex-end'}}>
-                <button className="btn btn-secondary" onClick={()=>setStep('upload')}>← Voltar</button>
-                <button className="btn btn-primary" onClick={confirmar}>✓ Confirmar importação de {preview.validas.length} boleto(s)</button>
-              </div>
-            )}
-            {preview.validas.length===0&&(
-              <div style={{marginTop:8,display:'flex',justifyContent:'flex-end'}}>
-                <button className="btn btn-secondary" onClick={()=>setStep('upload')}>← Voltar</button>
+                <button className="btn btn-secondary" onClick={()=>setStep('upload')} disabled={processando}>← Voltar</button>
+                <button className="btn btn-primary" onClick={confirmar} disabled={processando}>{processando?'Enviando ao banco…':`✓ Confirmar importação de ${preview.validas.length} boleto(s)`}</button>
               </div>
             )}
           </>
@@ -3036,9 +3153,27 @@ function ImportModal({onClose,onConfirm,contasExistentes}){
 
         {step==='done'&&resultado&&(
           <>
-            <div className="imp-success-banner">✅ Importação concluída: <strong>{resultado.adicionados} boleto(s) adicionado(s).</strong></div>
-            {resultado.duplicados>0&&<div style={{marginTop:6,fontSize:12,color:'var(--amber-dim)'}}>{resultado.duplicados} lançamento(s) duplicado(s) foram ignorados.</div>}
-            {resultado.invalidos>0&&<div style={{marginTop:4,fontSize:12,color:'var(--red-dim)'}}>{resultado.invalidos} linha(s) não foram importadas por inconsistência nos dados.</div>}
+            <div className="imp-success-banner">✅ Importação concluída: <strong>{resultado.inseridos} registro(s) inserido(s) pelo banco.</strong></div>
+            <div className="imp-preview" style={{marginTop:8}}>
+              <div className="imp-stat"><span className="imp-stat-label">📄 Total lido</span><span className="imp-stat-val">{resultado.totalLido}</span></div>
+              <div className="imp-stat"><span className="imp-stat-label">📤 Enviados ao banco</span><span className="imp-stat-val">{resultado.enviados}</span></div>
+              <div className="imp-stat"><span className="imp-stat-label">✅ Importados com sucesso</span><span className="imp-stat-val green">{resultado.inseridos}</span></div>
+              {resultado.duplicadosNoArquivo>0&&<div className="imp-stat"><span className="imp-stat-label">🔁 Duplicados no arquivo</span><span className="imp-stat-val amber">{resultado.duplicadosNoArquivo}</span></div>}
+              {resultado.duplicadosNoBanco>0&&<div className="imp-stat"><span className="imp-stat-label">🏦 Duplicados já existentes</span><span className="imp-stat-val amber">{resultado.duplicadosNoBanco}</span></div>}
+              {resultado.conflitosSinteticos>0&&<div className="imp-stat"><span className="imp-stat-label">🧮 Conflitos c/ recorrência</span><span className="imp-stat-val amber">{resultado.conflitosSinteticos}</span></div>}
+              {resultado.invalidos>0&&<div className="imp-stat"><span className="imp-stat-label">❌ Inválidos</span><span className="imp-stat-val red">{resultado.invalidos}</span></div>}
+              {resultado.rejeitadosPeloBanco>0&&<div className="imp-stat"><span className="imp-stat-label">🚫 Rejeitados pelo banco</span><span className="imp-stat-val red">{resultado.rejeitadosPeloBanco}</span></div>}
+            </div>
+            {resultado.rejeicoesBanco&&resultado.rejeicoesBanco.length>0&&(
+              <details style={{marginTop:8}}>
+                <summary style={{fontSize:12,fontWeight:700,color:'var(--red-dim)',cursor:'pointer'}}>Ver rejeições do banco ({resultado.rejeicoesBanco.length})</summary>
+                <div style={{marginTop:6,padding:'10px 14px',background:'var(--red-light)',border:'1px solid #fca5a5',borderRadius:'var(--radius-xs)'}}>
+                  {resultado.rejeicoesBanco.map((r,i)=>(
+                    <div key={i} className="imp-err-item">Linha {r.linha}: {r.motivo}{r.existente_id?` (ID existente: ${r.existente_id}${r.existente_status?', status: '+r.existente_status:''})`:''}</div>
+                  ))}
+                </div>
+              </details>
+            )}
             <div style={{marginTop:12,display:'flex',justifyContent:'flex-end'}}>
               <button className="btn btn-primary" onClick={onClose}>Fechar</button>
             </div>
@@ -3230,12 +3365,21 @@ function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onCo
     }
   };
 
-  const handleImport=novos=>{
-    if(contaOpLock.current)return;
+  // Importação: a RPC do banco é a autoridade final. NÃO faz update otimista amplo —
+  // adiciona ao estado local SOMENTE os registros confirmados como inseridos pelo banco.
+  // Retorna o relatório do banco para o ImportModal exibir; erros propagam (modal trata).
+  const handleImport=async novos=>{
+    if(contaOpLock.current)throw new Error('Importação já em andamento.');
     contaOpLock.current=true;
-    const prev=contas;
-    setContas([...contas,...novos]);
-    onContasImportar(novos).catch(err=>{setContas(prev);setContaErro('Erro ao importar contas. Importação revertida.');}).finally(()=>{contaOpLock.current=false;});
+    try{
+      const rep=await onContasImportar(novos); // {inseridos:[{linha,id}], duplicados:[...], erros:[...]}
+      const inseridasLinhas=new Set(((rep&&rep.inseridos)||[]).map(x=>x.linha));
+      const inseridasRows=novos.filter(n=>inseridasLinhas.has(n.linha)).map(({linha,...c})=>c);
+      if(inseridasRows.length)setContas([...contas,...inseridasRows]);
+      return rep;
+    }finally{
+      contaOpLock.current=false;
+    }
   };
 
   const contasFiltradas=[...contasNoMesCat]
@@ -3487,7 +3631,9 @@ function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onCo
         <ImportModal
           onClose={()=>setShowImport(false)}
           onConfirm={handleImport}
-          contasExistentes={contasComParcelas}
+          contasPersistidas={contas}
+          contasSinteticas={contasComParcelas.filter(c=>c._autoGerado)}
+          empresaId={EMPRESA_ID}
         />
       )}
     </div>
@@ -5681,10 +5827,10 @@ function App(){
         // histórico completo (uma dívida/fixa de meses atrás pode gerar parcela no mês selecionado).
         // Mesma exigência que já vale para o Painel do Dono (contas/dividas carregadas por inteiro).
         const[rawEnt,rawCon,rawDiv,rawRet,{data:rawCfg}]=await Promise.all([
-          fetchAllPages((from,to)=>supabase.from('entradas').select('empresa_id,total,data').in('empresa_id',ids).gte('data',mStart).lte('data',mEnd).range(from,to)),
-          fetchAllPages((from,to)=>supabase.from('contas').select('id,empresa_id,valor,status,vencimento,tipoDespesa,dividaVinculadaId,descricao').in('empresa_id',ids).range(from,to)),
-          fetchAllPages((from,to)=>supabase.from('dividas').select('id,empresa_id,parcelaMensal,status,vencimento,valorUtilizado,banco,tipo,quitada_em').in('empresa_id',ids).in('status',['Ativa','Quitada']).range(from,to)),
-          fetchAllPages((from,to)=>supabase.from('retiradas').select('empresa_id,valor,data').in('empresa_id',ids).gte('data',mStart).lte('data',mEnd).range(from,to)),
+          fetchAllPages((from,to)=>supabase.from('entradas').select('empresa_id,total,data').in('empresa_id',ids).gte('data',mStart).lte('data',mEnd).order('id',{ascending:true}).range(from,to),'portfolio:entradas'),
+          fetchAllPages((from,to)=>supabase.from('contas').select('id,empresa_id,valor,status,vencimento,tipoDespesa,dividaVinculadaId,descricao').in('empresa_id',ids).order('id',{ascending:true}).range(from,to),'portfolio:contas'),
+          fetchAllPages((from,to)=>supabase.from('dividas').select('id,empresa_id,parcelaMensal,status,vencimento,valorUtilizado,banco,tipo,quitada_em').in('empresa_id',ids).in('status',['Ativa','Quitada']).order('id',{ascending:true}).range(from,to),'portfolio:dividas'),
+          fetchAllPages((from,to)=>supabase.from('retiradas').select('empresa_id,valor,data').in('empresa_id',ids).gte('data',mStart).lte('data',mEnd).order('id',{ascending:true}).range(from,to),'portfolio:retiradas'),
           supabase.from('config').select('empresa_id,saldoInicial').in('empresa_id',ids),
         ]);
         const kpis={};
@@ -5777,7 +5923,24 @@ function App(){
   const onContaCriar=async entry=>{const eid=EMPRESA_ID;setIsSaving(true);try{await insertConta(entry,eid);}catch(err){console.error('Erro ao criar conta:',err);setIsSaving(false);throw err;}setIsSaving(false);};
   const onContaEditar=async entry=>{const eid=EMPRESA_ID;setIsSaving(true);try{await updateConta(entry,eid);}catch(err){console.error('Erro ao editar conta:',err);setIsSaving(false);throw err;}setIsSaving(false);};
   const onContaExcluir=async id=>{const eid=EMPRESA_ID;setIsSaving(true);try{await deleteConta(id,eid);}catch(err){console.error('Erro ao excluir conta:',err);setIsSaving(false);throw err;}setIsSaving(false);};
-  const onContasImportar=async novos=>{const eid=EMPRESA_ID;setIsSaving(true);try{await insertContasBatch(novos,eid);}catch(err){console.error('Erro ao importar contas:',err);setIsSaving(false);throw err;}setIsSaving(false);};
+  // Importação via RPC transacional 'importar_contas' — AUTORIDADE FINAL no banco (atômica,
+  // idempotente por identidade financeira, à prova de concorrência/duas abas/clique duplo).
+  // Sem fallback para .insert(): se a RPC não existir, o erro é propagado e nada é inserido.
+  // Retorna o relatório por linha: {inseridos:[{linha,id}], duplicados:[...], erros:[...]}.
+  const onContasImportar=async novos=>{
+    const eid=EMPRESA_ID;
+    setIsSaving(true);
+    try{
+      const{data,error}=await supabase.rpc('importar_contas',{p_empresa_id:eid,p_rows:novos});
+      if(error)throw error;
+      return data||{inseridos:[],duplicados:[],erros:[]};
+    }catch(err){
+      console.error('Erro ao importar contas (RPC importar_contas):',err);
+      throw err;
+    }finally{
+      setIsSaving(false);
+    }
+  };
   const setDividas=d=>setD_(d);
   const onDividaCriar=async entry=>{const eid=EMPRESA_ID;setIsSaving(true);try{await insertDivida(entry,eid);}catch(err){console.error('Erro ao criar dívida:',err);setIsSaving(false);throw err;}setIsSaving(false);};
   const onDividaEditar=async entry=>{const eid=EMPRESA_ID;setIsSaving(true);try{await updateDivida(entry,eid);}catch(err){console.error('Erro ao editar dívida:',err);setIsSaving(false);throw err;}setIsSaving(false);};
