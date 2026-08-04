@@ -5326,7 +5326,6 @@ function PortfolioOverview({mesInicial,empresas,ano}){
   const pIdx=antesDoAtivo.length?antesDoAtivo[antesDoAtivo.length-1]:null;
   const anterior=pIdx!=null?serie[pIdx]:null;
   const despesasAtual=getDespesasTotais(atual);
-  const variacao=getVariacaoPercentual(atual.faturamento,anterior?anterior.faturamento:null);
   const delta=getDeltaMonetario(atual.faturamento,anterior?anterior.faturamento:null);
   const valorPartes=splitCurrencyBRParts(atual.faturamento);
 
@@ -5347,7 +5346,8 @@ function PortfolioOverview({mesInicial,empresas,ano}){
   const tipLeft=Math.min(Math.max(cxOf(idx)/G.w*100,17),83);
   const tipTop=yOf(Math.max(atual.faturamento,despesasAtual))/G.h*100;
 
-  const varPos=variacao!=null&&variacao>=0;
+  // Saldo projetado do período = faturamento consolidado − despesas consolidadas (mesma base do gráfico).
+  const saldoProjetadoPeriodo=pfOvCents((Number(atual.faturamento)||0)-(Number(despesasAtual)||0));
   const badgeClasse=delta===null?'':(delta>0?'up':delta<0?'down':'');
   const badgeSeta=delta===null?'—':(delta>0?'↑':delta<0?'↓':'→');
 
@@ -5476,19 +5476,10 @@ function PortfolioOverview({mesInicial,empresas,ano}){
           </div>
         </div>
 
-        {/* Indicador grande de variação (canto inferior esquerdo) */}
+        {/* Indicador grande de saldo projetado (canto inferior esquerdo) */}
         <footer className="pf-overview-foot">
-          {variacao!==null?(
-            <>
-              <div className={varPos?'pf-overview-var up':'pf-overview-var down'}>{varPos?'+':''}{formatPercentBR(variacao)}</div>
-              <div className="pf-overview-var-cap">Faturamento de {MONTHS[idx].toLowerCase()} vs {MONTHS[pIdx].toLowerCase()}</div>
-            </>
-          ):(
-            <>
-              <div className="pf-overview-var neutral">—</div>
-              <div className="pf-overview-var-cap">Primeiro mês com dados — sem mês anterior para comparar</div>
-            </>
-          )}
+          <div className={`pf-overview-var ${saldoProjetadoPeriodo>0?'up':saldoProjetadoPeriodo<0?'down':'neutral'}`}>{formatCurrencyBR(saldoProjetadoPeriodo)}</div>
+          <div className="pf-overview-var-cap">Saldo projetado</div>
         </footer>
       </section>
 
@@ -6366,11 +6357,22 @@ function EmpresaSelector({empresas,roleGlobal,onSelect}){
     });
     return Object.values(map).sort((a,b)=>a.clienteNome.localeCompare(b.clienteNome,'pt-BR'));
   },[empresas]);
-  // Empresa principal: mesma nome do cliente, ou primeira da lista (já ordenada por nome)
+  // Unidade padrão ao entrar no cliente, nesta ordem:
+  //  1) unidade com o mesmo nome do cliente (regra existente);
+  //  2) unidade Matriz — a consulta de empresas traz apenas id/nome/cliente_id/clientes(nome),
+  //     sem campo estrutural de unidade principal, então a identificação é por nome normalizado
+  //     (trim + minúsculas + sem acentos, via normalizeIdentityText) com igualdade EXATA a
+  //     'matriz'. Sem esta etapa a lista, ordenada por nome, entregava a primeira unidade
+  //     alfabética (ex.: "Loja 02" antes de "Matriz");
+  //  3) primeira unidade da lista (fallback existente, para clientes sem Matriz identificável).
+  // A lista já contém apenas unidades ativas e autorizadas. Isto define somente o padrão da
+  // entrada no cliente — a troca manual (trocarEmpresa) e a unidade do usuário comum
+  // (usuarios.empresa_id) não passam por aqui e seguem inalteradas.
   const handleSelect=grupo=>{
     const principal=grupo.unidades.find(
       e=>e.nome.trim().toLowerCase()===grupo.clienteNome.trim().toLowerCase()
-    )||grupo.unidades[0];
+    )||grupo.unidades.find(e=>normalizeIdentityText(e.nome)==='matriz')
+     ||grupo.unidades[0];
     onSelect(principal.id);
   };
   return(
