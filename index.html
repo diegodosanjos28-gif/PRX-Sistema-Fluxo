@@ -840,6 +840,121 @@ textarea{resize:vertical;min-height:58px;}
 @media(max-width:680px){.portfolio-grid{grid-template-columns:1fr;}}
 
 /* ══════════════════════════════════════════════════════
+   PORTFÓLIO — VISÃO GERAL (PRIMEIRA CAMADA) — CSS ISOLADO
+   Prefixo exclusivo pf-overview-. Nenhuma regra abaixo toca
+   classes globais nem a seção "Comparação entre Unidades".
+   ══════════════════════════════════════════════════════ */
+.pf-overview-grid{
+  /* Paleta local da visualização financeira — NÃO altera o accent laranja global. */
+  --pfov-blue:#2f6feb;--pfov-blue-soft:rgba(47,111,235,.10);
+  --pfov-red:#e05a52;--pfov-red-soft:rgba(224,90,82,.10);
+  --pfov-ink:#12161f;
+  display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px;align-items:stretch;margin:18px 0 4px;
+}
+.pf-overview-chart-panel,.pf-overview-summary-panel{
+  background:var(--surface);border:1px solid var(--border);border-radius:18px;
+  box-shadow:0 1px 2px rgba(15,23,42,.04),0 6px 20px rgba(15,23,42,.05);
+  padding:22px 24px;min-width:0;display:flex;flex-direction:column;
+}
+/* Acabamento do card do gráfico — override APENAS do painel esquerdo (o painel direito
+   permanece com a regra compartilhada acima, inalterado). */
+.pf-overview-chart-panel{
+  border-radius:24px;padding:20px 26px;
+  border:1px solid rgba(213,213,208,.55);
+  box-shadow:0 14px 44px rgba(18,18,20,.06),0 2px 8px rgba(18,18,20,.03);
+}
+.pf-overview-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;}
+.pf-overview-titlewrap{display:flex;gap:13px;align-items:flex-start;min-width:0;}
+.pf-overview-title-ico{flex-shrink:0;width:38px;height:38px;border-radius:11px;background:var(--surface-2);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;margin-top:2px;}
+.pf-overview-title-ico svg{width:17px;height:17px;}
+.pf-overview-title{font-size:26px;font-weight:700;letter-spacing:-.03em;color:var(--text-primary);line-height:1.1;margin:0;}
+.pf-overview-sub{font-size:13px;color:var(--text-muted);margin:4px 0 0;line-height:1.45;max-width:46ch;}
+/* Seletor em pílula: wrapper + select + caret SVG separado */
+.pf-overview-pill{position:relative;flex-shrink:0;display:inline-flex;align-items:center;}
+.pf-overview-pill-sel{appearance:none;-webkit-appearance:none;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:9px 34px 9px 17px;font:inherit;font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;box-shadow:var(--shadow-xs);outline:none;transition:border-color .15s,box-shadow .15s;}
+.pf-overview-pill-sel:hover{border-color:var(--text-muted);}
+.pf-overview-pill-sel:focus{border-color:var(--carbon);box-shadow:0 0 0 3px rgba(18,18,20,.08);}
+.pf-overview-pill-caret{position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-muted);}
+/* Legenda — acima do gráfico */
+.pf-overview-legend{display:flex;gap:18px;margin:12px 0 2px;font-size:12px;font-weight:600;color:var(--text-secondary);}
+.pf-overview-legend span{display:inline-flex;align-items:center;gap:7px;}
+.pf-overview-sw{width:9px;height:9px;border-radius:999px;display:inline-block;}
+/* Área do gráfico + trilhos e marcadores */
+.pf-overview-plot{position:relative;flex:1;margin-top:8px;min-height:168px;}
+.pf-overview-svg{width:100%;height:100%;display:block;overflow:visible;}
+.pf-overview-track{stroke:#EAE9E4;stroke-width:3;stroke-linecap:round;transition:stroke .15s;}
+.pf-overview-track.empty{stroke:#F0EFEB;}
+.pf-overview-dot{transition:transform .15s;transform-box:fill-box;transform-origin:center;}
+.pf-overview-col{cursor:pointer;}
+.pf-overview-col:hover .pf-overview-track{stroke:#DEDDD7;}
+.pf-overview-col:hover .pf-overview-dot{transform:scale(1.18);}
+.pf-overview-col:focus-visible{outline:2px solid var(--carbon);outline-offset:2px;}
+.pf-overview-mlab{font-size:10px;font-weight:700;letter-spacing:.01em;font-family:inherit;pointer-events:none;}
+/* Tooltip HTML sobreposto ao SVG */
+.pf-overview-tip{position:absolute;transform:translate(-50%,-112%);background:var(--carbon);color:#fff;padding:8px 11px;border-radius:12px;box-shadow:var(--shadow-lg);pointer-events:none;z-index:3;display:flex;flex-direction:column;gap:4px;min-width:150px;}
+.pf-overview-tip-month{font-size:10.5px;font-weight:700;color:rgba(255,255,255,.58);letter-spacing:.03em;text-transform:uppercase;}
+.pf-overview-tip-row{display:flex;align-items:center;gap:7px;font-size:12.5px;white-space:nowrap;}
+.pf-overview-tip-dot{width:8px;height:8px;border-radius:999px;flex-shrink:0;}
+.pf-overview-tip-lbl{color:rgba(255,255,255,.72);font-weight:600;}
+.pf-overview-tip-val{margin-left:auto;font-weight:700;letter-spacing:-.01em;}
+.pf-overview-tip-arrow{position:absolute;left:50%;bottom:-4px;transform:translateX(-50%) rotate(45deg);width:8px;height:8px;background:var(--carbon);border-radius:1px;}
+/* Variação percentual */
+.pf-overview-foot{margin-top:12px;}
+.pf-overview-var{font-size:34px;font-weight:800;letter-spacing:-.035em;line-height:1;}
+.pf-overview-var.up{color:var(--green);}
+.pf-overview-var.down{color:var(--red);}
+.pf-overview-var.neutral{color:var(--text-muted);font-weight:700;}
+.pf-overview-var-cap{font-size:12.5px;color:var(--text-muted);margin-top:7px;max-width:34ch;line-height:1.4;}
+.pf-overview-legend{display:flex;align-items:center;gap:16px;flex-shrink:0;}
+.pf-overview-legend span{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:var(--text-secondary);}
+.pf-overview-legend i{width:9px;height:9px;border-radius:3px;display:inline-block;flex-shrink:0;}
+.pf-overview-sum-hd{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);}
+.pf-overview-sum-lbl{font-size:12px;font-weight:600;color:var(--text-secondary);margin-top:14px;}
+.pf-overview-sum-val{font-size:34px;font-weight:800;letter-spacing:-.035em;line-height:1.1;color:var(--text-primary);margin-top:5px;word-break:break-word;}
+.pf-overview-sum-cents{color:var(--text-muted);font-weight:700;}
+.pf-overview-badge{display:inline-flex;align-items:center;gap:7px;margin-top:11px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;background:var(--ink-100);color:var(--text-secondary);align-self:flex-start;}
+.pf-overview-badge.up{background:var(--green-light);color:var(--green-dim);}
+.pf-overview-badge.down{background:var(--red-light);color:var(--red-dim);}
+.pf-overview-badge .sep{font-weight:500;opacity:.7;}
+.pf-overview-expense-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px;}
+.pf-overview-expense-card{background:var(--surface-2);border:1px solid var(--border);border-radius:13px;padding:13px 14px;min-width:0;}
+.pf-overview-expense-ico{width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:9px;}
+.pf-overview-expense-ico svg{width:15px;height:15px;}
+.pf-overview-expense-ico.b{background:var(--pfov-blue-soft);color:var(--pfov-blue);}
+.pf-overview-expense-ico.r{background:var(--pfov-red-soft);color:var(--pfov-red);}
+.pf-overview-expense-ico.a{background:var(--amber-light);color:var(--amber-dim);}
+.pf-overview-expense-ico.p{background:var(--petronas-soft);color:var(--petronas-dark);}
+.pf-overview-expense-lbl{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);line-height:1.3;}
+.pf-overview-expense-val{font-size:15px;font-weight:700;letter-spacing:-.02em;color:var(--text-primary);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pf-overview-total{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding-top:13px;border-top:1px solid var(--border);}
+.pf-overview-total-lbl{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);}
+.pf-overview-total-val{font-size:16px;font-weight:800;letter-spacing:-.02em;color:var(--pfov-red);}
+/* Notebook — mantém 60/40 lado a lado, comprime ritmo interno */
+@media(max-width:1280px){
+  .pf-overview-grid{gap:13px;}
+  .pf-overview-chart-panel,.pf-overview-summary-panel{padding:18px 18px;}
+  .pf-overview-sum-val{font-size:29px;}
+  .pf-overview-title{font-size:22px;}
+  .pf-overview-var{font-size:30px;}
+}
+/* Tablet e telas estreitas — empilha: gráfico primeiro, resumo depois */
+@media(max-width:1024px){
+  .pf-overview-grid{grid-template-columns:1fr;}
+}
+/* Mobile — subcards em coluna única */
+@media(max-width:560px){
+  .pf-overview-expense-grid{grid-template-columns:1fr;}
+  .pf-overview-sum-val{font-size:26px;}
+  .pf-overview-title{font-size:20px;}
+  .pf-overview-title-ico{width:32px;height:32px;border-radius:9px;}
+  .pf-overview-var{font-size:28px;}
+  .pf-overview-var-cap{max-width:none;}
+  .pf-overview-legend{gap:14px;}
+  .pf-overview-tip{min-width:0;padding:7px 9px;}
+  .pf-overview-tip-row{font-size:11.5px;}
+}
+
+/* ══════════════════════════════════════════════════════
    PORTFÓLIO — REDESIGN EXECUTIVO (PRX)
    ══════════════════════════════════════════════════════ */
 .pf-subtitle{font-size:12.5px;color:var(--text-muted);font-weight:500;margin:-6px 0 4px;}
@@ -4964,6 +5079,373 @@ const PFIcon={
   search:(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>)
 };
 
+// ══════════════════════════════════════════════════════════════
+// PRIMEIRA CAMADA DO PORTFÓLIO — VISÃO GERAL (gráfico + resumo)
+// Camada VISUAL isolada. Não lê, não escreve e não interfere em:
+// kpisPortfolio, cards de unidade, comparação, Supabase, localStorage,
+// criação/exclusão/seleção de unidade ou qualquer outra aba.
+// ══════════════════════════════════════════════════════════════
+
+// Série mensal VAZIA (Jan..Dez) — estado inicial e fallback real. `faturamento:null` marca
+// "mês sem lançamentos" e aciona o estado visual de ausência de dados já implementado.
+// NÃO é mock: não carrega valor algum, apenas a moldura de 12 meses.
+const pfOvSerieVazia=()=>MONTHS_SHORT.map((m,i)=>({
+  mes:m,mesCompleto:MONTHS[i],
+  faturamento:null,despesaFixa:0,despesaVariavel:0,despesaFornecedores:0,despesaFinanceira:0,
+}));
+
+// Índice do mês (0..11) de uma data 'YYYY-MM-DD' dentro do ano informado; -1 se for de outro ano.
+// Comparação por string, sem Date — mesma abordagem usada no resto do sistema (sem fuso horário).
+const pfOvMesDe=(data,ano)=>{
+  if(!data||typeof data!=='string')return -1;
+  const partes=data.split('-');
+  if(Number(partes[0])!==Number(ano))return -1;
+  const mi=Number(partes[1])-1;
+  return (mi>=0&&mi<=11)?mi:-1;
+};
+
+// Consolida os 12 meses do ano a partir das fontes REAIS, replicando as réguas já existentes:
+//  • Faturamento  = soma de entradas.total com `data` dentro do mês — mesma regra do Painel do
+//                   Dono (linhas 2046-2047) e do KPI totalEntradas do Portfólio (linha 6181).
+//  • Despesas     = mergeContasComParcelas(contas,dividas) POR EMPRESA, filtrado por `vencimento`
+//                   dentro do mês — mesma regra de totalDespesasPeriodo (linha 6189).
+//  • Categorias   = classificação por `tipoDespesa` com o MESMO fallback do Painel do Dono
+//                   (linha 2106): tipo ausente ou desconhecido cai em 'Variável'.
+// SEM DUPLA CONTAGEM: as parcelas de dívidas já entram no merge como tipoDespesa 'Financeira'
+// (linha 4583), por isso `dividas` nunca é somada separadamente.
+const buildPortfolioMonthlyData=(ano,ids,rawEnt,rawCon,rawDiv)=>{
+  const serie=pfOvSerieVazia();
+  const entPorMes=serie.map(()=>0);
+  const qtdRegistros=serie.map(()=>0); // 0 = mês sem nenhum lançamento real
+  (rawEnt||[]).forEach(r=>{
+    const mi=pfOvMesDe(r.data,ano);
+    if(mi<0)return;
+    entPorMes[mi]+=Number(r.total)||0;
+    qtdRegistros[mi]++;
+  });
+  (ids||[]).forEach(id=>{
+    // Merge por empresa (nunca cruzando unidades) — igual ao consolidado do Portfólio.
+    const con=(rawCon||[]).filter(r=>r.empresa_id===id);
+    const div=(rawDiv||[]).filter(r=>r.empresa_id===id);
+    mergeContasComParcelas(con,div).forEach(r=>{
+      const mi=pfOvMesDe(r.vencimento,ano);
+      if(mi<0)return;
+      const t=r.tipoDespesa||'Variável';
+      const campo=t==='Fixa'?'despesaFixa':t==='Fornecedor'?'despesaFornecedores':t==='Financeira'?'despesaFinanceira':'despesaVariavel';
+      serie[mi][campo]+=Number(r.valor)||0;
+      qtdRegistros[mi]++;
+    });
+  });
+  serie.forEach((m,i)=>{
+    if(qtdRegistros[i]===0)return; // permanece com faturamento null → estado visual de "sem dados"
+    m.faturamento=pfOvCents(entPorMes[i]);
+    m.despesaFixa=pfOvCents(m.despesaFixa);
+    m.despesaVariavel=pfOvCents(m.despesaVariavel);
+    m.despesaFornecedores=pfOvCents(m.despesaFornecedores);
+    m.despesaFinanceira=pfOvCents(m.despesaFinanceira);
+  });
+  return serie;
+};
+
+// Arredonda para centavos — elimina o resíduo binário do float e garante que a soma dos quatro
+// subcards seja EXATAMENTE igual ao total exibido e à barra vermelha do gráfico.
+const pfOvCents=v=>Math.round((Number(v)||0)*100)/100;
+// FONTE ÚNICA do total de despesas do mês: usado pela barra vermelha, pelo total do resumo e
+// pela conferência dos subcards. Nenhum outro lugar recalcula despesas nesta camada.
+const getDespesasTotais=item=>pfOvCents((item?.despesaFixa||0)+(item?.despesaVariavel||0)+(item?.despesaFornecedores||0)+(item?.despesaFinanceira||0));
+// Retorna null (estado neutro) quando não há base comparável — evita NaN e Infinity.
+const getVariacaoPercentual=(atual,anterior)=>{
+  if(anterior===null||anterior===undefined)return null;
+  const base=Number(anterior);
+  if(!Number.isFinite(base)||base<=0)return null;
+  const v=((Number(atual)-base)/base)*100;
+  return Number.isFinite(v)?v:null;
+};
+const getDeltaMonetario=(atual,anterior)=>{
+  if(anterior===null||anterior===undefined)return null;
+  const base=Number(anterior);
+  if(!Number.isFinite(base))return null;
+  const d=pfOvCents(Number(atual)-base);
+  return Number.isFinite(d)?d:null;
+};
+// Separa visualmente inteiro/centavos SEM quebrar a localização: formata em pt-BR primeiro
+// (formatCurrencyBR já existente) e corta na última vírgula, que é o separador decimal do locale.
+const splitCurrencyBRParts=valor=>{
+  const s=formatCurrencyBR(valor);
+  const i=s.lastIndexOf(',');
+  return i===-1?{inteiro:s,centavos:''}:{inteiro:s.slice(0,i),centavos:s.slice(i)};
+};
+
+// Ícones dos subcards — SVG inline no mesmo traço dos ícones já usados no sistema (sem emoji).
+const PFOverviewIcon={
+  fixa:(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M10 21v-5h4v5"/></svg>),
+  variavel:(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h4l3 7 4-14 3 7h4"/></svg>),
+  fornecedores:(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7h11v10H3z"/><path d="M14 10h4l3 3v4h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>),
+  financeira:(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 10l9-5 9 5"/><path d="M5 10v8M19 10v8M9 10v8M15 10v8"/><path d="M3 21h18"/></svg>),
+  grafico:(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 16V11M12 16V8M16 16v-3"/></svg>),
+};
+
+// Geometria do gráfico — viewBox fixo + width:100% no CSS = escala responsiva sem largura rígida.
+// Valores replicados do design aprovado (PRX FLUXO DE CAIXA - 85.html):
+// trilhos verticais do topo à base, marcador circular na altura do valor, rótulo do mês em círculo.
+const PF_OV_CHART={
+  w:680,h:214,padT:40,padB:42,padL:16,padR:16,
+  off:8,          // afastamento das duas hastes (Faturamento à esquerda, Despesas à direita)
+  raioDot:5,      // marcador no topo da haste
+  raioLab:13,     // círculo do rótulo do mês
+  folgaTopo:1.3,  // headroom da escala — mantém os marcadores longe da borda superior
+};
+
+function PortfolioOverview({mesInicial,empresas,ano}){
+  // ÚNICO estado de mês desta camada (0..11) — fonte de verdade do gráfico, do tooltip,
+  // da variação, do resumo e dos quatro subcards. Puramente local: não toca selMonth/selYear
+  // globais, portanto não afeta nada abaixo desta seção.
+  const[mesIdx,setMesIdx]=useState(()=>{
+    const n=Number(mesInicial);
+    return Number.isInteger(n)&&n>=0&&n<=11?n:new Date().getMonth();
+  });
+  // Série mensal REAL. Estado inicial = 12 meses vazios (nunca valores fictícios).
+  const[serie,setSerie]=useState(pfOvSerieVazia);
+  const idsChave=(empresas||[]).map(e=>e.id).filter(Boolean).join(',');
+  // Carrega UMA vez por (ano × conjunto de unidades) — trocar o mês não refaz consulta.
+  // Reaproveita o cliente, os filtros por empresa_id, a paginação e a ordenação determinística
+  // já existentes (fetchAllPages + .order('id')), sem tocar em nenhuma query do sistema.
+  useEffect(()=>{
+    const ids=idsChave?idsChave.split(','):[];
+    if(!ids.length){setSerie(pfOvSerieVazia());return;}
+    let cancelado=false; // descarta resposta antiga ao trocar de ano/cliente (evita corrida)
+    (async()=>{
+      try{
+        const aStart=`${ano}-01-01`,aEnd=`${ano}-12-31`;
+        // contas/dividas SEM filtro de data: mergeContasComParcelas precisa do histórico completo
+        // (uma dívida ou fixa de meses atrás gera parcela dentro do ano exibido) — mesma exigência
+        // já aplicada no consolidado do Portfólio e no Painel do Dono.
+        const[rawEnt,rawCon,rawDiv]=await Promise.all([
+          fetchAllPages((from,to)=>supabase.from('entradas').select('empresa_id,total,data').in('empresa_id',ids).gte('data',aStart).lte('data',aEnd).order('id',{ascending:true}).range(from,to),'overviewMensal:entradas'),
+          fetchAllPages((from,to)=>supabase.from('contas').select('id,empresa_id,valor,status,vencimento,tipoDespesa,dividaVinculadaId,descricao').in('empresa_id',ids).order('id',{ascending:true}).range(from,to),'overviewMensal:contas'),
+          fetchAllPages((from,to)=>supabase.from('dividas').select('id,empresa_id,parcelaMensal,status,vencimento,valorUtilizado,banco,tipo,quitada_em').in('empresa_id',ids).in('status',['Ativa','Quitada']).order('id',{ascending:true}).range(from,to),'overviewMensal:dividas'),
+        ]);
+        if(cancelado)return;
+        setSerie(buildPortfolioMonthlyData(ano,ids,rawEnt,rawCon,rawDiv));
+      }catch(err){
+        if(cancelado)return;
+        // Mantém a última série válida; nunca cai em valores fictícios.
+        console.error('Erro ao carregar a série mensal do Portfólio:',err);
+      }
+    })();
+    return()=>{cancelado=true;};
+  },[ano,idsChave]);
+  // Mês "com dados" = faturamento informado. A série atual do index.html tem os 12 meses
+  // preenchidos, então o estado vazio nunca dispara — o tratamento visual existe para quando a
+  // fonte real entrar. Nenhum mês fictício, null ou valor do arquivo 85 foi introduzido.
+  const temDados=x=>!!x&&x.faturamento!=null;
+  const preenchidos=serie.map((x,i)=>temDados(x)?i:-1).filter(i=>i>=0);
+  // Mês ativo: o selecionado se tiver dados; senão, o último preenchido (evita seleção inválida).
+  const idx=temDados(serie[mesIdx])?mesIdx:(preenchidos.length?preenchidos[preenchidos.length-1]:0);
+  const atual=serie[idx];
+  // Mês preenchido imediatamente anterior ao ativo — base da variação.
+  const antesDoAtivo=preenchidos.filter(m=>m<idx);
+  const pIdx=antesDoAtivo.length?antesDoAtivo[antesDoAtivo.length-1]:null;
+  const anterior=pIdx!=null?serie[pIdx]:null;
+  const despesasAtual=getDespesasTotais(atual);
+  const variacao=getVariacaoPercentual(atual.faturamento,anterior?anterior.faturamento:null);
+  const delta=getDeltaMonetario(atual.faturamento,anterior?anterior.faturamento:null);
+  const valorPartes=splitCurrencyBRParts(atual.faturamento);
+
+  // Escala vertical dinâmica sobre o maior valor entre os meses PREENCHIDOS (faturamento OU
+  // despesas), com folga no topo (×1.3, como no arquivo 85). Base ZERO — eixo nunca truncado.
+  const G=PF_OV_CHART;
+  const plotH=G.h-G.padT-G.padB;
+  const baseY=G.padT+plotH;
+  const labY=baseY+24;                       // centro dos círculos de rótulo
+  const slotW=(G.w-G.padL-G.padR)/serie.length;
+  const maxSerie=preenchidos.reduce((m,i)=>Math.max(m,Number(serie[i].faturamento)||0,getDespesasTotais(serie[i])),0);
+  const escala=(maxSerie>0?maxSerie:1)*G.folgaTopo; // nunca divide por zero
+  const cxOf=i=>G.padL+slotW*i+slotW/2;
+  const yOf=v=>G.padT+plotH-(Math.max(0,Number(v)||0)/escala)*plotH;
+
+  // Tooltip HTML sobreposto ao SVG — posicionado em % e travado entre 17% e 83% da largura,
+  // para não vazar do painel quando o primeiro ou o último mês está selecionado.
+  const tipLeft=Math.min(Math.max(cxOf(idx)/G.w*100,17),83);
+  const tipTop=yOf(Math.max(atual.faturamento,despesasAtual))/G.h*100;
+
+  const varPos=variacao!=null&&variacao>=0;
+  const badgeClasse=delta===null?'':(delta>0?'up':delta<0?'down':'');
+  const badgeSeta=delta===null?'—':(delta>0?'↑':delta<0?'↓':'→');
+
+  const subcards=[
+    {chave:'fixa',        lbl:'Despesas Fixas',           valor:atual.despesaFixa,         ico:PFOverviewIcon.fixa,         tom:'b'},
+    {chave:'variavel',    lbl:'Despesas Variáveis',       valor:atual.despesaVariavel,     ico:PFOverviewIcon.variavel,     tom:'a'},
+    {chave:'fornecedores',lbl:'Despesas c/ Fornecedores', valor:atual.despesaFornecedores, ico:PFOverviewIcon.fornecedores, tom:'p'},
+    {chave:'financeira',  lbl:'Despesas Financeiras',     valor:atual.despesaFinanceira,   ico:PFOverviewIcon.financeira,   tom:'r'},
+  ];
+
+  return(
+    <div className="pf-overview-grid">
+      {/* ── PAINEL ESQUERDO — FATURAMENTO VS DESPESAS ── */}
+      <section className="pf-overview-chart-panel">
+        <header className="pf-overview-hd">
+          <div className="pf-overview-titlewrap">
+            <div className="pf-overview-title-ico" aria-hidden="true">{PFOverviewIcon.grafico}</div>
+            <div style={{minWidth:0}}>
+              <h3 className="pf-overview-title">Faturamento vs Despesas</h3>
+              <p className="pf-overview-sub">Faturamento e despesas consolidadas de todas as unidades, mês a mês.</p>
+            </div>
+          </div>
+          <div className="pf-overview-pill">
+            <select
+              className="pf-overview-pill-sel"
+              aria-label="Mês em destaque no gráfico de faturamento e despesas"
+              value={idx}
+              onChange={e=>setMesIdx(parseInt(e.target.value,10))}
+            >
+              {preenchidos.map(i=><option key={i} value={i}>{MONTHS[i]}</option>)}
+            </select>
+            <svg className="pf-overview-pill-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+        </header>
+
+        <div className="pf-overview-legend">
+          <span><i className="pf-overview-sw" style={{background:'var(--green)'}}></i>Faturamento</span>
+          <span><i className="pf-overview-sw" style={{background:'var(--red)'}}></i>Despesas</span>
+        </div>
+
+        <div className="pf-overview-plot">
+          <svg
+            className="pf-overview-svg"
+            viewBox={`0 0 ${G.w} ${G.h}`}
+            preserveAspectRatio="xMidYMid meet"
+            role="img"
+            aria-labelledby="pfOvChartTitle pfOvChartDesc"
+          >
+            <title id="pfOvChartTitle">Faturamento e despesas consolidadas por mês</title>
+            <desc id="pfOvChartDesc">
+              {`Mês em destaque: ${atual.mesCompleto}. Faturamento ${formatCurrencyBR(atual.faturamento)}. Despesas ${formatCurrencyBR(despesasAtual)}.`}
+            </desc>
+
+            <defs>
+              {/* Halos verticais em degradê, um por série, atrás do mês selecionado */}
+              <linearGradient id="pfOvGradFat" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="var(--green)" stopOpacity="0.30"/>
+                <stop offset="1" stopColor="var(--green)" stopOpacity="0"/>
+              </linearGradient>
+              <linearGradient id="pfOvGradDesp" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="var(--red)" stopOpacity="0.26"/>
+                <stop offset="1" stopColor="var(--red)" stopOpacity="0"/>
+              </linearGradient>
+            </defs>
+
+            {serie.map((it,i)=>{
+              const cx=cxOf(i);
+              // Mês SEM lançamentos: trilhos e círculo esmaecidos, sem marcadores e não selecionável.
+              if(!temDados(it)){
+                return(
+                  <g key={it.mes}>
+                    <line className="pf-overview-track empty" x1={cx} y1={G.padT} x2={cx} y2={baseY}/>
+                    <circle cx={cx} cy={labY} r={G.raioLab} fill="var(--surface-2)" opacity="0.55"/>
+                    <text x={cx} y={labY} textAnchor="middle" dominantBaseline="central" className="pf-overview-mlab" fill="var(--text-muted)" opacity="0.55">{it.mes}</text>
+                  </g>
+                );
+              }
+              const dv=getDespesasTotais(it);
+              const sel=i===idx;
+              const fX=cx-G.off, dX=cx+G.off;
+              const fY=yOf(it.faturamento), dY=yOf(dv);
+              return(
+                <g key={it.mes} className="pf-overview-col"
+                  tabIndex={0} role="button"
+                  aria-label={`${it.mesCompleto}: faturamento ${formatCurrencyBR(it.faturamento)}, despesas ${formatCurrencyBR(dv)}`}
+                  aria-pressed={sel}
+                  onClick={()=>setMesIdx(i)}
+                  onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setMesIdx(i);}}}
+                >
+                  {sel&&(<>
+                    <rect x={fX-8} y={fY-8} width="16" height={baseY-(fY-8)} rx="8" fill="url(#pfOvGradFat)"/>
+                    <rect x={dX-8} y={dY-8} width="16" height={baseY-(dY-8)} rx="8" fill="url(#pfOvGradDesp)"/>
+                    <circle cx={fX} cy={fY} r="10" fill="var(--green)" opacity="0.14"/>
+                    <circle cx={dX} cy={dY} r="10" fill="var(--red)" opacity="0.12"/>
+                  </>)}
+                  {/* Trilhos verticais finos (Faturamento e Despesas, lado a lado) */}
+                  <line className="pf-overview-track" x1={fX} y1={G.padT} x2={fX} y2={baseY}/>
+                  <line className="pf-overview-track" x1={dX} y1={G.padT} x2={dX} y2={baseY}/>
+                  {/* Marcadores arredondados na altura do valor */}
+                  <circle className="pf-overview-dot" cx={fX} cy={fY} r={G.raioDot} fill="var(--green)"/>
+                  <circle className="pf-overview-dot" cx={dX} cy={dY} r={G.raioDot} fill="var(--red)"/>
+                  {/* Rótulo do mês em círculo (escuro se ativo, cinza-claro caso contrário) */}
+                  <circle cx={cx} cy={labY} r={G.raioLab} fill={sel?'var(--carbon)':'var(--surface-2)'}/>
+                  <text x={cx} y={labY} textAnchor="middle" dominantBaseline="central" className="pf-overview-mlab" fill={sel?'#fff':'var(--text-secondary)'}>{it.mes}</text>
+                  {/* Área de toque ampliada */}
+                  <rect x={cx-slotW/2} y={G.padT-16} width={slotW} height={plotH+50} fill="transparent"/>
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* Tooltip escuro (chip carbon) — Faturamento e Despesas do mês selecionado */}
+          <div className="pf-overview-tip" style={{left:tipLeft+'%',top:tipTop+'%'}}>
+            <div className="pf-overview-tip-month">{MONTHS[idx]}</div>
+            <div className="pf-overview-tip-row">
+              <i className="pf-overview-tip-dot" style={{background:'var(--green-mid)'}}></i>
+              <span className="pf-overview-tip-lbl">Faturamento</span>
+              <span className="pf-overview-tip-val">{formatCurrencyBR(atual.faturamento)}</span>
+            </div>
+            <div className="pf-overview-tip-row">
+              <i className="pf-overview-tip-dot" style={{background:'#f87171'}}></i>
+              <span className="pf-overview-tip-lbl">Despesas</span>
+              <span className="pf-overview-tip-val">{formatCurrencyBR(despesasAtual)}</span>
+            </div>
+            <span className="pf-overview-tip-arrow"></span>
+          </div>
+        </div>
+
+        {/* Indicador grande de variação (canto inferior esquerdo) */}
+        <footer className="pf-overview-foot">
+          {variacao!==null?(
+            <>
+              <div className={varPos?'pf-overview-var up':'pf-overview-var down'}>{varPos?'+':''}{formatPercentBR(variacao)}</div>
+              <div className="pf-overview-var-cap">Faturamento de {MONTHS[idx].toLowerCase()} vs {MONTHS[pIdx].toLowerCase()}</div>
+            </>
+          ):(
+            <>
+              <div className="pf-overview-var neutral">—</div>
+              <div className="pf-overview-var-cap">Primeiro mês com dados — sem mês anterior para comparar</div>
+            </>
+          )}
+        </footer>
+      </section>
+
+      {/* ── PAINEL DIREITO — RESUMO DO MÊS ── */}
+      <section className="pf-overview-summary-panel">
+        <div className="pf-overview-sum-hd">Resumo de {atual.mesCompleto}</div>
+        <div className="pf-overview-sum-lbl">Faturamento consolidado</div>
+        <div className="pf-overview-sum-val">
+          {valorPartes.inteiro}<span className="pf-overview-sum-cents">{valorPartes.centavos}</span>
+        </div>
+        <div className={`pf-overview-badge ${badgeClasse}`}>
+          <span>{badgeSeta} {delta===null?'sem base comparável':formatCurrencyBR(Math.abs(delta))}</span>
+          <span className="sep">·</span>
+          <span className="sep">vs. mês anterior</span>
+        </div>
+
+        <div className="pf-overview-expense-grid">
+          {subcards.map(c=>(
+            <div className="pf-overview-expense-card" key={c.chave}>
+              <div className={`pf-overview-expense-ico ${c.tom}`}>{c.ico}</div>
+              <div className="pf-overview-expense-lbl">{c.lbl}</div>
+              <div className="pf-overview-expense-val" title={formatCurrencyBR(c.valor)}>{formatCurrencyBR(c.valor)}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="pf-overview-total">
+          <span className="pf-overview-total-lbl">Despesas totais</span>
+          <span className="pf-overview-total-val">{formatCurrencyBR(despesasAtual)}</span>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function UnitCard({unit,selYear,selMonth,onSelect,isActive,kpisPortfolio,onExcluir,canDelete,isMain}){
   const k=calcUnitKPIs(unit,kpisPortfolio);
   const mesLabel=MONTHS[selMonth]+' '+selYear;
@@ -5254,80 +5736,8 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
         </div>
       ):(
         <>
-          {/* ── VISÃO CONSOLIDADA DO PORTFÓLIO ── */}
-          <div className="pf-section-hdr">
-            <div className="pf-section-title">Visão Consolidada do Portfólio</div>
-            <div className="comp-panel-periodo">{mesLabel}</div>
-          </div>
-          <div className="pf-consol">
-            {/* Card principal — Saldo Projetado (cor dinâmica) */}
-            <div className={`pf-kpi pf-kpi-main ${consolTone}`}>
-              <div className="pf-kpi-head">
-                <div className={`pf-kpi-ico ${consolTone}`}>{PFIcon.saldo}</div>
-                <div style={{minWidth:0}}>
-                  <div className="pf-kpi-label">Saldo Projetado Consolidado</div>
-                  <span className={`pf-pill ${consolStatus.key}`} style={{marginTop:4}}><span className="dot"></span>{consolStatus.label}</span>
-                </div>
-              </div>
-              <div className={`pf-main-val ${consolTone}`}>{fmt(consol.saldoProjetado)}</div>
-              {compTotal>0&&(
-                <>
-                  <div className="pf-comp">
-                    <div className="pf-comp-bar">
-                      <div className="ent" style={{width:entPctBar+'%'}}></div>
-                      <div className="sai" style={{width:saiPctBar+'%'}}></div>
-                    </div>
-                  </div>
-                  <div className="pf-comp-legend">
-                    <span><span className="dot" style={{background:'var(--green)'}}></span>Entradas {Math.round(entPctBar)}%</span>
-                    <span><span className="dot" style={{background:'var(--red)'}}></span>Contas a pagar {Math.round(saiPctBar)}%</span>
-                  </div>
-                </>
-              )}
-              <div className="pf-kpi-sub">Saldo inicial + entradas − contas a pagar − retiradas, somado entre as unidades.</div>
-            </div>
-
-            {/* Entradas — verde */}
-            <div className="pf-kpi g">
-              <div className="pf-kpi-head">
-                <div className="pf-kpi-ico g">{PFIcon.ent}</div>
-                <div className="pf-kpi-label">Entradas Consolidadas</div>
-              </div>
-              <div className={`pf-kpi-val ${consol.totalEntradas>0?'g':''}`}>{fmt(consol.totalEntradas)}</div>
-              <div className="pf-kpi-sub">{bestEntradaUnit?<>Maior entrada: <strong>{bestEntradaUnit.nome}</strong></>:'Somatório de todas as unidades'}</div>
-            </div>
-
-            {/* Contas a Pagar — vermelho (Fornecedores exibido como informação complementar, sem somar de novo) */}
-            <div className="pf-kpi r">
-              <div className="pf-kpi-head">
-                <div className="pf-kpi-ico r">{PFIcon.sai}</div>
-                <div className="pf-kpi-label">Despesas Consolidadas</div>
-              </div>
-              <div className={`pf-kpi-val ${consol.totalContasAbertas>0?'r':''}`}>{fmt(consol.totalContasAbertas)}</div>
-              <div className="pf-metric" style={{marginTop:8}}>
-                <div className="pf-metric-top"><span className="pf-metric-lbl">Fornecedores</span>
-                  <span className={`pf-metric-val ${consol.totalFornecedores>0?'p':'muted'}`}>{fmt(consol.totalFornecedores)}</span></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Insights discretos: melhor unidade e a que exige atenção */}
-          {comMov.length>0&&(bestUnit||worstUnit)&&(
-            <div className="pf-insights">
-              {bestUnit&&(
-                <div className="pf-insight best">
-                  <span className="dot" style={{background:'var(--green)'}}></span>
-                  Melhor saldo: <strong>{bestUnit.nome}</strong> <span className="v">{fmt(bestUnit.kpi.saldoProjetado)}</span>
-                </div>
-              )}
-              {worstUnit&&(!bestUnit||worstUnit.id!==bestUnit.id)&&(
-                <div className="pf-insight warn">
-                  <span className="dot" style={{background:'var(--amber)'}}></span>
-                  Exige atenção: <strong>{worstUnit.nome}</strong> <span className="v">{fmt(worstUnit.kpi.saldoProjetado)}</span>
-                </div>
-              )}
-            </div>
-          )}
+          {/* ── VISÃO GERAL DO PORTFÓLIO (primeira camada) ── */}
+          <PortfolioOverview mesInicial={selMonth} empresas={empresas} ano={selYear}/>
 
           {/* ── COMPARAÇÃO ENTRE UNIDADES ── */}
           <div className="pf-section-hdr">
