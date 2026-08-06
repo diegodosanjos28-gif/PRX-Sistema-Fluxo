@@ -5402,7 +5402,7 @@ function PortfolioOverview({mesInicial,empresas,ano}){
             </desc>
 
             <defs>
-              {/* Halos verticais em degradê, um por série, atrás do mês selecionado */}
+              {/* Halos verticais em degradê, um por série, atrás de cada mês com valor */}
               <linearGradient id="pfOvGradFat" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0" stopColor="var(--green)" stopOpacity="0.30"/>
                 <stop offset="1" stopColor="var(--green)" stopOpacity="0"/>
@@ -5437,9 +5437,15 @@ function PortfolioOverview({mesInicial,empresas,ano}){
                   onClick={()=>setMesIdx(i)}
                   onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setMesIdx(i);}}}
                 >
-                  {sel&&(<>
+                  {/* Faixas coloridas: visíveis sempre que houver valor, independentemente da seleção */}
+                  {Number(it.faturamento)>0&&(
                     <rect x={fX-8} y={fY-8} width="16" height={baseY-(fY-8)} rx="8" fill="url(#pfOvGradFat)"/>
+                  )}
+                  {Number(dv)>0&&(
                     <rect x={dX-8} y={dY-8} width="16" height={baseY-(dY-8)} rx="8" fill="url(#pfOvGradDesp)"/>
+                  )}
+                  {/* Auréolas — destaque exclusivo do mês selecionado */}
+                  {sel&&(<>
                     <circle cx={fX} cy={fY} r="10" fill="var(--green)" opacity="0.14"/>
                     <circle cx={dX} cy={dY} r="10" fill="var(--red)" opacity="0.12"/>
                   </>)}
