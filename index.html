@@ -6969,6 +6969,10 @@ function App(){
   };
 
   const handleLogout=async()=>{await supabase.auth.signOut();setAutenticado(false);EMPRESA_ID=null;};
+  // Volta ao EmpresaSelector já existente, sem logout: reproduz o mesmo par de estados que o
+  // login do PRX produz. `autenticado:false` é indispensável — é a transição false→true, no
+  // onSelect, que faz o useEffect de carregamento recarregar os dados do novo cliente.
+  const handleTrocarEmpresa=()=>{setAutenticado(false);setAguardandoSelecaoEmpresa(true);};
   // Mescla contas manuais + parcelas automáticas de dívidas
   const contasComParcelas=mergeContasComParcelas(contas,dividas);
   const hoje=today();
@@ -7070,6 +7074,12 @@ function App(){
         <div className="hdr-right">
           {isSaving&&<span style={{fontSize:'11px',color:'var(--petronas)',fontWeight:'600',letterSpacing:'.04em',animation:'pulse 1s ease-in-out infinite'}}>💾 Salvando…<style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style></span>}
           <span className="hdr-date">{nowStr}</span>
+          {roleGlobal==='prx_admin'&&(
+            <button className="hdr-clear" onClick={handleTrocarEmpresa} title="Voltar à seleção de cliente" aria-label="Trocar empresa">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+              Trocar empresa
+            </button>
+          )}
           <button className="hdr-clear" onClick={handleLogout} title="Sair do sistema">⏏ Sair</button>
         </div>
       </header>
