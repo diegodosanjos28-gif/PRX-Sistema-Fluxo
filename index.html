@@ -146,6 +146,13 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 .page-hdr-shortcut{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.04em;cursor:pointer;border:1px solid rgba(232,118,10,.30);background:var(--papaya-soft);color:var(--papaya-dark);font-family:'DM Sans',sans-serif;transition:all .15s;box-shadow:var(--shadow-xs);white-space:nowrap;}
 .page-hdr-shortcut:hover{background:rgba(232,118,10,.17);color:var(--papaya-dark);border-color:rgba(232,118,10,.45);}
 .page-hdr-shortcut.active{background:var(--papaya);color:#fff;border-color:var(--papaya);}
+/* Acesso compacto à aba Projeção, ao lado do ícone de Portfólio no header.
+   Chumbo sobre o header carbon: base em --carbon-soft, realces na mesma
+   linguagem rgba já usada pelo botão de Portfólio. Classe exclusiva. */
+.prx-proj-nav{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:6px;flex-shrink:0;padding:0;cursor:pointer;background:var(--carbon-soft);border:1px solid var(--header-border);color:rgba(255,255,255,.55);transition:all .15s;}
+.prx-proj-nav:hover{background:rgba(255,255,255,.13);color:var(--header-text);border-color:rgba(255,255,255,.22);}
+.prx-proj-nav.active{background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.34);}
+.prx-proj-nav:focus-visible{outline:2px solid var(--header-text);outline-offset:2px;}
 /* Logo PRX no canto direito da linha interna */
 .page-hdr-prx{display:inline-flex;align-items:center;height:30px;opacity:.88;}
 .page-hdr-prx img{height:30px;width:auto;display:block;}
@@ -955,6 +962,166 @@ textarea{resize:vertical;min-height:58px;}
 }
 
 /* ══════════════════════════════════════════════════════
+   ABA PROJEÇÃO — FLUXO DE CAIXA CONSOLIDADO — CSS ISOLADO
+   Prefixo exclusivo prx-proj-. Nenhum seletor global.
+   ══════════════════════════════════════════════════════ */
+.prx-proj-wrap{display:flex;flex-direction:column;gap:14px;}
+.prx-proj-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+.prx-proj-title{font-size:24px;font-weight:800;letter-spacing:-.03em;color:var(--text-primary);margin:0;line-height:1.1;}
+.prx-proj-sub{font-size:12.5px;color:var(--text-muted);margin:5px 0 0;line-height:1.45;}
+.prx-proj-horizonte{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:3px;flex-shrink:0;}
+.prx-proj-horizonte button{font-family:inherit;font-size:12px;font-weight:700;color:var(--text-muted);background:transparent;border:none;border-radius:999px;padding:7px 15px;cursor:pointer;transition:background .15s,color .15s;}
+.prx-proj-horizonte button.on{background:var(--carbon);color:#fff;}
+.prx-proj-horizonte button:focus-visible{outline:2px solid var(--carbon);outline-offset:2px;}
+
+.prx-proj-vazio{background:var(--surface);border:1px dashed var(--border);border-radius:16px;padding:34px 22px;text-align:center;font-size:13px;color:var(--text-muted);}
+.prx-proj-vazio.erro{border-color:#fca5a5;color:var(--red-dim);background:var(--red-light);}
+.prx-proj-vazio.aviso{border-color:var(--amber);color:var(--amber-dim);background:var(--amber-light);}
+
+.prx-proj-saldo-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px 18px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:var(--shadow-xs);}
+.prx-proj-saldo-box.vazio{border-color:rgba(232,118,10,.35);background:var(--papaya-soft);}
+.prx-proj-saldo-txt{min-width:220px;flex:1;}
+.prx-proj-saldo-txt strong{display:block;font-size:13.5px;font-weight:700;color:var(--text-primary);}
+.prx-proj-saldo-txt span{display:block;font-size:11.5px;color:var(--text-muted);margin-top:3px;line-height:1.45;max-width:56ch;}
+.prx-proj-saldo-form{display:flex;align-items:flex-end;gap:9px;flex-wrap:wrap;}
+.prx-proj-saldo-form label{display:flex;flex-direction:column;gap:4px;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);}
+.prx-proj-saldo-form input{font-family:inherit;font-size:13px;font-weight:600;color:var(--text-primary);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;outline:none;min-width:150px;}
+.prx-proj-saldo-form input:focus{border-color:var(--carbon);box-shadow:0 0 0 3px rgba(18,18,20,.08);}
+.prx-proj-btn{font-family:inherit;font-size:12.5px;font-weight:700;color:#fff;background:var(--carbon);border:1px solid var(--carbon);border-radius:8px;padding:9px 18px;cursor:pointer;transition:opacity .15s;}
+.prx-proj-btn:hover{opacity:.88;}
+.prx-proj-btn:disabled{opacity:.5;cursor:not-allowed;}
+.prx-proj-btn.ghost{background:transparent;color:var(--text-secondary);border-color:var(--border);}
+.prx-proj-link{font-family:inherit;font-size:inherit;font-weight:700;color:var(--papaya-dark);background:none;border:none;padding:0;cursor:pointer;text-decoration:underline;}
+.prx-proj-aviso{font-size:12px;font-weight:600;border-radius:10px;padding:9px 13px;}
+.prx-proj-aviso.ok{background:var(--green-light);color:var(--green-dim);}
+.prx-proj-aviso.erro{background:var(--red-light);color:var(--red-dim);}
+.prx-proj-aviso.ro{background:var(--amber-light);color:var(--amber-dim);}
+
+/* HERO */
+.prx-proj-hero{display:flex;align-items:stretch;justify-content:space-between;gap:22px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px 26px;box-shadow:0 14px 44px rgba(18,18,20,.06),0 2px 8px rgba(18,18,20,.03);border-left:5px solid var(--ink-300);}
+.prx-proj-hero.ok{border-left-color:var(--green);}
+.prx-proj-hero.warn{border-left-color:var(--amber);}
+.prx-proj-hero.danger{border-left-color:var(--red);}
+.prx-proj-hero-main{min-width:0;flex:1;}
+.prx-proj-hero-vered{font-size:16px;font-weight:700;color:var(--text-primary);letter-spacing:-.015em;line-height:1.3;}
+.prx-proj-hero-num{font-size:42px;font-weight:800;letter-spacing:-.04em;line-height:1.05;margin-top:8px;color:var(--text-primary);}
+.prx-proj-hero.ok .prx-proj-hero-num{color:var(--green-dim);}
+.prx-proj-hero.warn .prx-proj-hero-num{color:var(--amber-dim);}
+.prx-proj-hero.danger .prx-proj-hero-num{color:var(--red);}
+.prx-proj-hero-cap{font-size:12.5px;color:var(--text-muted);margin-top:7px;}
+.prx-proj-hero-side{display:flex;flex-direction:column;gap:9px;min-width:180px;padding-left:20px;border-left:1px solid var(--border);}
+.prx-proj-hero-side>div{display:flex;flex-direction:column;gap:1px;}
+.prx-proj-hero-side span{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);}
+.prx-proj-hero-side strong{font-size:14px;font-weight:700;color:var(--text-primary);text-transform:capitalize;}
+.prx-proj-hero-motivo{font-size:11px;color:var(--text-muted);line-height:1.45;margin-top:2px;}
+
+/* HOJE */
+.prx-proj-hoje{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow-xs);}
+.prx-proj-hoje-hd{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+.prx-proj-hoje-hd strong{font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-primary);}
+.prx-proj-hoje-hd span{font-size:11.5px;color:var(--text-muted);}
+.prx-proj-hoje-hd span.velho{color:var(--amber-dim);font-weight:600;}
+.prx-proj-hoje-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.prx-proj-hoje-grid>div{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.prx-proj-hoje-grid span{font-size:10.5px;font-weight:600;color:var(--text-muted);}
+.prx-proj-hoje-grid strong{font-size:18px;font-weight:800;letter-spacing:-.025em;color:var(--text-primary);}
+.prx-proj-hoje-grid strong.g{color:var(--green-dim);}
+.prx-proj-hoje-grid strong.r{color:var(--red);}
+.prx-proj-nota{font-size:11px;color:var(--text-muted);margin-top:11px;line-height:1.45;}
+.prx-proj-nota.alerta{color:var(--amber-dim);background:var(--amber-light);border-radius:8px;padding:9px 12px;}
+
+/* CARDS DO HORIZONTE */
+.prx-proj-cards{display:grid;grid-template-columns:repeat(6,1fr);gap:11px;}
+.prx-proj-cards>div{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:13px 14px;min-width:0;box-shadow:var(--shadow-xs);}
+.prx-proj-cards span{display:block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);line-height:1.3;}
+.prx-proj-cards strong{display:block;font-size:16px;font-weight:800;letter-spacing:-.025em;color:var(--text-primary);margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.prx-proj-cards strong.g{color:var(--green-dim);}
+.prx-proj-cards strong.r{color:var(--red);}
+.prx-proj-cards strong.muted{color:var(--text-muted);font-weight:600;}
+
+/* CURVA */
+.prx-proj-chart-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow-xs);}
+.prx-proj-chart-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+.prx-proj-chart-hd strong{font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-primary);}
+.prx-proj-legend{display:flex;gap:16px;}
+.prx-proj-legend span{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:var(--text-secondary);}
+.prx-proj-legend i{width:18px;height:0;display:inline-block;flex-shrink:0;}
+.prx-proj-legend i.solida{border-top:2.4px solid var(--carbon);}
+.prx-proj-legend i.tracejada{border-top:2px dashed var(--green);}
+.prx-proj-chart{position:relative;height:250px;width:100%;}
+
+/* CENÁRIOS */
+.prx-proj-cenarios{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.prx-proj-cenarios>div{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:15px 17px;box-shadow:var(--shadow-xs);}
+.prx-proj-cenarios>div.off{background:var(--surface-2);opacity:.85;}
+.prx-proj-cenarios strong{font-size:13px;font-weight:800;color:var(--text-primary);}
+.prx-proj-cenarios p{font-size:11.5px;color:var(--text-muted);line-height:1.5;margin:5px 0 10px;}
+.prx-proj-cenarios span{font-size:21px;font-weight:800;letter-spacing:-.03em;display:block;}
+.prx-proj-cenarios span.g{color:var(--green-dim);}
+.prx-proj-cenarios span.r{color:var(--red);}
+.prx-proj-cenarios em{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);font-style:normal;}
+
+/* DETALHES */
+.prx-proj-detalhes{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-xs);overflow:hidden;}
+.prx-proj-detalhes-tog{width:100%;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--text-secondary);background:transparent;border:none;padding:14px 18px;cursor:pointer;text-align:left;}
+.prx-proj-detalhes-tog:hover{background:var(--ink-50);}
+.prx-proj-detalhes-body{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;padding:4px 18px 18px;border-top:1px solid var(--border);}
+.prx-proj-detalhes-body>div{min-width:0;}
+.prx-proj-detalhes-body strong{display:block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin:12px 0 8px;}
+.prx-proj-detalhes-body ul{list-style:none;margin:0;padding:0;}
+.prx-proj-detalhes-body li{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:12.5px;padding:5px 0;border-bottom:1px solid rgba(18,18,20,.04);}
+.prx-proj-detalhes-body li:last-child{border-bottom:none;}
+.prx-proj-detalhes-body li span{color:var(--text-secondary);}
+.prx-proj-detalhes-body li em{font-style:normal;font-size:10px;font-weight:700;color:var(--text-muted);margin-left:5px;}
+.prx-proj-detalhes-body li strong{margin:0;font-size:12.5px;text-transform:none;letter-spacing:0;color:var(--text-primary);}
+.prx-proj-detalhes-body p{font-size:11.5px;color:var(--text-muted);line-height:1.5;margin:0;}
+.prx-proj-detalhes-body p.vazio{margin-top:8px;}
+
+/* AGENDA */
+.prx-proj-agenda{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-xs);overflow:hidden;}
+.prx-proj-agenda-hd{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);}
+.prx-proj-agenda-hd strong{font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-primary);}
+.prx-proj-agenda-hd span{font-size:11.5px;color:var(--text-muted);}
+.prx-proj-agenda-scroll{max-height:420px;overflow-y:auto;overflow-x:auto;}
+.prx-proj-tabela{width:100%;border-collapse:collapse;min-width:560px;}
+.prx-proj-tabela th{position:sticky;top:0;background:var(--surface-2);font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);text-align:right;padding:9px 14px;border-bottom:1px solid var(--border);}
+.prx-proj-tabela th:first-child{text-align:left;}
+.prx-proj-tabela td{font-size:12.5px;text-align:right;padding:9px 14px;border-bottom:1px solid rgba(18,18,20,.04);white-space:nowrap;color:var(--text-secondary);}
+.prx-proj-tabela td:first-child{text-align:left;font-weight:600;}
+.prx-proj-tabela td.muted{color:var(--text-muted);}
+.prx-proj-tabela td strong.r{color:var(--red);}
+.prx-proj-tabela tr.neg td{background:var(--red-light);}
+.prx-proj-tabela tr.menor td{background:var(--amber-light);}
+
+/* PRECISA DE VOCÊ */
+.prx-proj-acoes{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--papaya);border-radius:14px;padding:15px 18px;box-shadow:var(--shadow-xs);}
+.prx-proj-acoes strong{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:9px;}
+.prx-proj-acoes ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;}
+.prx-proj-acoes li{font-size:12.5px;color:var(--text-secondary);line-height:1.5;padding-left:16px;position:relative;}
+.prx-proj-acoes li::before{content:'';position:absolute;left:0;top:7px;width:6px;height:6px;border-radius:50%;background:var(--papaya);}
+
+@media(max-width:1180px){
+  .prx-proj-cards{grid-template-columns:repeat(3,1fr);}
+}
+@media(max-width:900px){
+  .prx-proj-hero-side{padding-left:0;border-left:none;border-top:1px solid var(--border);padding-top:14px;width:100%;}
+  .prx-proj-hoje-grid{grid-template-columns:repeat(2,1fr);}
+  .prx-proj-cenarios{grid-template-columns:1fr;}
+  .prx-proj-detalhes-body{grid-template-columns:1fr;}
+}
+@media(max-width:600px){
+  .prx-proj-title{font-size:20px;}
+  .prx-proj-hero{padding:18px;}
+  .prx-proj-hero-num{font-size:32px;}
+  .prx-proj-cards{grid-template-columns:repeat(2,1fr);}
+  .prx-proj-horizonte button{padding:6px 11px;font-size:11.5px;}
+  .prx-proj-saldo-form input{min-width:0;width:100%;}
+  .prx-proj-saldo-form label{flex:1;min-width:130px;}
+  .prx-proj-chart{height:210px;}
+  .prx-proj-agenda-scroll{max-height:none;}
+}
+
+/* ══════════════════════════════════════════════════════
    PORTFÓLIO — REDESIGN EXECUTIVO (PRX)
    ══════════════════════════════════════════════════════ */
 .pf-subtitle{font-size:12.5px;color:var(--text-muted);font-weight:500;margin:-6px 0 4px;}
@@ -1263,7 +1430,7 @@ const TIPOS_DIVIDA  = ['Capital de Giro','Cheque Especial','Empréstimo','Financ
 const STATUS_DIVIDA = ['Ativa','Quitada','Renegociada','Suspensa'];
 
 // Receivables default settlement days by payment method
-const DEFAULT_PRAZOS = { dinheiro: 0, pix: 0, debito: 1, credito: 1, voucher: 30, outros: 1 };
+const DEFAULT_PRAZOS = { dinheiro: 0, pix: 0, debito: 1, credito: 30, voucher: 30, outros: 1 };
 
 // Calendar health threshold: days between "on-target" (green) and "critical" (red)
 const FAIXA_ATENCAO_CALENDARIO = 2000;
@@ -2556,7 +2723,7 @@ function Entradas({entradas,setEntradas,contas,dividas,selectedYear,selectedMont
   const[showConfig,setShowConfig]=useState(false);
   const[prazos,setPrazos_]=useState(()=>loadLocalS('zanon_prazos')||DEFAULT_PRAZOS);
   const setPrazos=p=>{setPrazos_(p);saveLocalS('zanon_prazos',p);};
-  const emptyForm={data:today(),dinheiro:'',pix:'',debito:'',credito:'',voucher:'',outros:'',obs:'',voucherAntecipado:'nao',voucherDataReceb:''};
+  const emptyForm={data:today(),dinheiro:'',pix:'',debito:'',credito:'',voucher:'',outros:'',obs:'',voucherAntecipado:'nao',voucherDataReceb:'',creditoAntecipado:'nao',creditoDataReceb:''};
   const[form,setForm]=useState(emptyForm);
   const chartDayRef=useRef(null);
   const totalF=f=>['dinheiro','pix','debito','credito','voucher','outros'].reduce((s,k)=>s+parseNum(f[k]),0);
@@ -2568,14 +2735,18 @@ function Entradas({entradas,setEntradas,contas,dividas,selectedYear,selectedMont
   const entradasDoMes=entradas.filter(e=>e.data>=mStart&&e.data<=mEnd);
 
   const openForm=(e=null)=>{
-    if(e){setForm({...e,dinheiro:e.dinheiro.toString(),pix:e.pix.toString(),debito:e.debito.toString(),credito:e.credito.toString(),voucher:e.voucher.toString(),outros:e.outros.toString(),voucherAntecipado:e.voucherAntecipado||'nao',voucherDataReceb:e.voucherDataReceb||''});setEditId(e.id);}
+    if(e){setForm({...e,dinheiro:e.dinheiro.toString(),pix:e.pix.toString(),debito:e.debito.toString(),credito:e.credito.toString(),voucher:e.voucher.toString(),outros:e.outros.toString(),voucherAntecipado:e.voucherAntecipado||'nao',voucherDataReceb:e.voucherDataReceb||'',creditoAntecipado:e.creditoAntecipado||'nao',creditoDataReceb:e.creditoDataReceb||''});setEditId(e.id);}
     else{setForm(emptyForm);setEditId(null);}
     setShowForm(true);
   };
 
   const save_=()=>{
     const t=totalF(form);if(!form.data||t===0)return alert('Informe a data e pelo menos um valor.');
-    const entry={...form,id:editId||genId(),dinheiro:parseNum(form.dinheiro),pix:parseNum(form.pix),debito:parseNum(form.debito),credito:parseNum(form.credito),voucher:parseNum(form.voucher),outros:parseNum(form.outros),total:t,voucherAntecipado:form.voucherAntecipado||'nao',voucherDataReceb:form.voucherDataReceb||''};
+    const creditoVal=parseNum(form.credito);
+    if(creditoVal>0&&form.creditoAntecipado==='sim'&&!form.creditoDataReceb)return alert('Informe a data de recebimento do crédito antecipado.');
+    // Crédito zero não guarda configuração de antecipação (evita metadado órfão).
+    const creditoAnt=creditoVal>0?(form.creditoAntecipado||'nao'):'nao';
+    const entry={...form,id:editId||genId(),dinheiro:parseNum(form.dinheiro),pix:parseNum(form.pix),debito:parseNum(form.debito),credito:creditoVal,voucher:parseNum(form.voucher),outros:parseNum(form.outros),total:t,voucherAntecipado:form.voucherAntecipado||'nao',voucherDataReceb:form.voucherDataReceb||'',creditoAntecipado:creditoAnt,creditoDataReceb:creditoAnt==='sim'?(form.creditoDataReceb||''):''};
     const updated=editId?entradas.map(e=>e.id===editId?entry:e):[...entradas.filter(e=>e.data!==form.data||editId),entry];
     setEntradas(updated.sort((a,b)=>a.data.localeCompare(b.data)));
     setForm(emptyForm);setEditId(null);setShowForm(false);
@@ -2600,6 +2771,11 @@ function Entradas({entradas,setEntradas,contas,dividas,selectedYear,selectedMont
       if(entry.voucherAntecipado==='sim'&&entry.voucherDataReceb) return entry.voucherDataReceb;
       return addDays(entry.data,prazos.voucher);
     }
+    // Crédito antecipado: a data informada substitui o prazo. Mesma regra do voucher.
+    if(forma==='credito'){
+      if(entry.creditoAntecipado==='sim'&&entry.creditoDataReceb) return entry.creditoDataReceb;
+      return addDays(entry.data,prazos.credito);
+    }
     return addDays(entry.data,prazos[forma]||0);
   };
 
@@ -2620,7 +2796,7 @@ function Entradas({entradas,setEntradas,contas,dividas,selectedYear,selectedMont
       const dtReceb=calcRecebimento(e,f.key);
       if(dtReceb<=todayStr)disponivel+=v;else aReceber+=v;
     });
-    const prazoLabel=f.key==='dinheiro'||f.key==='pix'?'D+0':f.key==='debito'||f.key==='credito'?'D+1':f.key==='voucher'?`D+${prazos.voucher}`:`D+${prazos.outros}`;
+    const prazoLabel=f.key==='dinheiro'||f.key==='pix'?'D+0':f.key==='debito'?'D+1':f.key==='credito'?`D+${prazos.credito}`:f.key==='voucher'?`D+${prazos.voucher}`:`D+${prazos.outros}`;
     return{...f,vendido,disponivel,aReceber,prazoLabel};
   });
 
@@ -2702,7 +2878,7 @@ function Entradas({entradas,setEntradas,contas,dividas,selectedYear,selectedMont
         <div className="card mb-3" style={{background:'var(--surface-2)',border:'1px solid var(--border)'}}>
           <div className="card-title">⚙️ Configuração de Prazos de Recebimento</div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))',gap:8}}>
-            {[{k:'dinheiro',l:'Dinheiro',fixed:true,val:'D+0'},{k:'pix',l:'PIX',fixed:true,val:'D+0'},{k:'debito',l:'Débito',fixed:true,val:'D+1'},{k:'credito',l:'Crédito',fixed:true,val:'D+1 (antecipado)'},{k:'voucher',l:'Voucher (dias)'},{k:'outros',l:'Outros (dias)'}].map(f=>(
+            {[{k:'dinheiro',l:'Dinheiro',fixed:true,val:'D+0'},{k:'pix',l:'PIX',fixed:true,val:'D+0'},{k:'debito',l:'Débito',fixed:true,val:'D+1'},{k:'credito',l:'Crédito',fixed:true,val:`D+${prazos.credito}`},{k:'voucher',l:'Voucher (dias)'},{k:'outros',l:'Outros (dias)'}].map(f=>(
               <div key={f.k} className="fg">
                 <label>{f.l}</label>
                 {f.fixed?<input type="text" value={f.val} disabled style={{background:'var(--ink-100)',color:'var(--text-muted)',cursor:'not-allowed'}}/>:<input type="number" min="0" value={prazos[f.k]} onChange={e=>setPrazos({...prazos,[f.k]:parseInt(e.target.value)||0})} placeholder="dias"/>}
@@ -2881,6 +3057,18 @@ function Entradas({entradas,setEntradas,contas,dividas,selectedYear,selectedMont
             <div className="fg"><label>PIX (R$)</label><input type="number" placeholder="0" value={form.pix} onChange={e=>setForm({...form,pix:e.target.value})}/></div>
             <div className="fg"><label>Débito (R$)</label><input type="number" placeholder="0" value={form.debito} onChange={e=>setForm({...form,debito:e.target.value})}/></div>
             <div className="fg"><label>Crédito (R$)</label><input type="number" placeholder="0" value={form.credito} onChange={e=>setForm({...form,credito:e.target.value})}/></div>
+            {parseNum(form.credito)>0&&(<>
+              <div className="fg">
+                <label>Crédito antecipado?</label>
+                <select value={form.creditoAntecipado} onChange={e=>setForm({...form,creditoAntecipado:e.target.value})}>
+                  <option value="nao">Não — prazo normal (D+{prazos.credito})</option>
+                  <option value="sim">Sim — informar data</option>
+                </select>
+              </div>
+              {form.creditoAntecipado==='sim'&&(
+                <div className="fg"><label>Data de recebimento do Crédito</label><input type="date" value={form.creditoDataReceb} onChange={e=>setForm({...form,creditoDataReceb:e.target.value})}/></div>
+              )}
+            </>)}
             <div className="fg"><label>Voucher (R$)</label><input type="number" placeholder="0" value={form.voucher} onChange={e=>setForm({...form,voucher:e.target.value})}/></div>
             {parseNum(form.voucher)>0&&(<>
               <div className="fg">
@@ -4174,305 +4362,609 @@ function Retiradas({retiradas,setRetiradas,entradaMensal,config,setConfig}){
 }
 
 // ── PROJEÇÃO ──
-function Projecao({entradas,contas,config,setConfig}){
+// ══════════════════════════════════════════════════════════════════════════
+// PROJEÇÃO DE CAIXA CONSOLIDADA (aba Projeção) — motor puro, sem I/O.
+// Consolida o GRUPO (cliente): não há visão por unidade.
+// Âncora = saldo real da tabela saldos_caixa_consolidados; config.saldoInicial
+// NÃO é usado aqui e permanece intocado.
+// ══════════════════════════════════════════════════════════════════════════
+const PROJ_MODALIDADES=['dinheiro','pix','debito','credito','voucher','outros'];
+const PROJ_MOD_LABEL={dinheiro:'Dinheiro',pix:'PIX',debito:'Débito',credito:'Crédito',voucher:'Voucher',outros:'Outros'};
+const PROJ_JANELA_HIST=56;   // 8 semanas até ontem
+const PROJ_MIN_DIAS_HIST=14; // mínimo para liberar o cenário Provável
+
+const projNum=v=>{const n=Number(v);return Number.isFinite(n)?n:0;};
+const projCents=v=>Math.round(projNum(v)*100)/100;
+const projDataValida=d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d);
+const projDow=d=>new Date(d+'T12:00:00').getDay();
+const projDiasEntre=(a,b)=>Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000);
+
+// Espelha calcRecebimento da aba Entradas: dias CORRIDOS (addDays), com o caso
+// especial do voucher antecipado. Não cria regra concorrente de liquidação.
+const projDataRecebimento=(entry,forma,prazos)=>{
+  if(forma==='voucher'){
+    if(entry.voucherAntecipado==='sim'&&projDataValida(entry.voucherDataReceb))return entry.voucherDataReceb;
+    return addDays(entry.data,projNum(prazos.voucher));
+  }
+  if(forma==='credito'){
+    if(entry.creditoAntecipado==='sim'&&projDataValida(entry.creditoDataReceb))return entry.creditoDataReceb;
+    return addDays(entry.data,projNum(prazos.credito));
+  }
+  return addDays(entry.data,projNum(prazos[forma]));
+};
+
+// Monta a série diária consolidada. Tudo derivado de dados reais; nada é inventado.
+const buildProjecaoCaixa=({entradas,contas,dividas,retiradas,empresaIds,prazos,saldoValor,dataPosicao,hoje,horizonte})=>{
+  const vazio={rows:[],hist:{diasComVenda:0,suficiente:false,mediaDow:[0,0,0,0,0,0,0],mix:{},totalHist:0},
+               metricas:null,porModalidade:[],porCategoria:[],qualidade:{semVencimento:0,semData:0,vencidas:0}};
+  if(!projDataValida(dataPosicao)||!projDataValida(hoje))return vazio;
+
+  // Regra temporal: só projeta a partir de uma posição do PRÓPRIO dia. Uma posição antiga não
+  // reconstrói o caixa — não há extrato bancário que prove o que já está refletido no saldo,
+  // então reaplicar movimentos passados arriscaria dupla contagem.
+  if(dataPosicao!==hoje)return vazio;
+  // A posição é o saldo de FECHAMENTO da data informada: a projeção começa no dia seguinte e
+  // movimentos datados na própria data_posicao não são somados nem subtraídos de novo.
+  const fim=addDays(hoje,projNum(horizonte));
+  const inicio=addDays(dataPosicao,1);
+  if(inicio>fim)return vazio;
+
+  // ── Esqueleto diário ──
+  const map={},ordem=[];
+  for(let d=inicio;d<=fim;d=addDays(d,1)){
+    map[d]={data:d,comprometido:0,estimado:0,saidas:0,porMod:{},porCat:{}};
+    ordem.push(d);
+    if(ordem.length>800)break; // trava de segurança
+  }
+  const ids=new Set((empresaIds||[]).filter(Boolean));
+  const qualidade={semVencimento:0,semData:0,vencidas:0};
+
+  // ── 1. RECEBIMENTOS COMPROMETIDOS — vendas JÁ realizadas ──
+  (entradas||[]).forEach(e=>{
+    if(!ids.has(e.empresa_id))return;
+    if(!projDataValida(e.data)){qualidade.semData++;return;}
+    PROJ_MODALIDADES.forEach(forma=>{
+      const v=projNum(e[forma]);
+      if(v<=0)return;
+      const dr=projDataRecebimento(e,forma,prazos);
+      if(!projDataValida(dr)||!map[dr])return; // já disponível antes do início, ou fora do horizonte
+      map[dr].comprometido+=v;
+      map[dr].porMod[forma]=(map[dr].porMod[forma]||0)+v;
+    });
+  });
+
+  // ── 2. HISTÓRICO para a estimativa ──
+  const histIni=addDays(hoje,-PROJ_JANELA_HIST),histFim=addDays(hoje,-1);
+  const totalPorData={},modPorData={};
+  (entradas||[]).forEach(e=>{
+    if(!ids.has(e.empresa_id))return;
+    if(!projDataValida(e.data)||e.data<histIni||e.data>histFim)return;
+    totalPorData[e.data]=(totalPorData[e.data]||0)+projNum(e.total);
+    PROJ_MODALIDADES.forEach(f=>{
+      if(!modPorData[f])modPorData[f]=0;
+      modPorData[f]+=projNum(e[f]);
+    });
+  });
+  const datasHist=Object.keys(totalPorData).filter(d=>totalPorData[d]>0);
+  const diasComVenda=datasHist.length;
+  const totalHist=datasHist.reduce((s,d)=>s+totalPorData[d],0);
+  const somaDow=[0,0,0,0,0,0,0],cntDow=[0,0,0,0,0,0,0];
+  datasHist.forEach(d=>{const w=projDow(d);somaDow[w]+=totalPorData[d];cntDow[w]+=1;});
+  const mediaGeral=diasComVenda>0?totalHist/diasComVenda:0;
+  const mediaDow=[0,1,2,3,4,5,6].map(w=>cntDow[w]>0?somaDow[w]/cntDow[w]:mediaGeral);
+  const somaMod=PROJ_MODALIDADES.reduce((s,f)=>s+projNum(modPorData[f]),0);
+  const mix={};
+  PROJ_MODALIDADES.forEach(f=>{mix[f]=somaMod>0?projNum(modPorData[f])/somaMod:0;});
+  const suficiente=diasComVenda>=PROJ_MIN_DIAS_HIST&&somaMod>0;
+  const hist={diasComVenda,suficiente,mediaDow,mix,totalHist,
+              semanas:Math.floor(diasComVenda/7),janelaIni:histIni,janelaFim:histFim};
+
+  // ── 3. VENDAS FUTURAS ESTIMADAS — apenas dias APÓS hoje ──
+  // Hoje pode ter vendas ainda não lançadas; estimar hoje duplicaria o comprometido.
+  if(suficiente){
+    ordem.forEach(d=>{
+      if(d<=hoje)return;
+      const totalDia=projNum(mediaDow[projDow(d)]);
+      if(totalDia<=0)return;
+      PROJ_MODALIDADES.forEach(f=>{
+        const v=totalDia*projNum(mix[f]);
+        if(v<=0)return;
+        const dr=addDays(d,projNum(prazos[f])); // estimativa não tem voucher antecipado
+        if(!map[dr])return;
+        map[dr].estimado+=v;
+      });
+    });
+  }
+
+  // ── 4. SAÍDAS — contas + parcelas de dívidas + fixas recorrentes (via merge) ──
+  // Dívidas NUNCA são somadas em separado: entram só pelo merge, o que impede
+  // dupla contagem. 'Pago' é excluído porque já deixou o caixa — mesma regra que
+  // a aba Projeção já aplicava.
+  ids.forEach(id=>{
+    const con=(contas||[]).filter(r=>r.empresa_id===id);
+    const div=(dividas||[]).filter(r=>r.empresa_id===id);
+    mergeContasComParcelas(con,div).forEach(c=>{
+      if(!projDataValida(c.vencimento)){qualidade.semVencimento++;return;}
+      if(c.status==='Pago')return;
+      if(c.vencimento<inicio){if(c.vencimento<hoje)qualidade.vencidas++;return;}
+      if(!map[c.vencimento])return;
+      const v=projNum(c.valor);
+      if(v<=0)return;
+      map[c.vencimento].saidas+=v;
+      const cat=c.tipoDespesa||'Variável';
+      map[c.vencimento].porCat[cat]=(map[c.vencimento].porCat[cat]||0)+v;
+    });
+  });
+  (retiradas||[]).forEach(r=>{
+    if(!ids.has(r.empresa_id))return;
+    if(!projDataValida(r.data)||!map[r.data])return;
+    const v=projNum(r.valor);
+    if(v<=0)return;
+    map[r.data].saidas+=v;
+    map[r.data].porCat['Retiradas']=(map[r.data].porCat['Retiradas']||0)+v;
+  });
+
+  // ── 5. ACUMULAÇÃO DIÁRIA ──
+  let gar=projNum(saldoValor),prov=projNum(saldoValor);
+  const rows=ordem.map(d=>{
+    const c=map[d];
+    gar=gar+c.comprometido-c.saidas;
+    prov=prov+c.comprometido+c.estimado-c.saidas;
+    return{data:c.data,comprometido:projCents(c.comprometido),estimado:projCents(c.estimado),
+           saidas:projCents(c.saidas),saldoGar:projCents(gar),saldoProv:projCents(prov),
+           porMod:c.porMod,porCat:c.porCat,futuro:c.data>=hoje};
+  });
+
+  // ── 6. MÉTRICAS — apenas sobre o horizonte visível (de hoje em diante) ──
+  const janela=rows.filter(r=>r.futuro);
+  let metricas=null;
+  if(janela.length){
+    const menorGar=janela.reduce((m,r)=>r.saldoGar<m.saldoGar?r:m);
+    const menorProv=janela.reduce((m,r)=>r.saldoProv<m.saldoProv?r:m);
+    const primNegGar=janela.find(r=>r.saldoGar<0)||null;
+    const primNegProv=janela.find(r=>r.saldoProv<0)||null;
+    const fimJ=janela[janela.length-1];
+    const status=!suficiente
+      ? (menorGar.saldoGar<0?'vermelho':'verde')
+      : (menorProv.saldoProv<0?'vermelho':(menorGar.saldoGar<0?'amarelo':'verde'));
+    metricas={
+      menorSaldoGar:menorGar.saldoGar,diaMenorGar:menorGar.data,
+      menorSaldoProv:menorProv.saldoProv,diaMenorProv:menorProv.data,
+      primeiroNegGar:primNegGar?primNegGar.data:null,
+      primeiroNegProv:primNegProv?primNegProv.data:null,
+      deficitMax:projCents(Math.max(0,-Math.min(menorGar.saldoGar,menorProv.saldoProv))),
+      saldoFimGar:fimJ.saldoGar,saldoFimProv:fimJ.saldoProv,
+      totalComprometido:projCents(janela.reduce((s,r)=>s+r.comprometido,0)),
+      totalEstimado:projCents(janela.reduce((s,r)=>s+r.estimado,0)),
+      totalSaidas:projCents(janela.reduce((s,r)=>s+r.saidas,0)),
+      status,
+    };
+  }
+
+  // ── 7. Composições para os detalhes ──
+  const accMod={},accCat={};
+  janela.forEach(r=>{
+    Object.entries(r.porMod).forEach(([k,v])=>{accMod[k]=(accMod[k]||0)+v;});
+    Object.entries(r.porCat).forEach(([k,v])=>{accCat[k]=(accCat[k]||0)+v;});
+  });
+  const porModalidade=PROJ_MODALIDADES.filter(f=>accMod[f]>0)
+    .map(f=>({chave:f,label:PROJ_MOD_LABEL[f],valor:projCents(accMod[f]),prazo:projNum(prazos[f])}))
+    .sort((a,b)=>b.valor-a.valor);
+  const porCategoria=Object.keys(accCat).map(k=>({label:k,valor:projCents(accCat[k])}))
+    .sort((a,b)=>b.valor-a.valor);
+
+  return{rows,hist,metricas,porModalidade,porCategoria,qualidade};
+};
+
+// Confiança qualitativa — regra explícita, sem percentual arbitrário.
+const projConfianca=(hist,idadePosicao,metricas)=>{
+  if(!metricas)return{nivel:'—',motivo:'Sem base para calcular.'};
+  const semanas=hist.semanas||0;
+  const idade=projNum(idadePosicao);
+  const totalEnt=projNum(metricas.totalComprometido)+projNum(metricas.totalEstimado);
+  const pctComp=totalEnt>0?projNum(metricas.totalComprometido)/totalEnt:1;
+  let nivel='baixa';
+  if(idade<=1&&semanas>=6)nivel='alta';
+  else if(idade<=7&&semanas>=3)nivel='média';
+  const partes=[];
+  partes.push(idade===0?'saldo atualizado hoje':(idade===1?'saldo de ontem':`saldo informado há ${idade} dias`));
+  partes.push(semanas>0?`${semanas} ${semanas===1?'semana':'semanas'} de histórico`:'histórico insuficiente');
+  if(totalEnt>0)partes.push(`${Math.round(pctComp*100)}% das entradas já vendidas`);
+  return{nivel,motivo:partes.join(' · ')};
+};
+
+function Projecao({empresas}){
   const chartRef=useRef(null);
   const hoje=today();
+  const[horizonte,setHorizonte]=useState(30);
+  const[carga,setCarga]=useState({estado:'idle',ent:[],con:[],div:[],ret:[]});
+  const[clienteId,setClienteId]=useState(null);
+  const[saldoPos,setSaldoPos]=useState(null);      // {data_posicao, valor, atualizado_em}
+  const[form,setForm]=useState({valor:'',data:hoje});
+  const[editando,setEditando]=useState(false);
+  const[salvando,setSalvando]=useState(false);
+  const[aviso,setAviso]=useState(null);            // {tipo:'ok'|'erro'|'ro', texto}
+  const[detalhes,setDetalhes]=useState(false);
 
-  // ── MOTOR: média de entrada por DIA DA SEMANA (7 médias) ──
-  // Janela: últimos 60 dias para ter ao menos ~8 amostras de cada dia da semana.
-  const janelaIni=addDays(hoje,-60);
-  const entJanela=entradas.filter(e=>e.data>=janelaIni&&e.data<=hoje);
-  // agrega total por data
-  const totalPorData={};
-  entJanela.forEach(e=>{totalPorData[e.data]=(totalPorData[e.data]||0)+e.total;});
-  // separa por dia da semana (0=Dom, 6=Sáb)
-  const somaDow=[0,0,0,0,0,0,0];
-  const cntDow=[0,0,0,0,0,0,0];
-  Object.keys(totalPorData).forEach(d=>{
-    const dow=new Date(d+'T12:00:00').getDay();
-    somaDow[dow]+=totalPorData[d];
-    cntDow[dow]+=1;
-  });
-  // média geral (fallback) — só dias com venda
-  const diasComVenda=Object.keys(totalPorData).length;
-  const totalGeral=Object.values(totalPorData).reduce((s,v)=>s+v,0);
-  const mediaGeral=diasComVenda>0?totalGeral/diasComVenda:0;
-  // média por dia da semana, com fallback para média geral se aquele dow não teve amostra
-  const mediaDow=[0,1,2,3,4,5,6].map(d=>cntDow[d]>0?somaDow[d]/cntDow[d]:mediaGeral);
+  const prazos=React.useMemo(()=>({...DEFAULT_PRAZOS,...(loadLocalS('zanon_prazos')||{})}),[]);
+  const idsChave=(empresas||[]).map(e=>e.id).filter(Boolean).join(',');
 
-  // ── PROJEÇÃO DIA A DIA ──
-  const rows=[];let saldoAcum=config.saldoInicial||0;
-  for(let i=0;i<30;i++){
-    const data=addDays(hoje,i);
-    const dow=new Date(data+'T12:00:00').getDay();
-    const entradaPrev=mediaDow[dow];
-    const contasDia=contas.filter(c=>c.vencimento===data&&c.status!=='Pago');
-    const saidas=contasDia.reduce((s,c)=>s+c.valor,0);
-    const saldoInicial=saldoAcum;
-    const saldoFinal=saldoInicial+entradaPrev-saidas;
-    saldoAcum=saldoFinal;
-    const pressao=entradaPrev>0?saidas/entradaPrev:(saidas>0?99:0);
-    let obs='';
-    if(saldoFinal<0)obs='🔴 Saldo negativo';
-    else if(pressao>2)obs='⚠️ Alta pressão';
-    rows.push({data,dow,saldoInicial,entradas:entradaPrev,saidas,saldoFinal,obs,pressao,contasDia});
-  }
+  // ── Carregamento consolidado: 1 rodada por (cliente × conjunto de unidades) ──
+  useEffect(()=>{
+    const ids=idsChave?idsChave.split(','):[];
+    if(!ids.length){setCarga({estado:'sem-empresas',ent:[],con:[],div:[],ret:[]});setClienteId(null);setSaldoPos(null);return;}
+    let cancelado=false;
+    setCarga(c=>({...c,estado:'carregando'}));
+    (async()=>{
+      try{
+        // cliente atual — mesmo padrão já usado em criarUnidade
+        const{data:emp,error:errEmp}=await supabase.from('empresas').select('cliente_id').eq('id',EMPRESA_ID).single();
+        if(errEmp)throw errEmp;
+        const cid=emp?.cliente_id||null;
+        if(cancelado)return;
+        setClienteId(cid);
 
-  // ── MÉTRICAS DERIVADAS ──
-  const saldoFinais=rows.map(r=>r.saldoFinal);
-  const menorSaldo=Math.min(...saldoFinais);
-  const diaMenor=rows.find(r=>r.saldoFinal===menorSaldo);
-  const diasNegativos=rows.filter(r=>r.saldoFinal<0).length;
-  const primeiroDiaNeg=rows.find(r=>r.saldoFinal<0);
-  const saldoHoje=config.saldoInicial||0;
-  const saldoFim30=rows[rows.length-1]?.saldoFinal??saldoHoje;
+        const maxPrazo=Math.max(...PROJ_MODALIDADES.map(f=>projNum(prazos[f])),0);
+        const entIni=addDays(hoje,-(Math.max(PROJ_JANELA_HIST,maxPrazo)+14));
+        const retFim=addDays(hoje,90);
 
-  // ── BLOCO 1: VEREDITO ──
-  // Regras:
-  //  - "danger" se há qualquer dia com saldo negativo;
-  //  - "warn" se menor saldo é positivo mas < reserva sugerida (= pico semanal de saídas);
-  //  - "ok" caso contrário.
-  // Reserva sugerida = maior soma de saídas em uma janela de 7 dias da projeção.
-  let picoSemana=0;
-  for(let i=0;i<=rows.length-7;i++){
-    const s=rows.slice(i,i+7).reduce((a,r)=>a+r.saidas,0);
-    if(s>picoSemana)picoSemana=s;
-  }
-  let veredito,vTag,vTitle,vSub;
-  if(diasNegativos>0&&primeiroDiaNeg){
-    const diasAte=Math.round((new Date(primeiroDiaNeg.data)-new Date(hoje))/(1000*60*60*24));
-    veredito='danger';
-    vTag='🔴 Caixa não fecha';
-    vTitle=`Déficit de ${fmtFull(Math.abs(primeiroDiaNeg.saldoFinal))} em ${fmtDate(primeiroDiaNeg.data)}`;
-    vSub=`Primeiro dia negativo em ${diasAte} dia${diasAte===1?'':'s'} — ${diasNegativos} dia${diasNegativos===1?'':'s'} negativo${diasNegativos===1?'':'s'} no horizonte de 30 dias.`;
-  }else if(menorSaldo<picoSemana&&picoSemana>0){
-    veredito='warn';
-    vTag='🟡 Caixa aperta';
-    vTitle=`Saldo mínimo de ${fmtFull(menorSaldo)} em ${diaMenor?fmtDate(diaMenor.data):'-'}`;
-    vSub=`Saldo fica abaixo da reserva sugerida (${fmtFull(picoSemana)}, pico semanal de saídas). Risco moderado.`;
-  }else{
-    veredito='ok';
-    vTag='🟢 Caixa fecha';
-    vTitle=`Menor saldo previsto: ${fmtFull(menorSaldo)} em ${diaMenor?fmtDate(diaMenor.data):'-'}`;
-    vSub='Projeção saudável para os próximos 30 dias com base nos dados atuais.';
-  }
-
-  // ── BLOCO 2: gráfico simplificado (1 linha de saldo) ──
-  useChart(chartRef,{
-    type:'line',
-    data:{
-      labels:rows.map(r=>fmtDate(r.data).slice(0,5)),
-      datasets:[{
-        label:'Saldo projetado',
-        data:rows.map(r=>r.saldoFinal),
-        borderColor:veredito==='danger'?'#dc2626':veredito==='warn'?'#f59e0b':'#16a34a',
-        backgroundColor:veredito==='danger'?'rgba(220,38,38,0.08)':veredito==='warn'?'rgba(245,158,11,0.08)':'rgba(22,163,74,0.08)',
-        fill:true,
-        tension:0.25,
-        borderWidth:2,
-        pointRadius:rows.map(r=>r.saldoFinal===menorSaldo?5:(r.saidas>0&&r.pressao>2?3:0)),
-        pointBackgroundColor:rows.map(r=>r.saldoFinal===menorSaldo?'#dc2626':'#f59e0b'),
-        pointBorderColor:'#fff',
-        pointBorderWidth:1.5,
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        tooltip:{
-          callbacks:{
-            title:items=>{const r=rows[items[0].dataIndex];return fmtDate(r.data);},
-            label:ctx=>{const r=rows[ctx.dataIndex];const arr=['Saldo: '+formatCurrency(r.saldoFinal)];if(r.saidas>0)arr.push('Saídas do dia: '+formatCurrency(r.saidas));arr.push('Entrada prevista: '+formatCurrency(r.entradas));return arr;}
-          }
-        }
-      },
-      scales:{
-        y:{
-          ticks:{callback:v=>formatCurrency(v),font:{size:10}},
-          grid:{color:'rgba(15,23,42,0.05)'}
-        },
-        x:{
-          ticks:{font:{size:9},maxRotation:0,autoSkipPadding:12},
-          grid:{display:false}
-        }
+        const[ent,con,div,ret,saldo]=await Promise.all([
+          fetchAllPages((from,to)=>supabase.from('entradas')
+            .select('empresa_id,data,total,dinheiro,pix,debito,credito,voucher,outros,voucherAntecipado,voucherDataReceb,creditoAntecipado,creditoDataReceb')
+            .in('empresa_id',ids).gte('data',entIni).order('id',{ascending:true}).range(from,to),'projecao:entradas'),
+          fetchAllPages((from,to)=>supabase.from('contas')
+            .select('id,empresa_id,valor,status,vencimento,tipoDespesa,dividaVinculadaId,descricao')
+            .in('empresa_id',ids).order('id',{ascending:true}).range(from,to),'projecao:contas'),
+          fetchAllPages((from,to)=>supabase.from('dividas')
+            .select('id,empresa_id,parcelaMensal,status,vencimento,valorUtilizado,banco,tipo,quitada_em')
+            .in('empresa_id',ids).in('status',['Ativa','Quitada']).order('id',{ascending:true}).range(from,to),'projecao:dividas'),
+          fetchAllPages((from,to)=>supabase.from('retiradas')
+            .select('empresa_id,valor,data').in('empresa_id',ids)
+            .gte('data',addDays(hoje,-90)).lte('data',retFim).order('id',{ascending:true}).range(from,to),'projecao:retiradas'),
+          cid?supabase.from('saldos_caixa_consolidados')
+            .select('cliente_id,data_posicao,valor,atualizado_em')
+            .eq('cliente_id',cid).order('data_posicao',{ascending:false}).limit(1):Promise.resolve({data:[]}),
+        ]);
+        if(cancelado)return;
+        const pos=(saldo&&saldo.data&&saldo.data[0])||null;
+        setSaldoPos(pos);
+        setForm({valor:pos?String(pos.valor):'',data:pos?pos.data_posicao:hoje});
+        setCarga({estado:'ok',ent:ent||[],con:con||[],div:div||[],ret:ret||[]});
+      }catch(err){
+        if(cancelado)return;
+        console.error('Erro ao carregar a projeção de caixa:',err);
+        setCarga({estado:'erro',ent:[],con:[],div:[],ret:[]});
       }
-    }
-  });
+    })();
+    return()=>{cancelado=true;};
+  },[idsChave,hoje]);
 
-  // ── BLOCO 3: PONTOS CRÍTICOS ──
-  // Top 3 dias por "criticidade": prioriza dias que zeram/negativam o saldo;
-  // depois dias com pressão (saídas/entrada > 2).
-  const diasCriticos=rows
-    .filter(r=>r.saidas>0&&(r.saldoFinal<0||r.pressao>1.5))
-    .map(r=>({
-      ...r,
-      score:(r.saldoFinal<0?1000000:0)+r.saidas*(r.pressao||1)
-    }))
-    .sort((a,b)=>b.score-a.score)
-    .slice(0,3);
+  const dataPosicao=saldoPos?saldoPos.data_posicao:null;
+  const posicaoValida=!!saldoPos&&projDataValida(dataPosicao);
+  const posicaoFutura=posicaoValida&&dataPosicao>hoje;
+  const posicaoAntiga=posicaoValida&&dataPosicao<hoje;
+  // Só uma posição do próprio dia libera a projeção. Posição antiga fica visível como histórico,
+  // mas não reconstrói o caixa.
+  const temSaldo=posicaoValida&&dataPosicao===hoje;
+  const idadePosicao=posicaoValida?projDiasEntre(dataPosicao,hoje):null;
 
-  // Descrição de causa para um dia crítico
-  const causaDia=r=>{
-    const n=r.contasDia.length;
-    if(n===0)return 'Pressão sem contas registradas neste dia';
-    const top=r.contasDia.slice().sort((a,b)=>b.valor-a.valor)[0];
-    if(n===1)return `1 conta: ${top.fornecedor||top.descricao||'sem descrição'} (${fmtFull(top.valor)})`;
-    return `${n} contas no mesmo dia — maior: ${top.fornecedor||top.descricao||'sem descrição'} (${fmtFull(top.valor)})`;
+  const proj=React.useMemo(()=>{
+    if(!temSaldo)return null;
+    return buildProjecaoCaixa({
+      entradas:carga.ent,contas:carga.con,dividas:carga.div,retiradas:carga.ret,
+      empresaIds:idsChave?idsChave.split(','):[],prazos,
+      saldoValor:projNum(saldoPos.valor),dataPosicao,hoje,horizonte,
+    });
+  },[carga,idsChave,prazos,saldoPos,dataPosicao,hoje,horizonte,temSaldo]);
+
+  const metricas=proj?proj.metricas:null;
+  const conf=proj?projConfianca(proj.hist,idadePosicao,metricas):null;
+  const janela=proj?proj.rows.filter(r=>r.futuro):[];
+  // A projeção começa no dia seguinte à posição; a 1ª linha é amanhã.
+  const linha1=janela.length?janela[0]:null;
+  const saldoPosicao=projNum(saldoPos&&saldoPos.valor);
+
+  // ── Gráfico (Chart.js, já disponível no projeto) ──
+  const labels=janela.map(r=>fmtDate(r.data).slice(0,5));
+  const idxMenor=metricas?janela.findIndex(r=>r.data===metricas.diaMenorGar):-1;
+  const chartCfg={
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Zero',data:janela.map(()=>0),borderColor:'rgba(120,120,120,.45)',borderWidth:1,
+       pointRadius:0,fill:false,tension:0,order:3},
+      {label:'Garantido',data:janela.map(r=>r.saldoGar),borderColor:'#1B1C20',backgroundColor:'rgba(27,28,32,.06)',
+       borderWidth:2.4,fill:true,tension:.25,order:1,
+       pointRadius:janela.map((_,i)=>i===idxMenor?5:0),
+       pointBackgroundColor:'#dc2626',pointBorderColor:'#fff',pointBorderWidth:2},
+      ...(proj&&proj.hist.suficiente?[{label:'Provável',data:janela.map(r=>r.saldoProv),borderColor:'#16a34a',
+       borderWidth:2,borderDash:[6,4],fill:false,tension:.25,pointRadius:0,order:2}]:[]),
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#1B1C20',padding:10,cornerRadius:8,
+        callbacks:{label:c=>c.dataset.label==='Zero'?null:`${c.dataset.label}: ${fmt(c.parsed.y)}`}}},
+      scales:{x:{grid:{display:false},ticks:{maxTicksLimit:10,font:{size:10}}},
+              y:{grid:{color:'rgba(18,18,20,.06)'},ticks:{font:{size:10},callback:v=>fmt(v)}}}},
+  };
+  useChart(chartRef,chartCfg);
+
+  // ── Gravação do saldo consolidado ──
+  const salvarSaldo=async()=>{
+    setAviso(null);
+    const valor=parseNum(form.valor);
+    if(!projDataValida(form.data)){setAviso({tipo:'erro',texto:'Informe uma data válida.'});return;}
+    if(form.data>hoje){setAviso({tipo:'erro',texto:'A data da posição não pode ser futura.'});return;}
+    if(!clienteId){setAviso({tipo:'erro',texto:'Não foi possível identificar o cliente.'});return;}
+    if(!Number.isFinite(valor)){setAviso({tipo:'erro',texto:'Informe um valor válido.'});return;}
+    setSalvando(true);
+    try{
+      // atualizado_em / atualizado_por são controlados pelo trigger do banco.
+      const{error}=await supabase.from('saldos_caixa_consolidados')
+        .upsert({cliente_id:clienteId,data_posicao:form.data,valor},{onConflict:'cliente_id,data_posicao'});
+      if(error)throw error;
+      const{data,error:errLer}=await supabase.from('saldos_caixa_consolidados')
+        .select('cliente_id,data_posicao,valor,atualizado_em')
+        .eq('cliente_id',clienteId).order('data_posicao',{ascending:false}).limit(1);
+      if(errLer)throw errLer;
+      const pos=(data&&data[0])||null;
+      setSaldoPos(pos);
+      if(pos)setForm({valor:String(pos.valor),data:pos.data_posicao});
+      setEditando(false);
+      setAviso({tipo:'ok',texto:'Saldo atualizado.'});
+    }catch(err){
+      console.error('Erro ao salvar o saldo consolidado:',err);
+      const msg=String((err&&(err.message||err.details))||'');
+      if(/row-level security|permission denied|violates/i.test(msg)){
+        setAviso({tipo:'ro',texto:'Seu acesso é somente leitura. Peça a um administrador para atualizar o saldo.'});
+      }else{
+        setAviso({tipo:'erro',texto:'Não foi possível salvar. '+(msg||'Tente novamente.')});
+      }
+    }finally{setSalvando(false);}
   };
 
-  // ── BLOCO 4: AÇÕES RECOMENDADAS ──
-  // Geração de ações concretas com impacto estimado em R$.
-  const acoes=[];
+  // ── Estados de carregamento / vazio ──
+  if(carga.estado==='sem-empresas')
+    return <div className="prx-proj-wrap"><div className="prx-proj-vazio">Nenhuma unidade ativa neste cliente. A projeção precisa de ao menos uma unidade ativa.</div></div>;
+  if(carga.estado==='carregando'||carga.estado==='idle')
+    return <div className="prx-proj-wrap"><div className="prx-proj-vazio">Carregando a projeção…</div></div>;
+  if(carga.estado==='erro')
+    return <div className="prx-proj-wrap"><div className="prx-proj-vazio erro">Não foi possível carregar os dados da projeção. Verifique a conexão e tente novamente.</div></div>;
 
-  // (a) Renegociar a maior conta dos dias críticos negativos
-  if(primeiroDiaNeg){
-    const contasNeg=primeiroDiaNeg.contasDia.slice().sort((a,b)=>b.valor-a.valor);
-    if(contasNeg.length>0){
-      const c=contasNeg[0];
-      acoes.push({
-        text:`Renegociar vencimento de ${fmtFull(c.valor)} (${c.fornecedor||c.descricao||'fornecedor'}) de ${fmtDate(c.vencimento)} para a semana seguinte`,
-        impacto:`Recupera ~${fmtFull(c.valor)} no caixa do dia ${fmtDate(primeiroDiaNeg.data)}`
-      });
-    }
-  }
-
-  // (b) Antecipar recebíveis se houver dia negativo
-  if(primeiroDiaNeg&&mediaGeral>0){
-    const buraco=Math.abs(primeiroDiaNeg.saldoFinal);
-    const valorAnt=Math.ceil(buraco/1000)*1000;
-    acoes.push({
-      text:`Antecipar ${fmtFull(valorAnt)} em recebíveis de cartão (3 a 5 dias úteis)`,
-      impacto:`Cobre o déficit de ${fmtFull(buraco)} em ${fmtDate(primeiroDiaNeg.data)}`
-    });
-  }
-
-  // (c) Redistribuir vencimentos de dias com pressão alta sem ser negativo
-  const diasPressao=rows.filter(r=>r.saidas>0&&r.pressao>2&&r.saldoFinal>=0);
-  if(diasPressao.length>0){
-    const d=diasPressao[0];
-    const c=d.contasDia.slice().sort((a,b)=>b.valor-a.valor)[0];
-    if(c)acoes.push({
-      text:`Redistribuir vencimento de ${fmtFull(c.valor)} (${c.fornecedor||c.descricao||'fornecedor'}) de ${fmtDate(d.data)} para dia de menor pressão`,
-      impacto:`Reduz pressão de ${d.pressao.toFixed(1)}x para ~${((d.saidas-c.valor)/Math.max(d.entradas,1)).toFixed(1)}x da média do dia`
-    });
-  }
-
-  // (d) Reserva mínima recomendada se está OK mas sem folga
-  if(veredito==='ok'&&menorSaldo<picoSemana*1.5&&picoSemana>0){
-    acoes.push({
-      text:`Constituir reserva mínima de ${fmtFull(picoSemana)} (equivalente ao pico semanal de saídas)`,
-      impacto:'Protege contra variações inesperadas de entrada ou despesas extras'
-    });
-  }
-
-  // (e) Caso não haja ações específicas (cenário saudável)
-  if(acoes.length===0){
-    acoes.push({
-      text:'Manter o ritmo atual de entradas e o controle de vencimentos',
-      impacto:'Cenário projetado é saudável — sem ações corretivas necessárias agora'
-    });
-    acoes.push({
-      text:'Revisar a projeção semanalmente conforme novas entradas e contas chegarem',
-      impacto:'Mantém antecipação de problemas com 7+ dias de folga'
-    });
-  }
+  const stMeta={
+    verde:{cls:'ok',titulo:`Dá para pagar tudo nos próximos ${horizonte} dias.`},
+    amarelo:{cls:'warn',titulo:'O caixa depende de manter o ritmo atual de vendas.'},
+    vermelho:{cls:'danger',titulo:metricas&&metricas.primeiroNegProv
+      ? `Pode faltar dinheiro a partir de ${fmtDate(metricas.primeiroNegProv)}.`
+      : 'O caixa fica negativo dentro do período.'},
+  };
+  const st=metricas?stMeta[metricas.status]:null;
+  const numeroHero=metricas
+    ? (metricas.status==='verde'?metricas.menorSaldoGar:(metricas.deficitMax>0?-metricas.deficitMax:metricas.menorSaldoProv))
+    : 0;
 
   return(
-    <div>
-      {/* ── BLOCO 1: VEREDITO ── */}
-      <div className={`prj-verdict ${veredito}`}>
-        <div className="prj-verdict-main">
-          <div className="prj-verdict-tag">{vTag}</div>
-          <div className="prj-verdict-title">{vTitle}</div>
-          <div className="prj-verdict-sub">{vSub}</div>
+    <div className="prx-proj-wrap">
+      {/* ── CABEÇALHO ── */}
+      <div className="prx-proj-head">
+        <div style={{minWidth:0}}>
+          <h2 className="prx-proj-title">Projeção de Caixa</h2>
+          <p className="prx-proj-sub">
+            Visão consolidada de {(empresas||[]).length} {(empresas||[]).length===1?'unidade ativa':'unidades ativas'} do grupo.
+          </p>
         </div>
-        <div className="prj-saldo-input">
-          <label>Saldo hoje</label>
-          <input type="number" value={config.saldoInicial} onChange={e=>setConfig({...config,saldoInicial:parseNum(e.target.value)})}/>
-        </div>
-        <div className="prj-kpis">
-          <div className="prj-kpi">
-            <div className="prj-kpi-lbl">Menor saldo</div>
-            <div className={`prj-kpi-val ${menorSaldo<0?'neg':'pos'}`}>{fmtFull(menorSaldo)}</div>
-            <div className="prj-kpi-sub">{diaMenor?fmtDate(diaMenor.data):'-'}</div>
-          </div>
-          <div className="prj-kpi">
-            <div className="prj-kpi-lbl">Saldo em 30 dias</div>
-            <div className={`prj-kpi-val ${saldoFim30<0?'neg':'pos'}`}>{fmtFull(saldoFim30)}</div>
-            <div className="prj-kpi-sub">{fmtDate(rows[rows.length-1].data)}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── BLOCO 2: GRÁFICO SIMPLIFICADO ── */}
-      <div className="prj-block" style={{marginBottom:12}}>
-        <div className="prj-block-hdr">
-          <div className="prj-block-ico">📈</div>
-          <div className="prj-block-title">Linha do tempo do caixa — 30 dias</div>
-          <div className="prj-block-count">Entrada estimada por dia da semana</div>
-        </div>
-        <div style={{position:'relative',height:200}}><canvas ref={chartRef}></canvas></div>
-      </div>
-
-      {/* ── BLOCOS 3 e 4 lado a lado: Pontos Críticos | Ações ── */}
-      <div className="prj-grid-2c">
-        <div className="prj-block">
-          <div className="prj-block-hdr">
-            <div className="prj-block-ico">⚠️</div>
-            <div className="prj-block-title">Pontos críticos</div>
-            <div className="prj-block-count">{diasCriticos.length>0?`top ${diasCriticos.length}`:'—'}</div>
-          </div>
-          {diasCriticos.length===0?(
-            <div className="prj-empty">Sem dias de pressão crítica nos próximos 30 dias.</div>
-          ):diasCriticos.map((r,i)=>(
-            <div key={i} className={`prj-crit-item${r.saldoFinal<0?' danger':''}`}>
-              <div className="prj-crit-top">
-                <div className="prj-crit-date">{fmtDate(r.data)} — {r.saldoFinal<0?'déficit no caixa':`pressão ${r.pressao.toFixed(1)}x`}</div>
-                <div className="prj-crit-amount">{fmtFull(r.saidas)}</div>
-              </div>
-              <div className="prj-crit-cause">{causaDia(r)}</div>
-              <div className="prj-crit-impact">
-                {r.saldoFinal<0?`Saldo do dia: ${fmtFull(r.saldoFinal)}`:`Saldo após o dia: ${fmtFull(r.saldoFinal)}`}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="prj-block">
-          <div className="prj-block-hdr">
-            <div className="prj-block-ico">🎯</div>
-            <div className="prj-block-title">Ações recomendadas</div>
-            <div className="prj-block-count">{acoes.length} {acoes.length===1?'ação':'ações'}</div>
-          </div>
-          {acoes.map((a,i)=>(
-            <div key={i} className="prj-action-item">
-              <div className="prj-action-num">{i+1}</div>
-              <div className="prj-action-body">
-                <div className="prj-action-text">{a.text}</div>
-                <div className="prj-action-impact">→ {a.impacto}</div>
-              </div>
-            </div>
+        <div className="prx-proj-horizonte" role="group" aria-label="Horizonte da projeção">
+          {[30,60,90].map(h=>(
+            <button key={h} type="button" className={horizonte===h?'on':''}
+              onClick={()=>setHorizonte(h)} aria-pressed={horizonte===h}>{h} dias</button>
           ))}
         </div>
       </div>
 
-      {/* ── TABELA DETALHADA COLAPSADA ── */}
-      <details className="prj-details">
-        <summary>Ver projeção dia a dia (30 linhas)</summary>
-        <div className="tw">
-          <table><thead><tr><th>Data</th><th>Saldo Inicial</th><th>Entradas Prev.</th><th>Saídas Prev.</th><th>Saldo Final</th><th>Situação</th></tr></thead>
-          <tbody>{rows.map((r,i)=>(
-            <tr key={i} className={r.saldoFinal<0?'row-danger':r.obs.includes('pressão')?'row-warn':''}>
-              <td>{fmtDate(r.data)}</td><td>{fmt(r.saldoInicial)}</td>
-              <td style={{color:'var(--green)'}}>{fmt(r.entradas)}</td>
-              <td style={{color:'var(--red)'}}>{r.saidas>0?fmtFull(r.saidas):'—'}</td>
-              <td><strong style={{color:r.saldoFinal<0?'var(--red)':r.saldoFinal<5000?'var(--amber)':'var(--green)'}}>{fmtFull(r.saldoFinal)}</strong></td>
-              <td style={{fontSize:11}}>{r.obs||'✓ Normal'}</td>
-            </tr>
-          ))}</tbody></table>
+      {/* ── SALDO / SEM BASE ── */}
+      {(!temSaldo||editando)&&(
+        <div className={`prx-proj-saldo-box${!temSaldo?' vazio':''}`}>
+          <div className="prx-proj-saldo-txt">
+            <strong>{temSaldo?'Atualizar saldo em conta':'Informe o saldo em conta para calcular a projeção'}</strong>
+            <span>
+              {posicaoFutura
+                ? 'A posição registrada tem data futura e não pode ser usada. Informe a posição de hoje.'
+                : (posicaoAntiga
+                  ? `A última posição é de ${fmtDate(dataPosicao)} (${fmt(saldoPos.valor)}). Informe o saldo de hoje para calcular a projeção.`
+                  : 'Somo o saldo bancário do grupo inteiro — não é preciso informar unidade por unidade.')}
+            </span>
+            <span>Esta posição representa o saldo consolidado da data informada. A projeção começa no dia seguinte.</span>
+          </div>
+          <div className="prx-proj-saldo-form">
+            <label>Saldo consolidado
+              <input type="text" inputMode="decimal" placeholder="R$ 0,00" value={form.valor}
+                onChange={e=>setForm({...form,valor:e.target.value})}/>
+            </label>
+            <label>Data da posição
+              <input type="date" value={form.data} max={hoje}
+                onChange={e=>setForm({...form,data:e.target.value})}/>
+            </label>
+            <button type="button" className="prx-proj-btn" onClick={salvarSaldo} disabled={salvando}>
+              {salvando?'Salvando…':'Salvar'}
+            </button>
+            {temSaldo&&<button type="button" className="prx-proj-btn ghost" onClick={()=>{setEditando(false);setAviso(null);}}>Cancelar</button>}
+          </div>
         </div>
-      </details>
+      )}
+      {aviso&&<div className={`prx-proj-aviso ${aviso.tipo}`}>{aviso.texto}</div>}
+
+      {!temSaldo?(
+        <div className={`prx-proj-vazio${posicaoAntiga?' aviso':''}`}>
+          {posicaoAntiga
+            ? `Atualize o saldo para calcular a projeção. A posição de ${fmtDate(dataPosicao)} continua guardada no histórico, mas não é usada para reconstruir o caixa de hoje.`
+            : 'Sem o saldo em conta não é possível projetar. Nenhum status é exibido até que a posição seja informada.'}
+        </div>
+      ):(
+        <>
+          {/* ── HERO ── */}
+          <section className={`prx-proj-hero ${st?st.cls:''}`}>
+            <div className="prx-proj-hero-main">
+              <div className="prx-proj-hero-vered">{st?st.titulo:'—'}</div>
+              <div className="prx-proj-hero-num">{fmt(numeroHero)}</div>
+              <div className="prx-proj-hero-cap">
+                {metricas&&metricas.status==='verde'
+                  ? `Menor folga do período, em ${fmtDate(metricas.diaMenorGar)}.`
+                  : (metricas?`Menor saldo do período, em ${fmtDate(metricas.status==='vermelho'?metricas.diaMenorProv:metricas.diaMenorGar)}.`:'')}
+              </div>
+            </div>
+            <div className="prx-proj-hero-side">
+              <div><span>Cenário</span><strong>{metricas&&metricas.status==='amarelo'?'Depende das vendas':'Garantido'}</strong></div>
+              <div><span>Confiança</span><strong>{conf?conf.nivel:'—'}</strong></div>
+              <div className="prx-proj-hero-motivo">{conf?conf.motivo:''}</div>
+            </div>
+          </section>
+
+          {/* ── PONTO DE PARTIDA ── */}
+          <section className="prx-proj-hoje">
+            <div className="prx-proj-hoje-hd">
+              <strong>Ponto de partida</strong>
+              <span>
+                Posição de {fmtDate(dataPosicao)} (hoje)
+                {' · '}
+                <button type="button" className="prx-proj-link" onClick={()=>{setEditando(true);setAviso(null);}}>atualizar</button>
+              </span>
+            </div>
+            <div className="prx-proj-hoje-grid">
+              <div><span>Saldo em conta hoje</span><strong>{fmt(saldoPosicao)}</strong></div>
+              <div><span>Entra amanhã</span><strong className="g">{fmt(linha1?linha1.comprometido:0)}</strong></div>
+              <div><span>Sai amanhã</span><strong className="r">{fmt(linha1?linha1.saidas:0)}</strong></div>
+              <div><span>Saldo ao fim de amanhã</span><strong className={linha1&&linha1.saldoGar<0?'r':''}>{fmt(linha1?linha1.saldoGar:saldoPosicao)}</strong></div>
+            </div>
+            <div className="prx-proj-nota">
+              Esta posição representa o saldo consolidado da data informada. A projeção começa no dia seguinte.
+            </div>
+          </section>
+
+          {/* ── RESUMO DO HORIZONTE ── */}
+          <section className="prx-proj-cards">
+            <div><span>Já vendido a receber</span><strong className="g">{fmt(metricas?metricas.totalComprometido:0)}</strong></div>
+            <div><span>Vendas estimadas</span><strong className={proj.hist.suficiente?'':'muted'}>
+              {proj.hist.suficiente?fmt(metricas?metricas.totalEstimado:0):'sem base'}</strong></div>
+            <div><span>Contas a pagar</span><strong className="r">{fmt(metricas?metricas.totalSaidas:0)}</strong></div>
+            <div><span>Saldo final garantido</span><strong className={metricas&&metricas.saldoFimGar<0?'r':''}>{fmt(metricas?metricas.saldoFimGar:0)}</strong></div>
+            <div><span>Saldo final provável</span><strong className={!proj.hist.suficiente?'muted':(metricas&&metricas.saldoFimProv<0?'r':'')}>
+              {proj.hist.suficiente?fmt(metricas?metricas.saldoFimProv:0):'—'}</strong></div>
+            <div><span>Dia de menor saldo</span><strong>{metricas?fmtDate(metricas.diaMenorGar):'—'}</strong></div>
+          </section>
+
+          {/* ── CURVA ── */}
+          <section className="prx-proj-chart-card">
+            <div className="prx-proj-chart-hd">
+              <strong>Como o caixa evolui</strong>
+              <div className="prx-proj-legend">
+                <span><i className="solida"></i>Garantido</span>
+                {proj.hist.suficiente&&<span><i className="tracejada"></i>Provável</span>}
+              </div>
+            </div>
+            <div className="prx-proj-chart"><canvas ref={chartRef}></canvas></div>
+            <div className="prx-proj-nota">Datas previstas conforme os prazos configurados, em dias corridos.</div>
+          </section>
+
+          {/* ── CENÁRIOS ── */}
+          <section className="prx-proj-cenarios">
+            <div>
+              <strong>Garantido</strong>
+              <p>Considera apenas o dinheiro já disponível ou já vendido, mais as contas conhecidas.</p>
+              <span className={metricas&&metricas.menorSaldoGar<0?'r':'g'}>{fmt(metricas?metricas.menorSaldoGar:0)}</span>
+              <em>menor saldo</em>
+            </div>
+            <div className={proj.hist.suficiente?'':'off'}>
+              <strong>Provável</strong>
+              <p>{proj.hist.suficiente
+                ? 'Inclui também a previsão de vendas futuras pelo ritmo histórico, já com o prazo de cada forma de pagamento.'
+                : `Histórico insuficiente para estimar vendas futuras (${proj.hist.diasComVenda} dias com venda nas últimas 8 semanas; mínimo de ${PROJ_MIN_DIAS_HIST}).`}</p>
+              {proj.hist.suficiente&&(<>
+                <span className={metricas&&metricas.menorSaldoProv<0?'r':'g'}>{fmt(metricas?metricas.menorSaldoProv:0)}</span>
+                <em>menor saldo</em>
+              </>)}
+            </div>
+          </section>
+
+          {/* ── DETALHES ── */}
+          <section className="prx-proj-detalhes">
+            <button type="button" className="prx-proj-detalhes-tog" onClick={()=>setDetalhes(!detalhes)} aria-expanded={detalhes}>
+              {detalhes?'Ocultar detalhes':'Ver detalhes'}
+            </button>
+            {detalhes&&(
+              <div className="prx-proj-detalhes-body">
+                <div>
+                  <strong>Recebimentos por forma de pagamento</strong>
+                  {proj.porModalidade.length===0?<p className="vazio">Nenhum recebimento previsto no período.</p>:(
+                    <ul>{proj.porModalidade.map(m=>(
+                      <li key={m.chave}><span>{m.label} <em>D+{m.prazo}</em></span><strong>{fmt(m.valor)}</strong></li>
+                    ))}</ul>
+                  )}
+                </div>
+                <div>
+                  <strong>Composição das saídas</strong>
+                  {proj.porCategoria.length===0?<p className="vazio">Nenhuma conta no período.</p>:(
+                    <ul>{proj.porCategoria.map(c=>(
+                      <li key={c.label}><span>{c.label}</span><strong>{fmt(c.valor)}</strong></li>
+                    ))}</ul>
+                  )}
+                </div>
+                <div>
+                  <strong>Origem da estimativa</strong>
+                  <p>{proj.hist.suficiente
+                    ? `Média por dia da semana sobre ${proj.hist.diasComVenda} dias com venda entre ${fmtDate(proj.hist.janelaIni)} e ${fmtDate(proj.hist.janelaFim)}, distribuída pelo mix histórico de formas de pagamento.`
+                    : 'Sem histórico suficiente para estimar. O cenário Provável está indisponível.'}</p>
+                </div>
+                <div>
+                  <strong>Qualidade dos dados</strong>
+                  <ul>
+                    <li><span>Contas sem vencimento</span><strong>{proj.qualidade.semVencimento}</strong></li>
+                    <li><span>Entradas sem data</span><strong>{proj.qualidade.semData}</strong></li>
+                    <li><span>Contas vencidas em aberto</span><strong>{proj.qualidade.vencidas}</strong></li>
+                  </ul>
+                  <p className="vazio">Transferências entre unidades não são identificáveis nos dados e permanecem contabilizadas como entrada e saída.</p>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* ── AGENDA ── */}
+          <section className="prx-proj-agenda">
+            <div className="prx-proj-agenda-hd"><strong>Próximos dias</strong><span>{janela.length} dias</span></div>
+            <div className="prx-proj-agenda-scroll">
+              <table className="prx-proj-tabela">
+                <thead><tr><th>Data</th><th>Entra</th><th>Estimado</th><th>Sai</th><th>Garantido</th><th>Provável</th></tr></thead>
+                <tbody>
+                  {janela.map(r=>(
+                    <tr key={r.data} className={r.saldoGar<0?'neg':(metricas&&r.data===metricas.diaMenorGar?'menor':'')}>
+                      <td>{fmtDate(r.data)}</td>
+                      <td>{r.comprometido>0?fmt(r.comprometido):'—'}</td>
+                      <td className="muted">{proj.hist.suficiente&&r.estimado>0?fmt(r.estimado):'—'}</td>
+                      <td>{r.saidas>0?fmt(r.saidas):'—'}</td>
+                      <td><strong className={r.saldoGar<0?'r':''}>{fmt(r.saldoGar)}</strong></td>
+                      <td className={!proj.hist.suficiente?'muted':''}>{proj.hist.suficiente?fmt(r.saldoProv):'—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {/* ── PRECISA DE VOCÊ ── */}
+          {(()=>{
+            const acoes=[];
+            if(proj.qualidade.semVencimento>0)acoes.push(`${proj.qualidade.semVencimento} conta(s) sem vencimento ficam de fora da projeção. Cadastre a data.`);
+            if(proj.qualidade.vencidas>0)acoes.push(`${proj.qualidade.vencidas} conta(s) vencida(s) continuam em aberto. Verifique se já foram pagas.`);
+            if(proj.qualidade.semData>0)acoes.push(`${proj.qualidade.semData} lançamento(s) de venda sem data não entram no cálculo.`);
+            if(!proj.hist.suficiente)acoes.push('Complete o histórico de vendas para liberar o cenário Provável.');
+            if(metricas&&metricas.primeiroNegGar)acoes.push(`Reveja os vencimentos de ${fmtDate(metricas.primeiroNegGar)} — é quando o caixa garantido fica negativo.`);
+            if(!acoes.length)return null;
+            return(
+              <section className="prx-proj-acoes">
+                <strong>Precisa de você</strong>
+                <ul>{acoes.map((a,i)=><li key={i}>{a}</li>)}</ul>
+              </section>
+            );
+          })()}
+        </>
+      )}
     </div>
   );
 }
@@ -6517,13 +7009,6 @@ function App(){
               <button key={i} className={`mchip${selectedMonth===i?' active':''}`} onClick={()=>setSelectedMonth(i)}>{m}</button>
             ))}
           </div>
-          <button
-            className={`page-hdr-shortcut${activeTab==='projecao'?' active':''}`}
-            onClick={()=>setActiveTab('projecao')}
-            title="Abrir Projeção de Saldo"
-          >
-            <span>📈</span><span>Projeção</span>
-          </button>
         </React.Fragment>
       ):null}
       actions={(
@@ -6548,6 +7033,14 @@ function App(){
             fontSize:14,transition:'all .15s',
           }}
         >🏢</button>
+        <button
+          type="button"
+          className={`prx-proj-nav${activeTab==='projecao'?' active':''}`}
+          onClick={()=>setActiveTab('projecao')}
+          title="Projeção"
+          aria-label="Projeção"
+          aria-pressed={activeTab==='projecao'}
+        >{TABS.find(t=>t.id==='projecao')?.icon}</button>
         {(()=>{
           // Identificação do cliente ativo a partir de TODAS as fontes já carregadas em empresaAtiva
           // (clienteNome vem do join com `clientes`; nome é o nome da própria empresa/unidade).
@@ -6588,7 +7081,7 @@ function App(){
         {activeTab==='fornecedores'&&<Fornecedores contas={contasComParcelas} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
         {activeTab==='dividas'&&<Dividas dividas={dividas} setDividas={setDividas} onDividaCriar={onDividaCriar} onDividaEditar={onDividaEditar} onDividaExcluir={onDividaExcluir} entradaMensal={totalEntMes}/>}
         {activeTab==='retiradas'&&<Retiradas retiradas={retiradas} setRetiradas={setRetiradas} entradaMensal={totalEntMes} config={config} setConfig={setConfig}/>}
-        {activeTab==='projecao'&&<Projecao entradas={entradas} contas={contasComParcelas} config={config} setConfig={setConfig}/>}
+        {activeTab==='projecao'&&<Projecao empresas={empresasDisponiveis}/>}
         {activeTab==='portfolio'&&<Portfolio
           empresas={empresasDisponiveis}
           selYear={selectedYear}
