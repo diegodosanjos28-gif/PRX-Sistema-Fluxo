@@ -1122,6 +1122,62 @@ textarea{resize:vertical;min-height:58px;}
 }
 
 /* ══════════════════════════════════════════════════════
+   PROJEÇÃO — CAMADA 1: CAPITAL DE GIRO + MURAL CONSULTIVO
+   Prefixo exclusivo prx-cg-. Off-white + grafite/preto + papaya.
+   Nenhum seletor global; nenhuma classe da Projeção existente é tocada.
+   ══════════════════════════════════════════════════════ */
+.prx-cg-layer{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(280px,1fr);gap:16px;margin-bottom:22px;align-items:stretch;}
+
+.prx-cg-main{background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:28px 30px;box-shadow:var(--shadow-md);display:flex;flex-direction:column;min-width:0;}
+.prx-cg-head{display:flex;flex-direction:column;gap:3px;margin-bottom:18px;}
+.prx-cg-label{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--carbon);}
+.prx-cg-sub{font-size:12px;color:var(--text-muted);}
+.prx-cg-carregando,.prx-cg-erro{font-size:13px;color:var(--text-muted);padding:20px 0;}
+.prx-cg-erro{color:var(--red-dim);}
+.prx-cg-value{font-size:44px;font-weight:800;letter-spacing:-.03em;color:var(--carbon);line-height:1.05;word-break:break-word;}
+.prx-cg-metrics{display:flex;gap:32px;margin-top:20px;flex-wrap:wrap;}
+.prx-cg-metrics div{display:flex;flex-direction:column;gap:3px;}
+.prx-cg-metrics span{font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.02em;}
+.prx-cg-metrics strong{font-size:17px;font-weight:700;color:var(--carbon);}
+.prx-cg-metrics strong.papaya{color:var(--papaya-dark);}
+.prx-cg-feedback{margin-top:16px;font-size:12px;font-weight:600;color:var(--green-dim);}
+.prx-cg-erro-inline{margin-top:16px;font-size:12px;font-weight:600;color:var(--red-dim);}
+.prx-cg-actions{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap;}
+
+.prx-cg-action{font-family:inherit;font-size:12.5px;font-weight:700;letter-spacing:.02em;padding:11px 20px;border-radius:10px;cursor:pointer;border:1px solid transparent;transition:opacity .15s,background .15s;}
+.prx-cg-action:hover{opacity:.9;}
+.prx-cg-action.primary{background:var(--papaya);color:#1B1C20;}
+.prx-cg-action.ghost{background:var(--surface);color:var(--carbon);border-color:var(--border);}
+.prx-cg-action.dark{background:var(--carbon);color:var(--header-text);border-bottom:2px solid var(--papaya);}
+
+.prx-cg-advisor{background:var(--carbon);color:var(--header-text);border-radius:20px;padding:26px 26px 20px;box-shadow:var(--shadow-md);display:flex;flex-direction:column;min-width:0;}
+.prx-cg-advisor-idx{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--papaya);margin-bottom:14px;}
+.prx-cg-slide{flex:1;display:flex;flex-direction:column;gap:9px;}
+.prx-cg-advisor-title{font-size:14px;font-weight:800;letter-spacing:-.005em;line-height:1.3;color:#fff;}
+.prx-cg-advisor-body{font-size:12.5px;line-height:1.55;color:rgba(240,239,235,.82);}
+.prx-cg-advisor-rodape{font-size:11px;color:rgba(240,239,235,.55);margin-top:2px;}
+.prx-cg-advisor-nav{display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.10);}
+.prx-cg-advisor-nav>button{font-family:inherit;background:transparent;border:1px solid rgba(255,255,255,.18);color:#fff;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:15px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:background .15s;}
+.prx-cg-advisor-nav>button:hover{background:rgba(255,255,255,.10);}
+.prx-cg-dots{display:flex;gap:6px;}
+.prx-cg-dot{width:6px;height:6px;padding:0;border-radius:50%;border:none;background:rgba(255,255,255,.25);cursor:pointer;}
+.prx-cg-dot.on{background:var(--papaya);}
+
+.prx-cg-modal-info{font-size:12.5px;color:var(--text-muted);margin-bottom:12px;}
+.prx-cg-modal-info strong{color:var(--text-primary);}
+
+@media(max-width:900px){
+  .prx-cg-layer{grid-template-columns:1fr;}
+}
+@media(max-width:600px){
+  .prx-cg-main{padding:20px 20px;}
+  .prx-cg-value{font-size:34px;}
+  .prx-cg-actions{gap:8px;}
+  .prx-cg-action{flex:1 1 auto;padding:10px 14px;font-size:12px;text-align:center;}
+  .prx-cg-advisor{padding:20px 20px 16px;}
+}
+
+/* ══════════════════════════════════════════════════════
    PORTFÓLIO — REDESIGN EXECUTIVO (PRX)
    ══════════════════════════════════════════════════════ */
 .pf-subtitle{font-size:12.5px;color:var(--text-muted);font-weight:500;margin:-6px 0 4px;}
@@ -4573,6 +4629,250 @@ const projConfianca=(hist,idadePosicao,metricas)=>{
   return{nivel,motivo:partes.join(' · ')};
 };
 
+// ══════════════════════════════════════════════════════════════════════════
+// CAPITAL DE GIRO — CAMADA 1 (aba Projeção).
+// Reserva financeira do CLIENTE (grupo), separada do saldo operacional em conta
+// (saldos_caixa_consolidados) e de config.saldoInicial. Ledger append-only em
+// public.capital_giro_movimentos — sem UPDATE, sem DELETE.
+// ══════════════════════════════════════════════════════════════════════════
+
+// Representação visual discreta do nível de confiança já calculado por projConfianca.
+// Não cria um novo nível nem percentual — só transforma alta/média/baixa em pontos.
+const cgConfDots=nivel=>nivel==='alta'?'●●●●':nivel==='média'?'●●●○':nivel==='baixa'?'●●○○':'○○○○';
+
+// Aviso 1 — leitura executiva do caixa, a partir das MESMAS métricas do Hero da Projeção
+// (metricas/conf já calculados por buildProjecaoCaixa/projConfianca para o horizonte
+// selecionado). Nenhum dado é inventado; nenhuma causa é atribuída sem prova.
+const cgAviso1Texto=(horizonte,metricas,conf)=>{
+  if(!metricas){
+    return{titulo:'ATUALIZE O SALDO PARA ANALISAR O CAIXA',
+      corpo:'Informe o saldo em conta para que a Projeção calcule a saúde do caixa dos próximos dias.',
+      rodape:null};
+  }
+  const rodape=conf?`Confiança: ${cgConfDots(conf.nivel)}  ·  ${conf.motivo}`:null;
+  if(metricas.status==='verde'){
+    return{titulo:'NO RITMO ATUAL, DÁ PRA PAGAR TUDO',
+      corpo:`As contas conhecidas dos próximos ${horizonte} dias estão cobertas pelo caixa garantido. Menor folga do período: ${fmt(metricas.menorSaldoGar)}, em ${fmtDate(metricas.diaMenorGar)}.`,
+      rodape};
+  }
+  if(metricas.status==='amarelo'){
+    return{titulo:'O CAIXA DEPENDE DA MANUTENÇÃO DAS VENDAS',
+      corpo:`Com o que já está garantido, o caixa fica apertado a partir de ${fmtDate(metricas.primeiroNegGar)}. Mantendo o ritmo médio de vendas, o período fecha sem ficar negativo. Ponto de atenção: ${fmtDate(metricas.diaMenorGar)}.`,
+      rodape};
+  }
+  return{titulo:'HÁ RISCO DE FALTA DE CAIXA',
+    corpo:`Mesmo considerando a estimativa de vendas, o caixa pode ficar negativo a partir de ${fmtDate(metricas.primeiroNegProv||metricas.diaMenorProv)}. Menor saldo previsto: ${fmt(metricas.menorSaldoProv)}.`,
+    rodape};
+};
+
+// Aviso 2 — necessidade de Capital de Giro nos PRÓXIMOS 30 DIAS, sempre pelo cenário
+// GARANTIDO (conservador) e sempre com horizonte fixo em 30 — nunca o horizonte
+// selecionado na tela. `proj30` é o MESMO motor buildProjecaoCaixa; nenhuma regra nova.
+const cgAviso2Texto=(proj30,capitalDisponivel)=>{
+  if(!proj30||!proj30.metricas){
+    return{titulo:'NECESSIDADE DE CAPITAL — 30 DIAS',
+      corpo:'Atualize o saldo para calcular a necessidade de Capital de Giro.',rodape:null};
+  }
+  const necessidade=projCents(Math.max(0,-proj30.metricas.menorSaldoGar));
+  if(necessidade<=0){
+    return{titulo:'NECESSIDADE DE CAPITAL — 30 DIAS',
+      corpo:'Pela projeção atual, não há necessidade prevista de utilizar o Capital de Giro nos próximos 30 dias.',
+      rodape:null};
+  }
+  const rodape=necessidade>projNum(capitalDisponivel)
+    ?`Necessidade projetada: ${fmt(necessidade)}  ·  Capital disponível: ${fmt(capitalDisponivel)}`:null;
+  return{titulo:'NECESSIDADE DE CAPITAL — 30 DIAS',
+    corpo:`Nos próximos 30 dias, a operação pode precisar de até ${fmt(necessidade)} do Capital de Giro para manter o caixa não negativo.`,
+    rodape};
+};
+
+// Aviso 3 — utilização e retorno do Capital de Giro. Utilizado/Retornado são do MÊS
+// CORRENTE real (data de hoje); "a retornar" é a pendência histórica — nunca reseta
+// na virada do mês (o Capital de Giro atravessa meses).
+const cgAviso3Texto=(cgCalc,hoje)=>{
+  const mesNome=(MONTHS[Number(hoje.slice(5,7))-1]||'').toLowerCase();
+  if(cgCalc.utilizadoMes<=0){
+    if(cgCalc.aRetornar>0){
+      return{titulo:'CAPITAL UTILIZADO NA OPERAÇÃO',
+        corpo:`Nenhuma saída de Capital de Giro em ${mesNome}.`,
+        rodape:`Ainda há ${fmt(cgCalc.aRetornar)} pendente de retorno de movimentos anteriores.`};
+    }
+    return{titulo:'CAPITAL UTILIZADO NA OPERAÇÃO',
+      corpo:'Nenhum valor do Capital de Giro foi utilizado na operação neste mês.',rodape:null};
+  }
+  const partes=[`Durante ${mesNome}, ${fmt(cgCalc.utilizadoMes)} saíram do Capital de Giro para ajudar nos pagamentos.`];
+  if(cgCalc.retornadoMes>0)partes.push(`${fmt(cgCalc.retornadoMes)} já retornaram neste mês.`);
+  const rodape=cgCalc.aRetornar>0?`Ainda devem retornar: ${fmt(cgCalc.aRetornar)}.`:'Sem pendência de retorno no momento.';
+  return{titulo:'CAPITAL UTILIZADO NA OPERAÇÃO',corpo:partes.join(' '),rodape};
+};
+
+function CapitalDeGiroLayer({clienteId,hoje,horizonte,metricas,conf,proj30}){
+  const[cg,setCg]=useState({estado:'idle',mov:[]}); // idle|carregando|ok|erro
+  const[acaoModal,setAcaoModal]=useState(null);      // null|'aporte'|'retorno'|'saida'
+  const[valorInput,setValorInput]=useState('');
+  const[salvandoCg,setSalvandoCg]=useState(false);
+  const[erroCg,setErroCg]=useState('');
+  const[feedbackCg,setFeedbackCg]=useState('');
+  const[muralIdx,setMuralIdx]=useState(0);
+
+  // Carregamento do ledger do CLIENTE — independente das unidades/entradas/contas da Projeção.
+  // Guard de corrida: resposta atrasada de um cliente anterior nunca sobrescreve o atual.
+  useEffect(()=>{
+    if(!clienteId){setCg({estado:'idle',mov:[]});return;}
+    let cancelado=false;
+    setCg({estado:'carregando',mov:[]});
+    (async()=>{
+      try{
+        const mov=await fetchAllPages((from,to)=>supabase.from('capital_giro_movimentos')
+          .select('tipo,valor,data').eq('cliente_id',clienteId)
+          .order('id',{ascending:true}).range(from,to),'capitalGiro:movimentos');
+        if(cancelado)return;
+        setCg({estado:'ok',mov:mov||[]});
+      }catch(err){
+        if(cancelado)return;
+        console.error('Erro ao carregar o Capital de Giro:',err);
+        setCg({estado:'erro',mov:[]});
+      }
+    })();
+    return()=>{cancelado=true;};
+  },[clienteId]);
+
+  // Derivações — fórmula oficial, única fonte de verdade para os 3 indicadores exibidos.
+  const cgCalc=React.useMemo(()=>{
+    const mesRef=hoje.slice(0,7);
+    let aportes=0,saidas=0,retornos=0,utilizadoMes=0,retornadoMes=0;
+    (cg.mov||[]).forEach(m=>{
+      const v=projNum(m.valor);
+      if(v<=0)return;
+      const doMes=(m.data||'').slice(0,7)===mesRef;
+      if(m.tipo==='aporte')aportes+=v;
+      else if(m.tipo==='saida'){saidas+=v;if(doMes)utilizadoMes+=v;}
+      else if(m.tipo==='retorno'){retornos+=v;if(doMes)retornadoMes+=v;}
+    });
+    return{
+      disponivel:projCents(aportes+retornos-saidas),
+      aRetornar:projCents(Math.max(0,saidas-retornos)),
+      utilizadoMes:projCents(utilizadoMes),
+      retornadoMes:projCents(retornadoMes),
+    };
+  },[cg.mov,hoje]);
+
+  const abrirModal=tipo=>{setAcaoModal(tipo);setValorInput('');setErroCg('');setFeedbackCg('');};
+  const fecharModal=()=>{if(salvandoCg)return;setAcaoModal(null);setValorInput('');setErroCg('');};
+
+  // INSERT único por confirmação — botão desabilitado durante o salvamento impede duplo clique.
+  // Envia SOMENTE cliente_id/tipo/valor/data — id/criado_em/criado_por são do trigger do banco.
+  const confirmarAcaoCg=async()=>{
+    if(salvandoCg)return;
+    const valor=projCents(parseNum(valorInput));
+    if(!(valor>0)){setErroCg('Informe um valor válido.');return;}
+    if(acaoModal==='saida'&&valor>cgCalc.disponivel){setErroCg('Esse valor é maior que o Capital de Giro disponível.');return;}
+    if(acaoModal==='retorno'&&valor>cgCalc.aRetornar){setErroCg('O valor informado é maior que o saldo pendente de retorno.');return;}
+    if(!clienteId){setErroCg('Não foi possível identificar o cliente.');return;}
+    setSalvandoCg(true);setErroCg('');
+    try{
+      const{error}=await supabase.from('capital_giro_movimentos')
+        .insert({cliente_id:clienteId,tipo:acaoModal,valor,data:hoje});
+      if(error)throw error;
+      // Estado local atualizado após confirmação do banco — nunca antes (evita movimento fictício).
+      setCg(c=>({...c,mov:[...c.mov,{tipo:acaoModal,valor,data:hoje}]}));
+      setAcaoModal(null);setValorInput('');
+      setFeedbackCg('Capital atualizado.');
+    }catch(err){
+      console.error('Erro ao registrar movimento do Capital de Giro:',err);
+      const msg=String((err&&(err.message||err.details))||'');
+      if(/row-level security|permission denied|violates/i.test(msg)){
+        setErroCg('Você tem acesso somente para consulta ao Capital de Giro.');
+      }else{
+        setErroCg('Não foi possível salvar. Tente novamente.');
+      }
+    }finally{setSalvandoCg(false);}
+  };
+
+  const avisos=[
+    cgAviso1Texto(horizonte,metricas,conf),
+    cgAviso2Texto(proj30,cgCalc.disponivel),
+    cgAviso3Texto(cgCalc,hoje),
+  ];
+  const avisoAtual=avisos[muralIdx];
+  const muralPrev=()=>setMuralIdx(i=>(i+2)%3);
+  const muralNext=()=>setMuralIdx(i=>(i+1)%3);
+
+  const modalTitulo=acaoModal==='aporte'?'Adicionar Capital de Giro'
+    :acaoModal==='retorno'?'Retornar ao Capital de Giro'
+    :'Utilizar Capital de Giro';
+
+  return(
+    <div className="prx-cg-layer">
+      <div className="prx-cg-main">
+        <div className="prx-cg-head">
+          <span className="prx-cg-label">Capital de Giro</span>
+          <span className="prx-cg-sub">Disponível para suporte à operação</span>
+        </div>
+        {cg.estado==='erro'?(
+          <div className="prx-cg-erro">Não foi possível carregar o Capital de Giro.</div>
+        ):cg.estado!=='ok'?(
+          <div className="prx-cg-carregando">Carregando Capital de Giro…</div>
+        ):(<>
+          <div className="prx-cg-value">{fmt(cgCalc.disponivel)}</div>
+          <div className="prx-cg-metrics">
+            <div><span>Utilizado no mês</span><strong>{fmt(cgCalc.utilizadoMes)}</strong></div>
+            <div><span>A retornar</span><strong className={cgCalc.aRetornar>0?'papaya':''}>{fmt(cgCalc.aRetornar)}</strong></div>
+          </div>
+          {feedbackCg&&<div className="prx-cg-feedback">{feedbackCg}</div>}
+          {erroCg&&!acaoModal&&<div className="prx-cg-erro-inline">{erroCg}</div>}
+          <div className="prx-cg-actions">
+            <button type="button" className="prx-cg-action primary" onClick={()=>abrirModal('aporte')}>Inserir valor</button>
+            <button type="button" className="prx-cg-action ghost" onClick={()=>abrirModal('retorno')}>Retornar saldo</button>
+            <button type="button" className="prx-cg-action dark" onClick={()=>abrirModal('saida')}>Saída</button>
+          </div>
+        </>)}
+      </div>
+
+      <div className="prx-cg-advisor">
+        <div className="prx-cg-advisor-idx">Aviso {muralIdx+1}/3</div>
+        <div className="prx-cg-slide">
+          <div className="prx-cg-advisor-title">{avisoAtual.titulo}</div>
+          <div className="prx-cg-advisor-body">{avisoAtual.corpo}</div>
+          {avisoAtual.rodape&&<div className="prx-cg-advisor-rodape">{avisoAtual.rodape}</div>}
+        </div>
+        <div className="prx-cg-advisor-nav">
+          <button type="button" onClick={muralPrev} aria-label="Aviso anterior">‹</button>
+          <div className="prx-cg-dots">
+            {[0,1,2].map(i=>(
+              <button key={i} type="button" className={`prx-cg-dot${i===muralIdx?' on':''}`}
+                onClick={()=>setMuralIdx(i)} aria-label={`Ir para o aviso ${i+1}`} aria-current={i===muralIdx}></button>
+            ))}
+          </div>
+          <button type="button" onClick={muralNext} aria-label="Próximo aviso">›</button>
+        </div>
+      </div>
+
+      {acaoModal&&(
+        <Modal title={modalTitulo} onClose={fecharModal}>
+          {acaoModal==='saida'&&<p className="prx-cg-modal-info">Disponível: <strong>{fmt(cgCalc.disponivel)}</strong></p>}
+          {acaoModal==='retorno'&&<p className="prx-cg-modal-info">Pendente de retorno: <strong>{fmt(cgCalc.aRetornar)}</strong></p>}
+          {erroCg&&<div className="alert alert-r" style={{marginBottom:12}}>{erroCg}</div>}
+          <div className="form-grid">
+            <div className="fg">
+              <label>{acaoModal==='aporte'?'Valor':(acaoModal==='retorno'?'Valor do retorno':'Valor da saída')}</label>
+              <input type="text" inputMode="decimal" placeholder="R$ 0,00" autoFocus
+                value={valorInput} onChange={e=>{setValorInput(e.target.value);setErroCg('');}}
+                onKeyDown={e=>{if(e.key==='Enter')confirmarAcaoCg();}}/>
+            </div>
+          </div>
+          <div style={{marginTop:12,display:'flex',gap:8,justifyContent:'flex-end'}}>
+            <button className="btn btn-secondary" onClick={fecharModal} disabled={salvandoCg}>Cancelar</button>
+            <button className="btn btn-primary" onClick={confirmarAcaoCg} disabled={salvandoCg}>
+              {salvandoCg?'Salvando…':(acaoModal==='aporte'?'Confirmar aporte':(acaoModal==='retorno'?'Confirmar retorno':'Confirmar saída'))}
+            </button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
 function Projecao({empresas}){
   const chartRef=useRef(null);
   const hoje=today();
@@ -4656,6 +4956,17 @@ function Projecao({empresas}){
       saldoValor:projNum(saldoPos.valor),dataPosicao,hoje,horizonte,
     });
   },[carga,idsChave,prazos,saldoPos,dataPosicao,hoje,horizonte,temSaldo]);
+
+  // Mesma projeção (mesmo motor, mesmas entradas), SEMPRE com horizonte fixo em 30 dias —
+  // usada apenas pelo Aviso 2 do mural do Capital de Giro. Independe do seletor 30/60/90 acima.
+  const proj30=React.useMemo(()=>{
+    if(!temSaldo)return null;
+    return buildProjecaoCaixa({
+      entradas:carga.ent,contas:carga.con,dividas:carga.div,retiradas:carga.ret,
+      empresaIds:idsChave?idsChave.split(','):[],prazos,
+      saldoValor:projNum(saldoPos.valor),dataPosicao,hoje,horizonte:30,
+    });
+  },[carga,idsChave,prazos,saldoPos,dataPosicao,hoje,temSaldo]);
 
   const metricas=proj?proj.metricas:null;
   const conf=proj?projConfianca(proj.hist,idadePosicao,metricas):null;
@@ -4743,6 +5054,16 @@ function Projecao({empresas}){
 
   return(
     <div className="prx-proj-wrap">
+      {/* ── CAMADA 1 · CAPITAL DE GIRO + MURAL CONSULTIVO ── */}
+      <CapitalDeGiroLayer
+        clienteId={clienteId}
+        hoje={hoje}
+        horizonte={horizonte}
+        metricas={metricas}
+        conf={conf}
+        proj30={proj30}
+      />
+
       {/* ── CABEÇALHO ── */}
       <div className="prx-proj-head">
         <div style={{minWidth:0}}>
