@@ -1189,7 +1189,9 @@ textarea{resize:vertical;min-height:58px;}
 .prx-today-sub{font-size:12px;color:var(--text-muted);}
 .prx-today-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:stretch;}
 .prx-today-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px 20px;box-shadow:var(--shadow-xs);display:flex;flex-direction:column;gap:6px;min-width:0;min-height:104px;justify-content:center;}
-.prx-today-card-account{background:linear-gradient(180deg,var(--papaya-soft),var(--surface) 65%);border-color:rgba(232,118,10,.22);}
+.prx-today-card-account{background:linear-gradient(180deg,var(--papaya-soft),var(--surface) 65%);border-color:rgba(232,118,10,.22);position:relative;}
+.prx-today-edit{position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:8px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);font-size:12px;line-height:1;padding:0;}
+.prx-today-edit:hover{background:var(--papaya-soft);color:var(--carbon);}
 .prx-today-label{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);}
 .prx-today-value{font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--carbon);line-height:1.15;word-break:break-word;}
 .prx-today-value.g{color:var(--green-dim);}
@@ -4642,23 +4644,22 @@ const buildProjecaoCaixa=({entradas,contas,dividas,retiradas,empresaIds,prazos,s
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// PROJEÇÃO — CAMADA 2: "HOJE" (4 cards executivos).
+// PROJEÇÃO — CAMADA 2: resultado de UM DIA (motor de "Hoje", generalizado).
 // Reaproveita EXATAMENTE os helpers do motor acima — projDataRecebimento para o
 // regime de caixa dos recebimentos, mergeContasComParcelas (+ mesmo filtro de
-// status 'Pago') para as saídas — filtrando ambos para a data de hoje. Não é um
+// status 'Pago') para as saídas — filtrando ambos para `dataAlvo`. Não é um
 // motor concorrente: nenhuma regra de prazo é copiada ou reinterpretada.
 //
-// Sobra Hoje = Entra Hoje − Sai Hoje. NÃO soma o saldo em conta: como o próprio
-// buildProjecaoCaixa comenta acima, `saldos_caixa_consolidados.valor` (quando a
-// posição é de hoje) é o saldo de FECHAMENTO do dia — já inclui os recebimentos e
-// pagamentos de hoje. Somá-lo de novo aqui duplicaria esses mesmos movimentos.
+// Generalização de buildHojeCaixa(hoje) → buildCaixaDoDia(dataAlvo): mesma regra,
+// parametrizada pela data. Usada tanto pelo Card "Hoje" quanto pelo acumulativo
+// de "Em Conta" (soma do resultado diário desde a última posição manual).
 // ══════════════════════════════════════════════════════════════════════════
-const buildHojeCaixa=({entradas,contas,dividas,retiradas,empresaIds,prazos,hoje})=>{
+const buildCaixaDoDia=({entradas,contas,dividas,retiradas,empresaIds,prazos,dataAlvo})=>{
   const ids=new Set((empresaIds||[]).filter(Boolean));
 
-  // ── Entra Hoje: mesma regra de projDataRecebimento, filtrada para dr===hoje ──
+  // ── Entra: mesma regra de projDataRecebimento, filtrada para dr===dataAlvo ──
   const porModalidade={};
-  let entraHoje=0;
+  let entra=0;
   (entradas||[]).forEach(e=>{
     if(!ids.has(e.empresa_id))return;
     if(!projDataValida(e.data))return;
@@ -4666,41 +4667,53 @@ const buildHojeCaixa=({entradas,contas,dividas,retiradas,empresaIds,prazos,hoje}
       const v=projNum(e[forma]);
       if(v<=0)return;
       const dr=projDataRecebimento(e,forma,prazos);
-      if(dr!==hoje)return; // só o que fica disponível hoje; nunca D+30 de hoje, nem ontem/amanhã
-      entraHoje+=v;
+      if(dr!==dataAlvo)return; // só o que fica disponível no dia-alvo; nunca D+30, nem véspera/seguinte
+      entra+=v;
       porModalidade[forma]=(porModalidade[forma]||0)+v;
     });
   });
 
-  // ── Sai Hoje: mesmo merge (contas manuais + parcelas de dívidas + fixas), sem
+  // ── Sai: mesmo merge (contas manuais + parcelas de dívidas + fixas), sem
   // somar dívidas em separado, mesma exclusão de status 'Pago' já aplicada acima ──
-  let saiHoje=0;
+  let sai=0;
   const porOrigem={contas:0,retiradas:0};
   ids.forEach(id=>{
     const con=(contas||[]).filter(r=>r.empresa_id===id);
     const div=(dividas||[]).filter(r=>r.empresa_id===id);
     mergeContasComParcelas(con,div).forEach(c=>{
-      if(!projDataValida(c.vencimento)||c.vencimento!==hoje)return;
+      if(!projDataValida(c.vencimento)||c.vencimento!==dataAlvo)return;
       if(c.status==='Pago')return;
       const v=projNum(c.valor);
       if(v<=0)return;
-      saiHoje+=v;
+      sai+=v;
       porOrigem.contas+=v;
     });
   });
   (retiradas||[]).forEach(r=>{
     if(!ids.has(r.empresa_id))return;
-    if(!projDataValida(r.data)||r.data!==hoje)return;
+    if(!projDataValida(r.data)||r.data!==dataAlvo)return;
     const v=projNum(r.valor);
     if(v<=0)return;
-    saiHoje+=v;
+    sai+=v;
     porOrigem.retiradas+=v;
   });
 
   return{
-    entraHoje:projCents(entraHoje),saiHoje:projCents(saiHoje),
-    sobraHoje:projCents(entraHoje-saiHoje),
+    entra:projCents(entra),sai:projCents(sai),
+    sobra:projCents(entra-sai),
     porModalidade,porOrigem,
+  };
+};
+
+// Sobra Hoje = Entra Hoje − Sai Hoje. NÃO soma o saldo em conta: como o próprio
+// buildProjecaoCaixa comenta acima, `saldos_caixa_consolidados.valor` (quando a
+// posição é de hoje) é o saldo de FECHAMENTO do dia — já inclui os recebimentos e
+// pagamentos de hoje. Somá-lo de novo aqui duplicaria esses mesmos movimentos.
+const buildHojeCaixa=({entradas,contas,dividas,retiradas,empresaIds,prazos,hoje})=>{
+  const dia=buildCaixaDoDia({entradas,contas,dividas,retiradas,empresaIds,prazos,dataAlvo:hoje});
+  return{
+    entraHoje:dia.entra,saiHoje:dia.sai,sobraHoje:dia.sobra,
+    porModalidade:dia.porModalidade,porOrigem:dia.porOrigem,
   };
 };
 
@@ -4968,10 +4981,12 @@ function CapitalDeGiroLayer({clienteId,hoje,horizonte,metricas,conf,proj30}){
 // ══════════════════════════════════════════════════════════════════════════
 // PROJEÇÃO — CAMADA 2: "HOJE".
 // Puramente apresentacional — recebe os valores já calculados por buildHojeCaixa
-// (mais o saldo/estado já existentes da própria Projeção para o Card 1).
+// e pelo acumulativo de "Em Conta" (ver useMemo `emConta` em Projecao()).
 // ══════════════════════════════════════════════════════════════════════════
-function HojeLayer({temSaldo,saldoPosicao,entraHoje,saiHoje,sobraHoje}){
+function HojeLayer({emContaValor,emContaOrigem,onEditarSaldo,entraHoje,saiHoje,sobraHoje}){
   const sobraCls=sobraHoje>0?'g':(sobraHoje<0?'r':'neutro');
+  const emContaFoot=emContaOrigem==='manual'?'saldo informado hoje'
+    :(emContaOrigem==='automatico'?'saldo acumulado':'defina o saldo em conta');
   return(
     <div className="prx-today-layer">
       <div className="prx-today-head">
@@ -4980,11 +4995,13 @@ function HojeLayer({temSaldo,saldoPosicao,entraHoje,saiHoje,sobraHoje}){
       </div>
       <div className="prx-today-grid">
         <div className="prx-today-card prx-today-card-account">
+          <button type="button" className="prx-today-edit" onClick={onEditarSaldo}
+            aria-label="Editar saldo em conta" title="Editar saldo em conta">✎</button>
           <span className="prx-today-label">Em conta</span>
-          <strong className={`prx-today-value${temSaldo?'':' muted'}`}>
-            {temSaldo?fmt(saldoPosicao):'Saldo não informado'}
+          <strong className={`prx-today-value${emContaValor==null?' muted':(emContaValor<0?' r':'')}`}>
+            {emContaValor==null?'Saldo não informado':fmt(emContaValor)}
           </strong>
-          <span className="prx-today-foot">saldo base</span>
+          <span className="prx-today-foot">{emContaFoot}</span>
         </div>
         <div className="prx-today-card">
           <span className="prx-today-label">Entra hoje</span>
@@ -5005,6 +5022,12 @@ function HojeLayer({temSaldo,saldoPosicao,entraHoje,saiHoje,sobraHoje}){
     </div>
   );
 }
+
+// Ocultação cirúrgica (temporária) da antiga seção "Projeção de Caixa" — Hero, Ponto de
+// Partida, cards, curva, cenários, detalhes e agenda. O motor que a alimenta (proj/proj30/
+// metricas/conf) continua ativo e é reaproveitado pela Camada 1 (Mural, Capital de Giro) e
+// pelas próximas camadas. Apenas o JSX deixa de ser renderizado — nada foi apagado.
+const MOSTRAR_PROJECAO_ANTIGA=false;
 
 function Projecao({empresas}){
   const chartRef=useRef(null);
@@ -5114,6 +5137,35 @@ function Projecao({empresas}){
     empresaIds:idsChave?idsChave.split(','):[],prazos,hoje,
   }),[carga,idsChave,prazos,hoje]);
 
+  // ── CAMADA 2 · EM CONTA — saldo operacional acumulado até hoje ──
+  // Prioridade 1 (manual): se a posição mais recente em saldos_caixa_consolidados é de
+  // hoje, ela É o Em Conta de hoje — não soma Entra/Sai/Sobra de novo (dupla contagem).
+  // Prioridade 2 (automático): se a posição mais recente é anterior a hoje, acumula o
+  // resultado diário (buildCaixaDoDia, mesmo motor de "Hoje") de (dataPosicao+1) até hoje.
+  // Sem nenhuma posição histórica: null → "Saldo não informado" (nunca assume R$ 0,00).
+  const emConta=React.useMemo(()=>{
+    if(!posicaoValida||posicaoFutura)return{valor:null,origem:null};
+    if(dataPosicao===hoje)return{valor:projNum(saldoPos.valor),origem:'manual'};
+    const ids=idsChave?idsChave.split(','):[];
+    let acumulado=projNum(saldoPos.valor);
+    let d=addDays(dataPosicao,1),guarda=0;
+    while(d<=hoje&&guarda<800){
+      acumulado+=buildCaixaDoDia({
+        entradas:carga.ent,contas:carga.con,dividas:carga.div,retiradas:carga.ret,
+        empresaIds:ids,prazos,dataAlvo:d,
+      }).sobra;
+      d=addDays(d,1);guarda++;
+    }
+    return{valor:projCents(acumulado),origem:'automatico'};
+  },[carga,idsChave,prazos,saldoPos,dataPosicao,hoje,posicaoValida,posicaoFutura]);
+
+  // ── Abrir editor do "Em Conta" a partir do card (pré-preenche com o valor calculado) ──
+  const abrirEditorSaldo=()=>{
+    setAviso(null);
+    setForm({valor:emConta.valor==null?'':String(emConta.valor),data:hoje});
+    setEditando(true);
+  };
+
   // ── Gráfico (Chart.js, já disponível no projeto) ──
   const labels=janela.map(r=>fmtDate(r.data).slice(0,5));
   const idxMenor=metricas?janela.findIndex(r=>r.data===metricas.diaMenorGar):-1;
@@ -5205,13 +5257,40 @@ function Projecao({empresas}){
 
       {/* ── CAMADA 2 · HOJE ── */}
       <HojeLayer
-        temSaldo={temSaldo}
-        saldoPosicao={saldoPosicao}
+        emContaValor={emConta.valor}
+        emContaOrigem={emConta.origem}
+        onEditarSaldo={abrirEditorSaldo}
         entraHoje={hojeCaixa.entraHoje}
         saiHoje={hojeCaixa.saiHoje}
         sobraHoje={hojeCaixa.sobraHoje}
       />
 
+      {/* ── EDITAR SALDO EM CONTA — reutiliza o mecanismo existente de gravação em
+          saldos_caixa_consolidados (salvarSaldo); data_posicao é sempre hoje aqui. ── */}
+      {editando&&(
+        <Modal title="Atualizar saldo em conta" onClose={()=>{setEditando(false);setAviso(null);}}>
+          <div className="form-grid">
+            <div className="fg full"><label>Saldo calculado</label><div>{emConta.valor==null?'—':fmt(emConta.valor)}</div></div>
+            <div className="fg full"><label>Saldo real em conta</label>
+              <input type="text" inputMode="decimal" placeholder="R$ 0,00" value={form.valor}
+                onChange={e=>setForm({...form,valor:e.target.value})}/>
+            </div>
+          </div>
+          {aviso&&<div className={`prx-proj-aviso ${aviso.tipo}`}>{aviso.texto}</div>}
+          <div style={{marginTop:12,display:'flex',gap:8,justifyContent:'flex-end'}}>
+            <button className="btn btn-secondary" onClick={()=>{setEditando(false);setAviso(null);}}>Cancelar</button>
+            <button className="btn btn-primary" onClick={salvarSaldo} disabled={salvando}>
+              {salvando?'Salvando…':'Salvar saldo'}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── PROJEÇÃO DE CAIXA (antiga) — oculta temporariamente nesta camada; motor e
+          estados abaixo permanecem ativos e são reaproveitados pela Camada 1 (Mural,
+          Capital de Giro) e pelas próximas camadas. Ver TAREFA MESTRE (ocultação
+          cirúrgica entre Camada 2 e próximas camadas). ── */}
+      {MOSTRAR_PROJECAO_ANTIGA&&(<>
       {/* ── CABEÇALHO ── */}
       <div className="prx-proj-head">
         <div style={{minWidth:0}}>
@@ -5434,6 +5513,7 @@ function Projecao({empresas}){
           })()}
         </>
       )}
+      </>)}
     </div>
   );
 }
