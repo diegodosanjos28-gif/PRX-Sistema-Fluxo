@@ -1178,6 +1178,35 @@ textarea{resize:vertical;min-height:58px;}
 }
 
 /* ══════════════════════════════════════════════════════
+   PROJEÇÃO — CAMADA 2: "HOJE" (4 cards executivos)
+   Prefixo exclusivo prx-today-. Off-white + grafite/preto + papaya (Em Conta) +
+   verde/vermelho financeiro (Entra/Sai/Sobra). Nenhuma classe prx-cg-/prx-proj-
+   é tocada; nenhum seletor global (.card/button/section/grid) é alterado.
+   ══════════════════════════════════════════════════════ */
+.prx-today-layer{margin-bottom:22px;}
+.prx-today-head{display:flex;align-items:baseline;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.prx-today-title{font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--carbon);}
+.prx-today-sub{font-size:12px;color:var(--text-muted);}
+.prx-today-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:stretch;}
+.prx-today-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px 20px;box-shadow:var(--shadow-xs);display:flex;flex-direction:column;gap:6px;min-width:0;min-height:104px;justify-content:center;}
+.prx-today-card-account{background:linear-gradient(180deg,var(--papaya-soft),var(--surface) 65%);border-color:rgba(232,118,10,.22);}
+.prx-today-label{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);}
+.prx-today-value{font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--carbon);line-height:1.15;word-break:break-word;}
+.prx-today-value.g{color:var(--green-dim);}
+.prx-today-value.r{color:var(--red);}
+.prx-today-value.neutro{color:var(--text-muted);}
+.prx-today-value.muted{font-size:15px;font-weight:600;color:var(--text-muted);}
+.prx-today-foot{font-size:11px;color:var(--text-muted);}
+
+@media(max-width:1024px){
+  .prx-today-grid{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:480px){
+  .prx-today-grid{grid-template-columns:1fr;}
+  .prx-today-card{padding:16px 18px;}
+}
+
+/* ══════════════════════════════════════════════════════
    PORTFÓLIO — REDESIGN EXECUTIVO (PRX)
    ══════════════════════════════════════════════════════ */
 .pf-subtitle{font-size:12.5px;color:var(--text-muted);font-weight:500;margin:-6px 0 4px;}
@@ -4612,6 +4641,69 @@ const buildProjecaoCaixa=({entradas,contas,dividas,retiradas,empresaIds,prazos,s
   return{rows,hist,metricas,porModalidade,porCategoria,qualidade};
 };
 
+// ══════════════════════════════════════════════════════════════════════════
+// PROJEÇÃO — CAMADA 2: "HOJE" (4 cards executivos).
+// Reaproveita EXATAMENTE os helpers do motor acima — projDataRecebimento para o
+// regime de caixa dos recebimentos, mergeContasComParcelas (+ mesmo filtro de
+// status 'Pago') para as saídas — filtrando ambos para a data de hoje. Não é um
+// motor concorrente: nenhuma regra de prazo é copiada ou reinterpretada.
+//
+// Sobra Hoje = Entra Hoje − Sai Hoje. NÃO soma o saldo em conta: como o próprio
+// buildProjecaoCaixa comenta acima, `saldos_caixa_consolidados.valor` (quando a
+// posição é de hoje) é o saldo de FECHAMENTO do dia — já inclui os recebimentos e
+// pagamentos de hoje. Somá-lo de novo aqui duplicaria esses mesmos movimentos.
+// ══════════════════════════════════════════════════════════════════════════
+const buildHojeCaixa=({entradas,contas,dividas,retiradas,empresaIds,prazos,hoje})=>{
+  const ids=new Set((empresaIds||[]).filter(Boolean));
+
+  // ── Entra Hoje: mesma regra de projDataRecebimento, filtrada para dr===hoje ──
+  const porModalidade={};
+  let entraHoje=0;
+  (entradas||[]).forEach(e=>{
+    if(!ids.has(e.empresa_id))return;
+    if(!projDataValida(e.data))return;
+    PROJ_MODALIDADES.forEach(forma=>{
+      const v=projNum(e[forma]);
+      if(v<=0)return;
+      const dr=projDataRecebimento(e,forma,prazos);
+      if(dr!==hoje)return; // só o que fica disponível hoje; nunca D+30 de hoje, nem ontem/amanhã
+      entraHoje+=v;
+      porModalidade[forma]=(porModalidade[forma]||0)+v;
+    });
+  });
+
+  // ── Sai Hoje: mesmo merge (contas manuais + parcelas de dívidas + fixas), sem
+  // somar dívidas em separado, mesma exclusão de status 'Pago' já aplicada acima ──
+  let saiHoje=0;
+  const porOrigem={contas:0,retiradas:0};
+  ids.forEach(id=>{
+    const con=(contas||[]).filter(r=>r.empresa_id===id);
+    const div=(dividas||[]).filter(r=>r.empresa_id===id);
+    mergeContasComParcelas(con,div).forEach(c=>{
+      if(!projDataValida(c.vencimento)||c.vencimento!==hoje)return;
+      if(c.status==='Pago')return;
+      const v=projNum(c.valor);
+      if(v<=0)return;
+      saiHoje+=v;
+      porOrigem.contas+=v;
+    });
+  });
+  (retiradas||[]).forEach(r=>{
+    if(!ids.has(r.empresa_id))return;
+    if(!projDataValida(r.data)||r.data!==hoje)return;
+    const v=projNum(r.valor);
+    if(v<=0)return;
+    saiHoje+=v;
+    porOrigem.retiradas+=v;
+  });
+
+  return{
+    entraHoje:projCents(entraHoje),saiHoje:projCents(saiHoje),
+    sobraHoje:projCents(entraHoje-saiHoje),
+    porModalidade,porOrigem,
+  };
+};
+
 // Confiança qualitativa — regra explícita, sem percentual arbitrário.
 const projConfianca=(hist,idadePosicao,metricas)=>{
   if(!metricas)return{nivel:'—',motivo:'Sem base para calcular.'};
@@ -4873,6 +4965,47 @@ function CapitalDeGiroLayer({clienteId,hoje,horizonte,metricas,conf,proj30}){
   );
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// PROJEÇÃO — CAMADA 2: "HOJE".
+// Puramente apresentacional — recebe os valores já calculados por buildHojeCaixa
+// (mais o saldo/estado já existentes da própria Projeção para o Card 1).
+// ══════════════════════════════════════════════════════════════════════════
+function HojeLayer({temSaldo,saldoPosicao,entraHoje,saiHoje,sobraHoje}){
+  const sobraCls=sobraHoje>0?'g':(sobraHoje<0?'r':'neutro');
+  return(
+    <div className="prx-today-layer">
+      <div className="prx-today-head">
+        <strong className="prx-today-title">Hoje</strong>
+        <span className="prx-today-sub">Movimentação financeira do dia</span>
+      </div>
+      <div className="prx-today-grid">
+        <div className="prx-today-card prx-today-card-account">
+          <span className="prx-today-label">Em conta</span>
+          <strong className={`prx-today-value${temSaldo?'':' muted'}`}>
+            {temSaldo?fmt(saldoPosicao):'Saldo não informado'}
+          </strong>
+          <span className="prx-today-foot">saldo base</span>
+        </div>
+        <div className="prx-today-card">
+          <span className="prx-today-label">Entra hoje</span>
+          <strong className="prx-today-value g">{entraHoje>0?'+':''}{fmt(entraHoje)}</strong>
+          <span className="prx-today-foot">recebimentos disponíveis</span>
+        </div>
+        <div className="prx-today-card">
+          <span className="prx-today-label">Sai hoje</span>
+          <strong className="prx-today-value r">{saiHoje>0?fmt(-saiHoje):fmt(0)}</strong>
+          <span className="prx-today-foot">compromissos do dia</span>
+        </div>
+        <div className="prx-today-card">
+          <span className="prx-today-label">Sobra hoje</span>
+          <strong className={`prx-today-value ${sobraCls}`}>{fmt(sobraHoje)}</strong>
+          <span className="prx-today-foot">entra − sai do dia</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Projecao({empresas}){
   const chartRef=useRef(null);
   const hoje=today();
@@ -4975,6 +5108,12 @@ function Projecao({empresas}){
   const linha1=janela.length?janela[0]:null;
   const saldoPosicao=projNum(saldoPos&&saldoPos.valor);
 
+  // ── CAMADA 2 · HOJE — independe do saldo (ver nota em buildHojeCaixa) ──
+  const hojeCaixa=React.useMemo(()=>buildHojeCaixa({
+    entradas:carga.ent,contas:carga.con,dividas:carga.div,retiradas:carga.ret,
+    empresaIds:idsChave?idsChave.split(','):[],prazos,hoje,
+  }),[carga,idsChave,prazos,hoje]);
+
   // ── Gráfico (Chart.js, já disponível no projeto) ──
   const labels=janela.map(r=>fmtDate(r.data).slice(0,5));
   const idxMenor=metricas?janela.findIndex(r=>r.data===metricas.diaMenorGar):-1;
@@ -5062,6 +5201,15 @@ function Projecao({empresas}){
         metricas={metricas}
         conf={conf}
         proj30={proj30}
+      />
+
+      {/* ── CAMADA 2 · HOJE ── */}
+      <HojeLayer
+        temSaldo={temSaldo}
+        saldoPosicao={saldoPosicao}
+        entraHoje={hojeCaixa.entraHoje}
+        saiHoje={hojeCaixa.saiHoje}
+        sobraHoje={hojeCaixa.sobraHoje}
       />
 
       {/* ── CABEÇALHO ── */}
