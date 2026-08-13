@@ -1126,55 +1126,173 @@ textarea{resize:vertical;min-height:58px;}
    Prefixo exclusivo prx-cg-. Off-white + grafite/preto + papaya.
    Nenhum seletor global; nenhuma classe da Projeção existente é tocada.
    ══════════════════════════════════════════════════════ */
-.prx-cg-layer{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(280px,1fr);gap:16px;margin-bottom:22px;align-items:stretch;}
+.prx-cg-layer{display:grid;grid-template-columns:minmax(0,9fr) minmax(280px,11fr);gap:16px;margin-bottom:22px;align-items:start;}
 
-.prx-cg-main{background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:28px 30px;box-shadow:var(--shadow-md);display:flex;flex-direction:column;min-width:0;}
-.prx-cg-head{display:flex;flex-direction:column;gap:3px;margin-bottom:18px;}
-.prx-cg-label{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--carbon);}
-.prx-cg-sub{font-size:12px;color:var(--text-muted);}
-.prx-cg-carregando,.prx-cg-erro{font-size:13px;color:var(--text-muted);padding:20px 0;}
+.prx-cg-main{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow-md);display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:16px;min-width:0;}
+.prx-cg-info{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.prx-cg-head{display:flex;flex-direction:column;gap:2px;margin-bottom:2px;}
+.prx-cg-label{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--carbon);}
+.prx-cg-sub{font-size:11px;color:var(--text-muted);}
+.prx-cg-carregando,.prx-cg-erro{font-size:13px;color:var(--text-muted);padding:10px 0;}
 .prx-cg-erro{color:var(--red-dim);}
-.prx-cg-value{font-size:44px;font-weight:800;letter-spacing:-.03em;color:var(--carbon);line-height:1.05;word-break:break-word;}
-.prx-cg-metrics{display:flex;gap:32px;margin-top:20px;flex-wrap:wrap;}
-.prx-cg-metrics div{display:flex;flex-direction:column;gap:3px;}
-.prx-cg-metrics span{font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.02em;}
-.prx-cg-metrics strong{font-size:17px;font-weight:700;color:var(--carbon);}
+.prx-cg-value{font-size:28px;font-weight:800;letter-spacing:-.02em;color:var(--carbon);line-height:1.1;word-break:break-word;margin-top:2px;}
+.prx-cg-metrics{display:flex;gap:18px;margin-top:8px;flex-wrap:wrap;}
+.prx-cg-metrics div{display:flex;flex-direction:column;gap:1px;}
+.prx-cg-metrics span{font-size:10px;font-weight:600;color:var(--text-muted);letter-spacing:.02em;}
+.prx-cg-metrics strong{font-size:13px;font-weight:700;color:var(--carbon);}
 .prx-cg-metrics strong.papaya{color:var(--papaya-dark);}
-.prx-cg-feedback{margin-top:16px;font-size:12px;font-weight:600;color:var(--green-dim);}
-.prx-cg-erro-inline{margin-top:16px;font-size:12px;font-weight:600;color:var(--red-dim);}
-.prx-cg-actions{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap;}
+.prx-cg-feedback{margin-top:6px;font-size:11px;font-weight:600;color:var(--green-dim);}
+.prx-cg-erro-inline{margin-top:6px;font-size:11px;font-weight:600;color:var(--red-dim);}
+.prx-cg-actions{display:flex;flex-direction:column;gap:8px;flex-shrink:0;}
 
-.prx-cg-action{font-family:inherit;font-size:12.5px;font-weight:700;letter-spacing:.02em;padding:11px 20px;border-radius:10px;cursor:pointer;border:1px solid transparent;transition:opacity .15s,background .15s;}
+.prx-cg-action{font-family:inherit;font-size:12px;font-weight:700;letter-spacing:.02em;padding:9px 18px;border-radius:10px;cursor:pointer;border:1px solid transparent;transition:opacity .15s,background .15s;white-space:nowrap;}
 .prx-cg-action:hover{opacity:.9;}
-.prx-cg-action.primary{background:var(--papaya);color:#1B1C20;}
-.prx-cg-action.ghost{background:var(--surface);color:var(--carbon);border-color:var(--border);}
-.prx-cg-action.dark{background:var(--carbon);color:var(--header-text);border-bottom:2px solid var(--papaya);}
+.prx-cg-action.primary{background:var(--green-light);color:#14532d;border-color:rgba(22,163,74,.28);}
+.prx-cg-action.dark{background:var(--red-light);color:#7f1d1d;border-color:rgba(220,38,38,.28);}
 
-.prx-cg-advisor{background:var(--carbon);color:var(--header-text);border-radius:20px;padding:26px 26px 20px;box-shadow:var(--shadow-md);display:flex;flex-direction:column;min-width:0;}
-.prx-cg-advisor-idx{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--papaya);margin-bottom:14px;}
-.prx-cg-slide{flex:1;display:flex;flex-direction:column;gap:9px;}
-.prx-cg-advisor-title{font-size:14px;font-weight:800;letter-spacing:-.005em;line-height:1.3;color:#fff;}
-.prx-cg-advisor-body{font-size:12.5px;line-height:1.55;color:rgba(240,239,235,.82);}
-.prx-cg-advisor-rodape{font-size:11px;color:rgba(240,239,235,.55);margin-top:2px;}
-.prx-cg-advisor-nav{display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.10);}
-.prx-cg-advisor-nav>button{font-family:inherit;background:transparent;border:1px solid rgba(255,255,255,.18);color:#fff;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:15px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:background .15s;}
-.prx-cg-advisor-nav>button:hover{background:rgba(255,255,255,.10);}
-.prx-cg-dots{display:flex;gap:6px;}
-.prx-cg-dot{width:6px;height:6px;padding:0;border-radius:50%;border:none;background:rgba(255,255,255,.25);cursor:pointer;}
-.prx-cg-dot.on{background:var(--papaya);}
+.prx-cg-modal-tipo{display:flex;gap:8px;margin-bottom:14px;}
+.prx-cg-modal-tipo button{flex:1;font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-secondary);cursor:pointer;transition:all .15s;}
+.prx-cg-modal-tipo button.on{background:var(--green-light);color:#14532d;border-color:rgba(22,163,74,.35);}
+
+/* ── PAINEL "EM CONTA" (ocupa a coluna do antigo Mural de avisos, dentro de .prx-cg-layer).
+   Prefixo exclusivo prx-acc-. Painel externo branco + card interno chumbo vitrificado com
+   detalhes papaya + histórico claro. Não toca .prx-cg-main nem nenhum seletor global. ── */
+.prx-acc-panel{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:14px;box-shadow:var(--shadow-md);display:flex;flex-direction:column;gap:11px;min-width:0;}
+
+/* VIDRO FUMÊ — superfície do card interno, translucidez alta.
+   Alfa .20–.30 (70% a 80% de transparência): o branco do painel externo atravessa amplamente a
+   superfície, que por isso compõe em cinza claro — é o efeito pretendido, não um desvio, e a
+   aparência chumbo antiga foi deliberadamente abandonada. Com esse nível de transparência o
+   backdrop-filter contribui de fato. Reflexos especulares e rim light por cima. */
+.prx-acc-card{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(30,33,40,.24) 0%,rgba(20,23,29,.20) 55%,rgba(13,16,22,.30) 100%);backdrop-filter:blur(24px) saturate(140%);-webkit-backdrop-filter:blur(24px) saturate(140%);border:1px solid rgba(255,255,255,.24);border-top-color:rgba(255,255,255,.38);border-radius:14px;padding:13px 16px;box-shadow:0 10px 26px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(0,0,0,.10);}
+/* Reflexo especular — luz incidindo no canto superior esquerdo da placa translúcida. */
+.prx-acc-card::before{content:'';position:absolute;inset:0;z-index:0;border-radius:inherit;pointer-events:none;background:linear-gradient(118deg,rgba(255,255,255,.24) 0%,rgba(255,255,255,.13) 16%,rgba(255,255,255,.045) 31%,transparent 50%);}
+/* Lâmina de luz — faixa discreta atravessando a superfície. */
+.prx-acc-card::after{content:'';position:absolute;inset:0;z-index:0;border-radius:inherit;pointer-events:none;background:linear-gradient(105deg,transparent 0%,transparent 48%,rgba(255,255,255,.05) 53%,rgba(255,255,255,.12) 58%,rgba(255,255,255,.03) 63%,transparent 70%);}
+/* Conteúdo sempre acima das camadas de vidro — 100% opaco, sem filtro, cor/nitidez inalteradas. */
+.prx-acc-card>*{position:relative;z-index:1;}
+.prx-acc-card-hd{display:flex;align-items:center;gap:7px;margin-bottom:7px;}
+.prx-acc-dot{width:7px;height:7px;border-radius:50%;background:var(--papaya);box-shadow:0 0 0 3px rgba(232,118,10,.18);flex-shrink:0;}
+.prx-acc-card-label{font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:rgba(240,239,235,.60);}
+.prx-acc-card-value{font-size:27px;font-weight:800;letter-spacing:-.025em;line-height:1.12;color:#fff;word-break:break-word;}
+.prx-acc-card-value.muted{font-size:15px;font-weight:600;letter-spacing:0;color:rgba(240,239,235,.55);}
+.prx-acc-card-value.neg{color:#F98A8A;}
+.prx-acc-card-foot{margin-top:4px;font-size:11px;color:rgba(240,239,235,.48);}
+/* Ação de editar o saldo — herdada do card "Em Conta" inferior, que deixou de ser renderizado.
+   É o único ponto de entrada do modal de saldo (abrirEditorSaldo → salvarSaldo). */
+.prx-acc-edit{position:absolute;top:12px;right:12px;z-index:2;width:26px;height:26px;border-radius:8px;border:1px solid rgba(27,28,32,.16);background:rgba(255,255,255,.55);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--carbon);font-size:12px;line-height:1;padding:0;transition:background .15s,border-color .15s;}
+.prx-acc-edit:hover{background:rgba(255,255,255,.85);border-color:rgba(232,118,10,.45);}
+
+.prx-acc-hist-hd{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
+.prx-acc-hist-title{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--text-muted);}
+.prx-acc-hist-cnt{font-size:10.5px;color:var(--text-muted);white-space:nowrap;}
+/* Estado vazio reserva a mesma área das 4 linhas — o painel não encolhe sem registros. */
+.prx-acc-vazio{font-size:12px;color:var(--text-muted);padding:12px 2px;height:192px;flex-shrink:0;}
+/* Área fixa de 4 linhas. box-sizing é border-box, então min-height da linha já inclui padding e
+   borda: 48px × 4 = 192px. Altura reservada mesmo com 0–3 registros; do 5º em diante a lista
+   rola dentro da própria área, sem crescer o painel. */
+.prx-acc-hist{display:flex;flex-direction:column;height:192px;max-height:192px;flex-shrink:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(15,23,42,.18) transparent;}
+.prx-acc-hist:focus-visible{outline:2px solid var(--papaya);outline-offset:2px;border-radius:8px;}
+.prx-acc-hist::-webkit-scrollbar{width:5px;}
+.prx-acc-hist::-webkit-scrollbar-track{background:transparent;}
+.prx-acc-hist::-webkit-scrollbar-thumb{background:rgba(15,23,42,.16);border-radius:3px;}
+.prx-acc-hist::-webkit-scrollbar-thumb:hover{background:rgba(15,23,42,.30);}
+/* min-height 48px é vinculante (o conteúdo da linha mede ~46,5px), tornando a altura da linha
+   determinística — é isso que garante exatamente 4 linhas na área acima. */
+.prx-acc-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;padding:5px 2px;border-bottom:1px solid var(--border);}
+.prx-acc-row:last-child{border-bottom:none;}
+.prx-acc-row-l{display:flex;flex-direction:column;gap:1px;min-width:0;}
+.prx-acc-row-data{font-size:12.5px;font-weight:700;letter-spacing:-.01em;color:var(--text-primary);}
+.prx-acc-row-sub{font-size:10.5px;color:var(--text-muted);}
+.prx-acc-row-val{font-size:13.5px;font-weight:700;letter-spacing:-.02em;white-space:nowrap;}
+.prx-acc-row-val.pos{color:var(--green-dim);}
+.prx-acc-row-val.neg{color:var(--red-dim);}
+.prx-acc-row-val.zero{color:var(--text-muted);}
 
 .prx-cg-modal-info{font-size:12.5px;color:var(--text-muted);margin-bottom:12px;}
 .prx-cg-modal-info strong{color:var(--text-primary);}
+
+/* ── STACK "HOJE" — Entra/Sai/Sobra empilhados abaixo do Capital de Giro, dentro da MESMA
+   coluna do grid .prx-cg-layer. Dimensionado a partir das medidas reais dos dois painéis
+   âncora (CG termina em 175px, painel Em Conta em 380px → 205px disponíveis): 12px de gap +
+   3 cards de 85px com overlap de 31px (3×85 − 2×31 = 193px) fecham exatamente 205px, então a
+   base do 3º card encosta na base do Em Conta SEM alterar nenhuma das duas âncoras.
+   Sobreposição só no eixo Y (margin-top negativo + z-index); zero deslocamento lateral. ── */
+.prx-today-stack-col{display:flex;flex-direction:column;min-width:0;}
+.prx-today-stack{display:flex;flex-direction:column;margin-top:12px;}
+.prx-today-stack-card{position:relative;height:85px;padding:13px 18px;border-radius:16px;border:1px solid var(--border);background:var(--surface);box-shadow:0 6px 16px rgba(15,23,42,.07);display:flex;flex-direction:column;gap:2px;min-width:0;}
+.prx-today-stack-card+.prx-today-stack-card{margin-top:-31px;}
+.prx-today-stack-enter{z-index:1;}
+.prx-today-stack-exit{z-index:2;}
+/* Papaya SUAVE e SÓLIDO — fecha o stack sem dominar a coluna. Degradê do papaya claro ao branco,
+   100% opaco (nenhum alpha, nenhum backdrop-filter): linguagem oposta à do painel Em Conta,
+   que é o glass translúcido. */
+.prx-today-stack-balance{z-index:3;background:linear-gradient(180deg,#FFD3AE 0%,#FFE7D3 48%,#FFFDFB 78%,#FFFFFF 100%);border-color:rgba(205,95,20,.35);box-shadow:0 8px 20px rgba(180,90,25,.16),inset 0 1px 0 rgba(255,255,255,.24);}
+.prx-today-stack-label{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);}
+.prx-today-stack-value{font-size:19px;font-weight:800;letter-spacing:-.02em;line-height:1.2;color:var(--carbon);word-break:break-word;}
+.prx-today-stack-value.g{color:var(--green-dim);}
+.prx-today-stack-value.r{color:var(--red);}
+.prx-today-stack-value.neutro{color:var(--text-muted);}
+/* Sobre o papaya sólido o verde cai para 1,9:1 e o vermelho para 2,5:1; o grafite sobe para
+   6,5–9,5:1. A leitura semântica não se perde: o sinal +/− continua no próprio valor. */
+.prx-today-stack-balance .prx-today-stack-value{color:var(--carbon);}
+.prx-today-stack-balance .prx-today-stack-label{color:#5A3A18;}
 
 @media(max-width:900px){
   .prx-cg-layer{grid-template-columns:1fr;}
 }
 @media(max-width:600px){
-  .prx-cg-main{padding:20px 20px;}
-  .prx-cg-value{font-size:34px;}
-  .prx-cg-actions{gap:8px;}
-  .prx-cg-action{flex:1 1 auto;padding:10px 14px;font-size:12px;text-align:center;}
-  .prx-cg-advisor{padding:20px 20px 16px;}
+  .prx-cg-main{flex-direction:column;align-items:stretch;padding:16px 18px;gap:12px;}
+  .prx-cg-actions{flex-direction:row;gap:8px;}
+  .prx-cg-action{flex:1 1 0;padding:10px 14px;text-align:center;}
+  .prx-acc-panel{padding:12px;}
+  .prx-acc-card-value{font-size:24px;}
+  .prx-today-stack-card{height:78px;padding:12px 16px;}
+  .prx-today-stack-card+.prx-today-stack-card{margin-top:-24px;}
+}
+
+/* ══════════════════════════════════════════════════════
+   PROJEÇÃO — CAMADA DE PREVISÃO 15/30/60 (valores + gráfico)
+   Prefixo exclusivo prx-forecast-. Camada independente, inserida ABAIXO da
+   estrutura já aprovada: não toca prx-cg-*, prx-acc-*, prx-today-* nem o grid
+   superior. align-items:stretch iguala a altura dos dois painéis.
+   ══════════════════════════════════════════════════════ */
+/* Mesma declaração de colunas e mesmo gap de .prx-cg-layer — é o que faz as divisórias
+   verticais desta camada coincidirem com as do bloco superior. */
+.prx-forecast-layer{display:grid;grid-template-columns:minmax(0,9fr) minmax(280px,11fr);gap:16px;align-items:stretch;margin-bottom:22px;}
+.prx-forecast-values,.prx-forecast-chart{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px;box-shadow:var(--shadow-md);display:flex;flex-direction:column;min-width:0;}
+.prx-forecast-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px;flex-wrap:wrap;}
+.prx-forecast-title{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--carbon);}
+
+.prx-forecast-value-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:12px;min-height:0;}
+.prx-forecast-value-card{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:14px 15px;display:flex;flex-direction:column;gap:5px;min-width:0;justify-content:center;}
+.prx-forecast-value-card.destaque{background:linear-gradient(180deg,var(--papaya-soft),var(--surface-2) 70%);border-color:rgba(232,118,10,.24);}
+.prx-forecast-value-label{font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);line-height:1.3;}
+.prx-forecast-value-num{font-size:19px;font-weight:800;letter-spacing:-.025em;line-height:1.15;color:var(--green-dim);word-break:break-word;}
+.prx-forecast-value-num.neutro{color:var(--carbon);}
+.prx-forecast-value-num.neg,.prx-forecast-value-num.saida{color:var(--red-dim);}
+.prx-forecast-value-foot{font-size:10px;color:var(--text-muted);}
+
+.prx-forecast-range{display:inline-flex;gap:3px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:2px;}
+.prx-forecast-range>button{font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.01em;padding:5px 11px;border-radius:7px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;transition:background .15s,color .15s;white-space:nowrap;}
+.prx-forecast-range>button:hover{color:var(--carbon);}
+.prx-forecast-range>button.on{background:var(--surface);color:var(--carbon);box-shadow:var(--shadow-xs);}
+
+.prx-forecast-legend{display:flex;gap:14px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+.prx-forecast-legend span{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--text-secondary);}
+.prx-forecast-legend i{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.prx-forecast-legend i.ent{background:#16A05D;}
+.prx-forecast-legend i.sai{background:#E34242;}
+.prx-forecast-canvas{position:relative;flex:1;min-height:244px;}
+.prx-forecast-vazio{flex:1;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text-muted);text-align:center;padding:20px 0;}
+
+@media(max-width:900px){
+  .prx-forecast-layer{grid-template-columns:1fr;}
+  .prx-forecast-canvas{min-height:230px;}
+}
+@media(max-width:480px){
+  .prx-forecast-value-grid{grid-template-columns:1fr;grid-template-rows:none;}
+  .prx-forecast-values,.prx-forecast-chart{padding:14px;}
 }
 
 /* ══════════════════════════════════════════════════════
@@ -1188,8 +1306,8 @@ textarea{resize:vertical;min-height:58px;}
 .prx-today-title{font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--carbon);}
 .prx-today-sub{font-size:12px;color:var(--text-muted);}
 .prx-today-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:stretch;}
-.prx-today-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px 20px;box-shadow:var(--shadow-xs);display:flex;flex-direction:column;gap:6px;min-width:0;min-height:104px;justify-content:center;}
-.prx-today-card-account{background:linear-gradient(180deg,var(--papaya-soft),var(--surface) 65%);border-color:rgba(232,118,10,.22);position:relative;}
+.prx-today-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 22px 18px;box-shadow:var(--shadow-xs);display:flex;flex-direction:column;gap:8px;min-width:0;min-height:144px;justify-content:flex-start;}
+.prx-today-card-account{background:linear-gradient(180deg,rgba(59,130,246,.16),var(--surface) 65%);border-color:rgba(59,130,246,.30);position:relative;}
 .prx-today-edit{position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:8px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);font-size:12px;line-height:1;padding:0;}
 .prx-today-edit:hover{background:var(--papaya-soft);color:var(--carbon);}
 .prx-today-label{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);}
@@ -1198,14 +1316,259 @@ textarea{resize:vertical;min-height:58px;}
 .prx-today-value.r{color:var(--red);}
 .prx-today-value.neutro{color:var(--text-muted);}
 .prx-today-value.muted{font-size:15px;font-weight:600;color:var(--text-muted);}
-.prx-today-foot{font-size:11px;color:var(--text-muted);}
+.prx-today-foot{font-size:11px;color:var(--text-muted);margin-top:auto;}
 
 @media(max-width:1024px){
   .prx-today-grid{grid-template-columns:repeat(2,1fr);}
 }
 @media(max-width:480px){
   .prx-today-grid{grid-template-columns:1fr;}
-  .prx-today-card{padding:16px 18px;}
+  .prx-today-card{padding:18px 18px 16px;min-height:128px;}
+}
+
+/* ══════════════════════════════════════════════════════
+   PROJEÇÃO — REDESIGN (migração fiel de fluxo-caixa-projecao-redesign.html)
+   Prefixo exclusivo prx-rdp-. TODOS os tokens são LOCAIS, declarados no escopo
+   .prx-rdp: nenhum token global (:root) é alterado e nenhum seletor global
+   (.card/.row/.label/.stat/.mini/table/button/svg) é criado. Os valores abaixo
+   foram lidos diretamente do CSS do mockup, não aproximados.
+   ══════════════════════════════════════════════════════ */
+.prx-rdp{
+  /* Superfícies — o mockup usa uma família levemente diferente da global
+     (--surface-2 #f4f3ef / --border #dcdcd6); por isso tokens locais. */
+  --rdp-surface:#ffffff;
+  --rdp-surface-2:#f6f5f1;
+  --rdp-border:#e4e2dc;
+  --rdp-line:#efedE7;
+  --rdp-line-2:#f4f2ec;
+  /* Texto — idênticos aos globais --text-primary/-secondary/-muted */
+  --rdp-ink:#0f172a;
+  --rdp-ink-2:#475569;
+  --rdp-ink-3:#94a3b8;
+  /* Marca — idênticos a --carbon/--papaya/--papaya-dark; brand-soft é sólido
+     no mockup (#fbe9d6), enquanto --papaya-soft global é rgba(.10). */
+  --rdp-carbon:#1B1C20;
+  --rdp-brand:#E8760A;
+  --rdp-brand-dark:#CF6800;
+  --rdp-brand-soft:#fbe9d6;
+  /* Semânticas — pos/neg/warn idênticos aos globais; os *-soft do mockup são
+     mais saturados que --green-light/--red-light/--amber-light. */
+  --rdp-pos:#16a34a;
+  --rdp-pos-soft:#eafaef;
+  --rdp-pos-line:#cdeed7;
+  --rdp-neg:#dc2626;
+  --rdp-neg-soft:#fdeeee;
+  --rdp-neg-line:#f6d5d5;
+  --rdp-warn:#d97706;
+  --rdp-warn-soft:#fef6e7;
+  --rdp-warn-line:#f6e3bf;
+  --rdp-radius:16px;
+  --rdp-radius-sm:11px;
+  --rdp-radius-xs:9px;
+  --rdp-shadow-sm:0 1px 2px rgba(15,23,42,.04);
+  --rdp-shadow:0 1px 2px rgba(15,23,42,.04),0 6px 16px rgba(15,23,42,.05);
+  --rdp-shadow-lg:0 2px 4px rgba(15,23,42,.04),0 14px 34px rgba(15,23,42,.07);
+  --rdp-gap:16px;
+  /* .wrap do mockup — mantém as proporções originais dentro do shell real,
+     que é fluido (.page-wrap não tem max-width). */
+  max-width:1280px;margin:0 auto;color:var(--rdp-ink);
+  /* O mockup roda sobre a métrica padrão do navegador (16px / line-height normal); o
+     shell real declara body{font-size:14px;line-height:1.5}, que herdava para cá e
+     inflava a altura de TODO bloco de texto (linhas da tabela, minis, títulos, pills).
+     Restaurar as duas aqui — e só aqui — é o que faz as alturas baterem com a
+     referência. Escopo fechado em .prx-rdp: nenhuma outra aba enxerga isso. */
+  font-size:16px;line-height:normal;
+}
+.prx-rdp-num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";}
+
+/* ---------- Grid ---------- */
+.prx-rdp-row{display:grid;gap:var(--rdp-gap);margin-bottom:var(--rdp-gap);}
+.prx-rdp-r-hero{grid-template-columns:1.35fr 1fr 1fr;}
+.prx-rdp-r-today{grid-template-columns:1fr 1fr 1fr;}
+.prx-rdp-r-split{grid-template-columns:1fr 1.55fr;}
+
+/* ---------- Card base ---------- */
+.prx-rdp-card{
+  background:var(--rdp-surface);border:1px solid var(--rdp-border);border-radius:var(--rdp-radius);
+  box-shadow:var(--rdp-shadow);padding:22px;transition:box-shadow .2s,transform .2s;
+  min-width:0;display:flex;flex-direction:column;
+}
+.prx-rdp-card:hover{box-shadow:var(--rdp-shadow-lg);transform:translateY(-1px);}
+.prx-rdp-chead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.prx-rdp-label{
+  font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--rdp-ink-3);
+  display:flex;align-items:center;gap:9px;
+}
+.prx-rdp-ichip{
+  width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex:none;
+  background:var(--rdp-surface-2);color:var(--rdp-ink-2);border:1px solid var(--rdp-border);
+}
+.prx-rdp-ichip.brand{background:var(--rdp-brand-soft);color:var(--rdp-brand-dark);border-color:#f4dcc3;}
+.prx-rdp-ichip.pos{background:var(--rdp-pos-soft);color:var(--rdp-pos);border-color:var(--rdp-pos-line);}
+.prx-rdp-ichip.neg{background:var(--rdp-neg-soft);color:var(--rdp-neg);border-color:var(--rdp-neg-line);}
+.prx-rdp-ichip.warn{background:var(--rdp-warn-soft);color:var(--rdp-warn);border-color:var(--rdp-warn-line);}
+
+/* trend chip */
+.prx-rdp-trend{
+  display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;
+  padding:4px 9px;border-radius:999px;line-height:1;white-space:nowrap;
+}
+.prx-rdp-trend.pos{background:var(--rdp-pos-soft);color:var(--rdp-pos);}
+.prx-rdp-trend.neg{background:var(--rdp-neg-soft);color:var(--rdp-neg);}
+.prx-rdp-trend.flat{background:var(--rdp-surface-2);color:var(--rdp-ink-3);}
+.prx-rdp-trend.on-brand{background:rgba(255,255,255,.16);color:#fff;}
+
+/* ---------- Hero ---------- */
+.prx-rdp-hero{position:relative;overflow:hidden;}
+.prx-rdp-accent{
+  background:
+    radial-gradient(120% 140% at 100% 0%, #ff8a2b 0%, rgba(255,138,43,0) 55%),
+    linear-gradient(150deg,var(--rdp-brand) 0%,var(--rdp-brand-dark) 100%);
+  border-color:transparent;color:#fff;
+  box-shadow:0 2px 4px rgba(207,104,0,.18),0 16px 36px rgba(232,118,10,.28);
+}
+.prx-rdp-accent:hover{box-shadow:0 2px 4px rgba(207,104,0,.22),0 20px 44px rgba(232,118,10,.34);}
+.prx-rdp-accent .prx-rdp-label{color:rgba(255,255,255,.82);}
+.prx-rdp-accent .prx-rdp-ichip{background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.24);}
+.prx-rdp-hero-tools{display:flex;align-items:center;gap:8px;position:relative;z-index:1;flex:none;}
+.prx-rdp-hero-edit{
+  width:26px;height:26px;border-radius:8px;flex:none;display:grid;place-items:center;padding:0;
+  border:1px solid rgba(255,255,255,.26);background:rgba(255,255,255,.16);color:#fff;
+  font-size:12px;line-height:1;cursor:pointer;transition:background .15s,border-color .15s;
+}
+.prx-rdp-hero-edit:hover{background:rgba(255,255,255,.30);border-color:rgba(255,255,255,.45);}
+.prx-rdp-hero-edit:focus-visible{outline:2px solid #fff;outline-offset:2px;}
+.prx-rdp-hero-value{font-size:41px;font-weight:700;letter-spacing:-.025em;margin-top:14px;line-height:1;color:#fff;word-break:break-word;}
+.prx-rdp-hero-value.muted{font-size:22px;font-weight:600;letter-spacing:-.01em;color:rgba(255,255,255,.80);}
+.prx-rdp-hero-meta{font-size:12.5px;color:rgba(255,255,255,.85);margin-top:11px;display:flex;align-items:center;gap:8px;}
+.prx-rdp-sheen{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0) 40%);}
+.prx-rdp-hero>*:not(.prx-rdp-sheen){position:relative;z-index:1;}
+
+/* ---------- Stat ---------- */
+.prx-rdp-stat-value{font-size:27px;font-weight:700;letter-spacing:-.02em;margin-top:16px;line-height:1;word-break:break-word;}
+.prx-rdp-stat-value.pos{color:var(--rdp-pos);}
+.prx-rdp-stat-value.neg{color:var(--rdp-neg);}
+.prx-rdp-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;}
+.prx-rdp-meta{font-size:12px;color:var(--rdp-ink-3);font-weight:500;}
+.prx-rdp-bar{height:6px;border-radius:6px;background:var(--rdp-line);margin-top:16px;overflow:hidden;display:flex;}
+.prx-rdp-bar>span{display:block;height:100%;border-radius:6px;}
+
+/* ---------- Capital de giro ---------- */
+.prx-rdp-cg-value{font-size:27px;font-weight:700;letter-spacing:-.02em;margin-top:16px;word-break:break-word;}
+.prx-rdp-cg-split{display:flex;gap:22px;margin-top:16px;padding-top:15px;border-top:1px solid var(--rdp-line);}
+.prx-rdp-cg-split .n{font-size:10.5px;color:var(--rdp-ink-3);font-weight:600;letter-spacing:.03em;text-transform:uppercase;}
+.prx-rdp-cg-split .v{font-size:15.5px;font-weight:700;margin-top:4px;}
+.prx-rdp-cg-split .v.warn{color:var(--rdp-warn);}
+.prx-rdp-cg-actions{display:flex;gap:7px;flex:none;}
+.prx-rdp-chip{
+  display:inline-flex;gap:6px;align-items:center;font-family:inherit;font-size:12px;font-weight:600;
+  padding:7px 12px;border-radius:9px;border:1px solid var(--rdp-border);cursor:pointer;
+  background:var(--rdp-surface-2);color:var(--rdp-ink-2);transition:.15s;white-space:nowrap;
+}
+.prx-rdp-chip:hover{border-color:#d9d7d0;}
+.prx-rdp-chip:focus-visible{outline:2px solid var(--rdp-carbon);outline-offset:2px;}
+.prx-rdp-chip.pos{color:var(--rdp-pos);background:var(--rdp-pos-soft);border-color:var(--rdp-pos-line);}
+.prx-rdp-chip.neg{color:var(--rdp-neg);background:var(--rdp-neg-soft);border-color:var(--rdp-neg-line);}
+.prx-rdp-cg-state{font-size:13px;color:var(--rdp-ink-3);padding:16px 0 4px;}
+.prx-rdp-cg-state.erro{color:var(--rdp-neg);}
+.prx-rdp-cg-msg{margin-top:10px;font-size:11px;font-weight:600;}
+.prx-rdp-cg-msg.ok{color:var(--rdp-pos);}
+.prx-rdp-cg-msg.erro{color:var(--rdp-neg);}
+
+/* ---------- Section title ---------- */
+.prx-rdp-section{display:flex;align-items:center;gap:10px;margin:30px 4px 14px;}
+.prx-rdp-section .tk{width:4px;height:15px;border-radius:3px;background:var(--rdp-brand);flex:none;}
+.prx-rdp-section span.t{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--rdp-ink-2);}
+.prx-rdp-section .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--rdp-border),transparent);}
+
+/* ---------- Segmented ---------- */
+.prx-rdp-seg{display:inline-flex;background:var(--rdp-surface-2);border:1px solid var(--rdp-border);border-radius:12px;padding:3px;flex:none;}
+.prx-rdp-seg button{
+  border:0;background:transparent;font-family:inherit;font-size:12px;font-weight:600;color:var(--rdp-ink-2);
+  padding:6px 12px;border-radius:9px;cursor:pointer;transition:.18s;
+}
+.prx-rdp-seg button.on{background:var(--rdp-carbon);color:#fff;box-shadow:0 2px 6px rgba(27,28,32,.28);}
+.prx-rdp-seg button:focus-visible{outline:2px solid var(--rdp-carbon);outline-offset:2px;}
+
+/* ---------- Projeção ---------- */
+.prx-rdp-proj-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
+.prx-rdp-proj-title{font-size:15px;font-weight:700;letter-spacing:-.01em;}
+.prx-rdp-proj-sub{font-size:11.5px;color:var(--rdp-ink-3);margin-top:3px;font-weight:500;}
+.prx-rdp-proj-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;}
+.prx-rdp-mini{border:1px solid var(--rdp-border);border-radius:var(--rdp-radius-sm);padding:15px;background:var(--rdp-surface-2);position:relative;min-width:0;}
+.prx-rdp-mini.accent-neg{background:var(--rdp-neg-soft);border-color:var(--rdp-neg-line);}
+.prx-rdp-mini.accent-pos{background:var(--rdp-pos-soft);border-color:var(--rdp-pos-line);}
+.prx-rdp-mini .mh{display:flex;align-items:center;gap:8px;}
+.prx-rdp-mini .idot{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none;}
+.prx-rdp-mini .idot.pos{background:var(--rdp-pos-soft);color:var(--rdp-pos);}
+.prx-rdp-mini .idot.neg{background:var(--rdp-neg-soft);color:var(--rdp-neg);}
+.prx-rdp-mini .idot.brand{background:var(--rdp-brand-soft);color:var(--rdp-brand-dark);}
+.prx-rdp-mini .n{font-size:10.5px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--rdp-ink-3);}
+.prx-rdp-mini .v{font-size:19px;font-weight:700;margin-top:12px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.prx-rdp-mini .v.pos{color:var(--rdp-pos);}
+.prx-rdp-mini .v.neg{color:var(--rdp-neg);}
+.prx-rdp-mini .d{font-size:11px;color:var(--rdp-ink-3);margin-top:5px;font-weight:500;}
+
+/* ---------- Chart ---------- */
+.prx-rdp-chart-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+.prx-rdp-chart-title{font-size:15px;font-weight:700;letter-spacing:-.01em;}
+.prx-rdp-legend{display:flex;gap:18px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+.prx-rdp-legend .li{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--rdp-ink-3);font-weight:500;}
+.prx-rdp-legend .li b{font-weight:700;color:var(--rdp-ink);font-size:13px;margin-left:2px;}
+.prx-rdp-dot{width:8px;height:8px;border-radius:50%;flex:none;}
+.prx-rdp-dot.pos{background:var(--rdp-pos);}
+.prx-rdp-dot.neg{background:var(--rdp-neg);}
+.prx-rdp-canvas{position:relative;width:100%;height:250px;flex:1;min-height:250px;}
+.prx-rdp-chart-vazio{flex:1;display:flex;align-items:center;justify-content:center;min-height:250px;font-size:12px;color:var(--rdp-ink-3);text-align:center;}
+
+/* ---------- Tabela (Resumo semanal) ---------- */
+.prx-rdp-tablecard{padding:8px 6px 12px;}
+.prx-rdp-tablewrap{overflow-x:auto;}
+.prx-rdp-table{width:100%;border-collapse:collapse;min-width:620px;}
+.prx-rdp-table thead th{
+  font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--rdp-ink-3);
+  text-align:right;padding:11px 16px;border-bottom:1px solid var(--rdp-border);white-space:nowrap;
+}
+.prx-rdp-table thead th:first-child{text-align:left;}
+.prx-rdp-table tbody td{font-size:14px;padding:14px 16px;text-align:right;border-bottom:1px solid var(--rdp-line-2);font-weight:600;white-space:nowrap;}
+.prx-rdp-table tbody td:first-child{text-align:left;}
+.prx-rdp-table tbody tr{transition:background .15s;}
+.prx-rdp-table tbody tr:hover{background:var(--rdp-surface-2);}
+.prx-rdp-table tbody tr:last-child td{border-bottom:0;}
+.prx-rdp-table tbody td.pos{color:var(--rdp-pos);}
+.prx-rdp-table tbody td.neg{color:var(--rdp-neg);}
+.prx-rdp-table tbody td.zero{color:var(--rdp-ink-3);}
+.prx-rdp-week{display:flex;align-items:center;gap:11px;}
+.prx-rdp-wk-ic{
+  width:30px;height:30px;border-radius:9px;background:var(--rdp-surface-2);border:1px solid var(--rdp-border);
+  display:grid;place-items:center;color:var(--rdp-ink-3);font-size:12px;font-weight:700;flex:none;
+}
+.prx-rdp-week .wn{font-weight:700;color:var(--rdp-ink);font-size:13.5px;}
+.prx-rdp-week .wp{font-weight:500;color:var(--rdp-ink-3);font-size:11.5px;margin-top:1px;}
+.prx-rdp-pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:999px;}
+.prx-rdp-pill.pos{background:var(--rdp-pos-soft);color:var(--rdp-pos);}
+.prx-rdp-pill.neg{background:var(--rdp-neg-soft);color:var(--rdp-neg);}
+.prx-rdp-pill.zero{background:var(--rdp-surface-2);color:var(--rdp-ink-3);}
+.prx-rdp-pill .pd{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none;}
+.prx-rdp-table-vazio{font-size:12px;color:var(--rdp-ink-3);text-align:center;padding:26px 16px;}
+
+/* ---------- Responsivo (o mockup é desktop-only; adaptado ao shell real) ---------- */
+@media(max-width:1180px){
+  .prx-rdp-r-split{grid-template-columns:1fr;}
+}
+@media(max-width:980px){
+  .prx-rdp-r-hero{grid-template-columns:1fr 1fr;}
+  .prx-rdp-r-hero>.prx-rdp-hero{grid-column:1/-1;}
+  .prx-rdp-card{padding:20px;}
+  .prx-rdp-hero-value{font-size:36px;}
+}
+@media(max-width:760px){
+  .prx-rdp-r-hero,.prx-rdp-r-today{grid-template-columns:1fr;}
+  .prx-rdp-proj-grid{grid-template-columns:1fr;}
+  .prx-rdp-hero-value{font-size:32px;}
+  .prx-rdp-stat-value,.prx-rdp-cg-value{font-size:24px;}
+  .prx-rdp-canvas{height:220px;min-height:220px;}
+  .prx-rdp-section{margin:24px 2px 12px;}
 }
 
 /* ══════════════════════════════════════════════════════
@@ -4717,6 +5080,83 @@ const buildHojeCaixa=({entradas,contas,dividas,retiradas,empresaIds,prazos,hoje}
   };
 };
 
+// ══════════════════════════════════════════════════════════════════════════
+// PROJEÇÃO — SÉRIE DIÁRIA de ENTRADAS × SAÍDAS (camada do gráfico 15/30/60).
+// Re-agrupamento por dia dos MESMOS primitivos que buildCaixaDoDia já usa —
+// projDataRecebimento para o regime de caixa dos recebimentos e mergeContasComParcelas
+// (+ mesmo filtro de status 'Pago') para as saídas. Não é uma segunda verdade: nenhuma
+// regra de prazo, antecipação ou parcela é reinterpretada aqui.
+//
+// NÃO ACUMULA: cada ponto é o montante previsto NAQUELE dia, não o saldo corrente.
+//
+// ENTRADAS = COMPROMETIDO — vendas JÁ realizadas, na data real de disponibilidade. A
+// estimativa de vendas futuras (cenário Provável de buildProjecaoCaixa) NÃO entra aqui.
+//
+// Independe do saldo em conta — por isso não reaproveita buildProjecaoCaixa, que só
+// devolve linhas quando existe posição do próprio dia (`if(dataPosicao!==hoje)`).
+// ══════════════════════════════════════════════════════════════════════════
+const buildSerieProjecao=({entradas,contas,dividas,retiradas,empresaIds,prazos,inicio,fim})=>{
+  const vazio={rows:[],totalEntradas:0,totalSaidas:0};
+  if(!projDataValida(inicio)||!projDataValida(fim)||inicio>fim)return vazio;
+  const ids=new Set((empresaIds||[]).filter(Boolean));
+
+  const map={},ordem=[];
+  for(let d=inicio;d<=fim;d=addDays(d,1)){
+    map[d]={entradas:0,saidas:0};
+    ordem.push(d);
+    if(ordem.length>400)break; // trava de segurança
+  }
+
+  // ── Entradas: mesma regra de projDataRecebimento (D+X, crédito/voucher antecipados) ──
+  (entradas||[]).forEach(e=>{
+    if(!ids.has(e.empresa_id))return;
+    if(!projDataValida(e.data))return;
+    PROJ_MODALIDADES.forEach(forma=>{
+      const v=projNum(e[forma]);
+      if(v<=0)return;
+      const dr=projDataRecebimento(e,forma,prazos);
+      if(!projDataValida(dr)||!map[dr])return; // fora da janela projetada
+      map[dr].entradas+=v;
+    });
+  });
+
+  // ── Saídas: mesmo merge (contas + parcelas de dívidas + fixas), sem somar dívidas
+  // em separado, mesma exclusão de status 'Pago' ──
+  ids.forEach(id=>{
+    const con=(contas||[]).filter(r=>r.empresa_id===id);
+    const div=(dividas||[]).filter(r=>r.empresa_id===id);
+    mergeContasComParcelas(con,div).forEach(c=>{
+      if(!projDataValida(c.vencimento)||!map[c.vencimento])return;
+      if(c.status==='Pago')return;
+      const v=projNum(c.valor);
+      if(v<=0)return;
+      map[c.vencimento].saidas+=v;
+    });
+  });
+  (retiradas||[]).forEach(r=>{
+    if(!ids.has(r.empresa_id))return;
+    if(!projDataValida(r.data)||!map[r.data])return;
+    const v=projNum(r.valor);
+    if(v<=0)return;
+    map[r.data].saidas+=v;
+  });
+
+  const rows=ordem.map(d=>({data:d,entradas:projCents(map[d].entradas),saidas:projCents(map[d].saidas)}));
+  return{
+    rows,
+    totalEntradas:projCents(rows.reduce((s,r)=>s+r.entradas,0)),
+    totalSaidas:projCents(rows.reduce((s,r)=>s+r.saidas,0)),
+  };
+};
+
+// Eixo Y compacto do gráfico de projeção — só apresentação, não altera nenhum valor.
+const fcEixoY=v=>{
+  const n=projNum(v),a=Math.abs(n);
+  if(a>=1000000)return 'R$ '+(n/1000000).toLocaleString('pt-BR',{maximumFractionDigits:1})+' mi';
+  if(a>=1000)return 'R$ '+Math.round(n/1000)+' mil';
+  return 'R$ '+Math.round(n);
+};
+
 // Confiança qualitativa — regra explícita, sem percentual arbitrário.
 const projConfianca=(hist,idadePosicao,metricas)=>{
   if(!metricas)return{nivel:'—',motivo:'Sem base para calcular.'};
@@ -4811,14 +5251,125 @@ const cgAviso3Texto=(cgCalc,hoje)=>{
   return{titulo:'CAPITAL UTILIZADO NA OPERAÇÃO',corpo:partes.join(' '),rodape};
 };
 
-function CapitalDeGiroLayer({clienteId,hoje,horizonte,metricas,conf,proj30}){
+// NOTA: cgAviso1Texto/cgAviso2Texto/cgAviso3Texto acima permanecem definidos e testados, mas hoje
+// sem consumidor — o carrossel de avisos que os renderizava foi substituído pelo painel "Em Conta".
+// Mantidos de propósito (mesma política do motor da Projeção antiga): são funções puras, derivadas
+// de metricas/conf/proj30/cgCalc, e serão reaproveitadas quando o Mural voltar em outra camada.
+
+// Data curta para o histórico de saldos: "08 Ago". Reutiliza MONTHS_SHORT já definido no projeto.
+const accDataCurta=d=>{
+  if(!projDataValida(d))return '—';
+  return `${d.slice(8,10)} ${MONTHS_SHORT[Number(d.slice(5,7))-1]||''}`.trim();
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+// PROJEÇÃO — REDESIGN: helpers de APRESENTAÇÃO (prefixo rdp).
+// Nenhum deles calcula dinheiro: só formatam ou comparam valores que os motores
+// existentes (buildSerieProjecao / buildCaixaDoDia / cgCalc) já produziram.
+// ══════════════════════════════════════════════════════════════════════════
+
+// BRL sem centavos — é a notação usada pelo mockup nos minis, na legenda do
+// gráfico e no Resumo semanal ("R$ 171.044"). O hero, o Capital de Giro e os
+// cards de Hoje seguem com fmt() (centavos), como no mockup.
+const rdpFmt0=v=>projNum(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL',
+  minimumFractionDigits:0,maximumFractionDigits:0});
+
+// Variação percentual entre dois valores REAIS já calculados. Devolve null quando
+// não há base de comparação (evita percentual inventado). Nunca cria dado novo.
+const rdpVariacao=(atual,anterior)=>{
+  const base=projNum(anterior);
+  if(base<=0)return null;
+  const d=(projNum(atual)-base)/base*100;
+  return Number.isFinite(d)?d:null;
+};
+const rdpPct=d=>`${d>=0?'+':'−'}${Math.abs(d).toLocaleString('pt-BR',{maximumFractionDigits:1})}%`;
+
+// Rótulo do período de uma semana civil: "01–07 ago".
+const rdpPeriodo=(ini,fim)=>{
+  const mi=MONTHS_SHORT[Number(ini.slice(5,7))-1]||'',mf=MONTHS_SHORT[Number(fim.slice(5,7))-1]||'';
+  return mi===mf?`${ini.slice(8,10)}–${fim.slice(8,10)} ${mi.toLowerCase()}`
+                :`${ini.slice(8,10)} ${mi.toLowerCase()}–${fim.slice(8,10)} ${mf.toLowerCase()}`;
+};
+
+// ── RESUMO SEMANAL — agrupamento SEMANAL CIVIL da MESMA série do gráfico ──
+// Regra de divisão (idêntica à estrutura do mockup): dentro de cada mês, blocos
+// fixos de 7 dias a partir do dia 1 — 01–07, 08–14, 15–21, 22–28, 29–fim. As
+// bordas são recortadas pelo horizonte exibido (a série começa amanhã), então a
+// 1ª e a última semana podem ser parciais; o período impresso mostra os dias reais.
+// Entradas/Saídas são a soma das MESMAS linhas verde/vermelha — nenhuma reconsulta,
+// nenhum segundo cálculo.
+//
+// SITUAÇÃO — determinística, nesta ordem de precedência:
+//   1. "Melhor semana" — única semana com o maior resultado, e resultado > 0;
+//   2. "Maior saída"   — única semana com o maior total de saídas, e saídas > 0;
+//   3. resultado < 0 → "Déficit"; resultado > 0 → "Positivo"; resultado = 0 → "Neutra".
+// 1 e 2 exigem 2+ semanas e empate zero (máximo estrito): sem isso o rótulo seria
+// arbitrário. A cor do pill segue SEMPRE o sinal do resultado.
+const rdpSemanas=rows=>{
+  const grupos=[],idx={};
+  (rows||[]).forEach(r=>{
+    if(!projDataValida(r.data))return;
+    const bloco=Math.min(5,Math.ceil(Number(r.data.slice(8,10))/7));
+    const chave=`${r.data.slice(0,7)}-${bloco}`;
+    if(idx[chave]===undefined){idx[chave]=grupos.length;grupos.push({ini:r.data,fim:r.data,entradas:0,saidas:0});}
+    const g=grupos[idx[chave]];
+    if(r.data<g.ini)g.ini=r.data;
+    if(r.data>g.fim)g.fim=r.data;
+    g.entradas+=projNum(r.entradas);
+    g.saidas+=projNum(r.saidas);
+  });
+  const linhas=grupos.map((g,i)=>({
+    n:i+1,ini:g.ini,fim:g.fim,
+    entradas:projCents(g.entradas),saidas:projCents(g.saidas),
+    resultado:projCents(g.entradas-g.saidas),
+  }));
+  if(!linhas.length)return[];
+  const maxRes=Math.max(...linhas.map(l=>l.resultado));
+  const maxSai=Math.max(...linhas.map(l=>l.saidas));
+  const melhorUnico=linhas.filter(l=>l.resultado===maxRes).length===1;
+  const saidaUnica=linhas.filter(l=>l.saidas===maxSai).length===1;
+  return linhas.map(l=>{
+    let situacao;
+    if(linhas.length>1&&melhorUnico&&l.resultado===maxRes&&l.resultado>0)situacao='Melhor semana';
+    else if(linhas.length>1&&saidaUnica&&l.saidas===maxSai&&l.saidas>0)situacao='Maior saída';
+    else situacao=l.resultado<0?'Déficit':(l.resultado>0?'Positivo':'Neutra');
+    return{...l,situacao,cls:l.resultado<0?'neg':(l.resultado>0?'pos':'zero')};
+  });
+};
+
+// Título do Resumo semanal a partir do período REAL exibido ("agosto 2026",
+// "agosto–setembro 2026", "dezembro 2026–janeiro 2027").
+const rdpTituloPeriodo=rows=>{
+  if(!rows||!rows.length)return '';
+  const a=rows[0].data,b=rows[rows.length-1].data;
+  const ma=(MONTHS[Number(a.slice(5,7))-1]||'').toLowerCase(),mb=(MONTHS[Number(b.slice(5,7))-1]||'').toLowerCase();
+  const ya=a.slice(0,4),yb=b.slice(0,4);
+  if(ya===yb)return ma===mb?`${ma} ${ya}`:`${ma}–${mb} ${ya}`;
+  return `${ma} ${ya}–${mb} ${yb}`;
+};
+
+// Ícones do redesign — SVGs idênticos aos do mockup, isolados para não repetir markup.
+const RdpIcon={
+  card:  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>,
+  cifrao:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+  seta:  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 7l-5-5-5 5"/></svg>,
+  baixo: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>,
+  cima:  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>,
+  grafico:<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>,
+  miniBaixo:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>,
+  miniCima: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>,
+  miniGlobo:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>,
+  chevron:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>,
+  chevronUp:<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m6 15 6-6 6 6"/></svg>,
+};
+
+function CapitalDeGiroLayer({clienteId,hoje,horizonte,metricas,conf,proj30,emConta,saldoHistorico,onEditarSaldo,entraHoje,saiHoje,sobraHoje}){
   const[cg,setCg]=useState({estado:'idle',mov:[]}); // idle|carregando|ok|erro
   const[acaoModal,setAcaoModal]=useState(null);      // null|'aporte'|'retorno'|'saida'
   const[valorInput,setValorInput]=useState('');
   const[salvandoCg,setSalvandoCg]=useState(false);
   const[erroCg,setErroCg]=useState('');
   const[feedbackCg,setFeedbackCg]=useState('');
-  const[muralIdx,setMuralIdx]=useState(0);
 
   // Carregamento do ledger do CLIENTE — independente das unidades/entradas/contas da Projeção.
   // Guard de corrida: resposta atrasada de um cliente anterior nunca sobrescreve o atual.
@@ -4894,67 +5445,62 @@ function CapitalDeGiroLayer({clienteId,hoje,horizonte,metricas,conf,proj30}){
     }finally{setSalvandoCg(false);}
   };
 
-  const avisos=[
-    cgAviso1Texto(horizonte,metricas,conf),
-    cgAviso2Texto(proj30,cgCalc.disponivel),
-    cgAviso3Texto(cgCalc,hoje),
-  ];
-  const avisoAtual=avisos[muralIdx];
-  const muralPrev=()=>setMuralIdx(i=>(i+2)%3);
-  const muralNext=()=>setMuralIdx(i=>(i+1)%3);
-
   const modalTitulo=acaoModal==='aporte'?'Adicionar Capital de Giro'
     :acaoModal==='retorno'?'Retornar ao Capital de Giro'
     :'Utilizar Capital de Giro';
 
+  // ── REDESIGN: o componente passa a renderizar APENAS o card "Capital de giro"
+  // (2ª coluna do hero row do mockup). O stack Entra/Sai/Sobra e o painel "Em conta"
+  // que ficavam aqui foram reposicionados por Projecao() nos blocos Hero e "Movimento
+  // de hoje" — mesmos valores, mesmas fontes. Nenhuma regra do Capital de Giro mudou:
+  // cgCalc, confirmarAcaoCg, o ledger append-only e os modais seguem intactos. Os props
+  // emConta/saldoHistorico/onEditarSaldo/entraHoje/saiHoje/sobraHoje permanecem na
+  // assinatura (consumidos agora por Projecao) e o contrato do componente é preservado.
   return(
-    <div className="prx-cg-layer">
-      <div className="prx-cg-main">
-        <div className="prx-cg-head">
-          <span className="prx-cg-label">Capital de Giro</span>
-          <span className="prx-cg-sub">Disponível para suporte à operação</span>
+    <div className="prx-rdp-card prx-rdp-cg">
+      <div className="prx-rdp-chead">
+        <div className="prx-rdp-label">
+          <span className="prx-rdp-ichip brand">{RdpIcon.cifrao}</span>
+          Capital de giro
         </div>
-        {cg.estado==='erro'?(
-          <div className="prx-cg-erro">Não foi possível carregar o Capital de Giro.</div>
-        ):cg.estado!=='ok'?(
-          <div className="prx-cg-carregando">Carregando Capital de Giro…</div>
-        ):(<>
-          <div className="prx-cg-value">{fmt(cgCalc.disponivel)}</div>
-          <div className="prx-cg-metrics">
-            <div><span>Utilizado no mês</span><strong>{fmt(cgCalc.utilizadoMes)}</strong></div>
-            <div><span>A retornar</span><strong className={cgCalc.aRetornar>0?'papaya':''}>{fmt(cgCalc.aRetornar)}</strong></div>
+        {cg.estado==='ok'&&(
+          <div className="prx-rdp-cg-actions">
+            <button type="button" className="prx-rdp-chip pos" onClick={()=>abrirModal('aporte')}>+ Entrada</button>
+            <button type="button" className="prx-rdp-chip neg" onClick={()=>abrirModal('saida')}>− Saída</button>
           </div>
-          {feedbackCg&&<div className="prx-cg-feedback">{feedbackCg}</div>}
-          {erroCg&&!acaoModal&&<div className="prx-cg-erro-inline">{erroCg}</div>}
-          <div className="prx-cg-actions">
-            <button type="button" className="prx-cg-action primary" onClick={()=>abrirModal('aporte')}>Inserir valor</button>
-            <button type="button" className="prx-cg-action ghost" onClick={()=>abrirModal('retorno')}>Retornar saldo</button>
-            <button type="button" className="prx-cg-action dark" onClick={()=>abrirModal('saida')}>Saída</button>
-          </div>
-        </>)}
+        )}
       </div>
 
-      <div className="prx-cg-advisor">
-        <div className="prx-cg-advisor-idx">Aviso {muralIdx+1}/3</div>
-        <div className="prx-cg-slide">
-          <div className="prx-cg-advisor-title">{avisoAtual.titulo}</div>
-          <div className="prx-cg-advisor-body">{avisoAtual.corpo}</div>
-          {avisoAtual.rodape&&<div className="prx-cg-advisor-rodape">{avisoAtual.rodape}</div>}
-        </div>
-        <div className="prx-cg-advisor-nav">
-          <button type="button" onClick={muralPrev} aria-label="Aviso anterior">‹</button>
-          <div className="prx-cg-dots">
-            {[0,1,2].map(i=>(
-              <button key={i} type="button" className={`prx-cg-dot${i===muralIdx?' on':''}`}
-                onClick={()=>setMuralIdx(i)} aria-label={`Ir para o aviso ${i+1}`} aria-current={i===muralIdx}></button>
-            ))}
+      {cg.estado==='erro'?(
+        <div className="prx-rdp-cg-state erro">Não foi possível carregar o Capital de Giro.</div>
+      ):cg.estado!=='ok'?(
+        <div className="prx-rdp-cg-state">Carregando Capital de Giro…</div>
+      ):(<>
+        <div className="prx-rdp-cg-value prx-rdp-num">{fmt(cgCalc.disponivel)}</div>
+        <div className="prx-rdp-cg-split">
+          <div>
+            <div className="n">Utilizado no mês</div>
+            <div className="v prx-rdp-num">{rdpFmt0(cgCalc.utilizadoMes)}</div>
           </div>
-          <button type="button" onClick={muralNext} aria-label="Próximo aviso">›</button>
+          <div>
+            <div className="n">A retornar</div>
+            <div className={`v prx-rdp-num${cgCalc.aRetornar>0?' warn':''}`}>{rdpFmt0(cgCalc.aRetornar)}</div>
+          </div>
         </div>
-      </div>
+        {feedbackCg&&<div className="prx-rdp-cg-msg ok">{feedbackCg}</div>}
+        {erroCg&&!acaoModal&&<div className="prx-rdp-cg-msg erro">{erroCg}</div>}
+      </>)}
 
       {acaoModal&&(
         <Modal title={modalTitulo} onClose={fecharModal}>
+          {acaoModal!=='saida'&&(
+            <div className="prx-cg-modal-tipo" role="group" aria-label="Tipo de entrada">
+              <button type="button" className={acaoModal==='aporte'?'on':''}
+                onClick={()=>{setAcaoModal('aporte');setErroCg('');}}>Aporte</button>
+              <button type="button" className={acaoModal==='retorno'?'on':''}
+                onClick={()=>{setAcaoModal('retorno');setErroCg('');}}>Retorno</button>
+            </div>
+          )}
           {acaoModal==='saida'&&<p className="prx-cg-modal-info">Disponível: <strong>{fmt(cgCalc.disponivel)}</strong></p>}
           {acaoModal==='retorno'&&<p className="prx-cg-modal-info">Pendente de retorno: <strong>{fmt(cgCalc.aRetornar)}</strong></p>}
           {erroCg&&<div className="alert alert-r" style={{marginBottom:12}}>{erroCg}</div>}
@@ -4978,50 +5524,10 @@ function CapitalDeGiroLayer({clienteId,hoje,horizonte,metricas,conf,proj30}){
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// PROJEÇÃO — CAMADA 2: "HOJE".
-// Puramente apresentacional — recebe os valores já calculados por buildHojeCaixa
-// e pelo acumulativo de "Em Conta" (ver useMemo `emConta` em Projecao()).
-// ══════════════════════════════════════════════════════════════════════════
-function HojeLayer({emContaValor,emContaOrigem,onEditarSaldo,entraHoje,saiHoje,sobraHoje}){
-  const sobraCls=sobraHoje>0?'g':(sobraHoje<0?'r':'neutro');
-  const emContaFoot=emContaOrigem==='manual'?'saldo informado hoje'
-    :(emContaOrigem==='automatico'?'saldo acumulado':'defina o saldo em conta');
-  return(
-    <div className="prx-today-layer">
-      <div className="prx-today-head">
-        <strong className="prx-today-title">Hoje</strong>
-        <span className="prx-today-sub">Movimentação financeira do dia</span>
-      </div>
-      <div className="prx-today-grid">
-        <div className="prx-today-card prx-today-card-account">
-          <button type="button" className="prx-today-edit" onClick={onEditarSaldo}
-            aria-label="Editar saldo em conta" title="Editar saldo em conta">✎</button>
-          <span className="prx-today-label">Em conta</span>
-          <strong className={`prx-today-value${emContaValor==null?' muted':(emContaValor<0?' r':'')}`}>
-            {emContaValor==null?'Saldo não informado':fmt(emContaValor)}
-          </strong>
-          <span className="prx-today-foot">{emContaFoot}</span>
-        </div>
-        <div className="prx-today-card">
-          <span className="prx-today-label">Entra hoje</span>
-          <strong className="prx-today-value g">{entraHoje>0?'+':''}{fmt(entraHoje)}</strong>
-          <span className="prx-today-foot">recebimentos disponíveis</span>
-        </div>
-        <div className="prx-today-card">
-          <span className="prx-today-label">Sai hoje</span>
-          <strong className="prx-today-value r">{saiHoje>0?fmt(-saiHoje):fmt(0)}</strong>
-          <span className="prx-today-foot">compromissos do dia</span>
-        </div>
-        <div className="prx-today-card">
-          <span className="prx-today-label">Sobra hoje</span>
-          <strong className={`prx-today-value ${sobraCls}`}>{fmt(sobraHoje)}</strong>
-          <span className="prx-today-foot">entra − sai do dia</span>
-        </div>
-      </div>
-    </div>
-  );
-}
+// PROJEÇÃO — CAMADA 2 "HOJE": o wrapper visual e o card "Em Conta" isolado deixaram de ser
+// renderizados (redundantes com o painel Em Conta superior, que agora carrega também o lápis
+// de edição). Os dados de Hoje continuam ativos: hojeCaixa alimenta o stack Entra/Sai/Sobra,
+// e emConta/salvarSaldo/modal seguem intactos.
 
 // Ocultação cirúrgica (temporária) da antiga seção "Projeção de Caixa" — Hero, Ponto de
 // Partida, cards, curva, cenários, detalhes e agenda. O motor que a alimenta (proj/proj30/
@@ -5036,11 +5542,14 @@ function Projecao({empresas}){
   const[carga,setCarga]=useState({estado:'idle',ent:[],con:[],div:[],ret:[]});
   const[clienteId,setClienteId]=useState(null);
   const[saldoPos,setSaldoPos]=useState(null);      // {data_posicao, valor, atualizado_em}
+  const[saldoLista,setSaldoLista]=useState([]);    // posições persistidas, mais recente → mais antiga
   const[form,setForm]=useState({valor:'',data:hoje});
   const[editando,setEditando]=useState(false);
   const[salvando,setSalvando]=useState(false);
   const[aviso,setAviso]=useState(null);            // {tipo:'ok'|'erro'|'ro', texto}
   const[detalhes,setDetalhes]=useState(false);
+  const fcRef=useRef(null);                        // canvas do gráfico de previsão
+  const[fcHorizonte,setFcHorizonte]=useState(30);  // 15|30|60 — independe do seletor da projeção antiga
 
   const prazos=React.useMemo(()=>({...DEFAULT_PRAZOS,...(loadLocalS('zanon_prazos')||{})}),[]);
   const idsChave=(empresas||[]).map(e=>e.id).filter(Boolean).join(',');
@@ -5048,7 +5557,7 @@ function Projecao({empresas}){
   // ── Carregamento consolidado: 1 rodada por (cliente × conjunto de unidades) ──
   useEffect(()=>{
     const ids=idsChave?idsChave.split(','):[];
-    if(!ids.length){setCarga({estado:'sem-empresas',ent:[],con:[],div:[],ret:[]});setClienteId(null);setSaldoPos(null);return;}
+    if(!ids.length){setCarga({estado:'sem-empresas',ent:[],con:[],div:[],ret:[]});setClienteId(null);setSaldoPos(null);setSaldoLista([]);return;}
     let cancelado=false;
     setCarga(c=>({...c,estado:'carregando'}));
     (async()=>{
@@ -5077,13 +5586,16 @@ function Projecao({empresas}){
           fetchAllPages((from,to)=>supabase.from('retiradas')
             .select('empresa_id,valor,data').in('empresa_id',ids)
             .gte('data',addDays(hoje,-90)).lte('data',retFim).order('id',{ascending:true}).range(from,to),'projecao:retiradas'),
+          // 6 posições: a mais recente (âncora do Em Conta) + até 5 anteriores para o histórico.
           cid?supabase.from('saldos_caixa_consolidados')
             .select('cliente_id,data_posicao,valor,atualizado_em')
-            .eq('cliente_id',cid).order('data_posicao',{ascending:false}).limit(1):Promise.resolve({data:[]}),
+            .eq('cliente_id',cid).order('data_posicao',{ascending:false}).limit(6):Promise.resolve({data:[]}),
         ]);
         if(cancelado)return;
-        const pos=(saldo&&saldo.data&&saldo.data[0])||null;
+        const lista=(saldo&&saldo.data)||[];
+        const pos=lista[0]||null;
         setSaldoPos(pos);
+        setSaldoLista(lista);
         setForm({valor:pos?String(pos.valor):'',data:pos?pos.data_posicao:hoje});
         setCarga({estado:'ok',ent:ent||[],con:con||[],div:div||[],ret:ret||[]});
       }catch(err){
@@ -5159,6 +5671,76 @@ function Projecao({empresas}){
     return{valor:projCents(acumulado),origem:'automatico'};
   },[carga,idsChave,prazos,saldoPos,dataPosicao,hoje,posicaoValida,posicaoFutura]);
 
+  // ── Histórico de saldos anteriores (painel "Em Conta") ──
+  // Mesma fonte já persistida do Em Conta: saldos_caixa_consolidados. Cada linha é o saldo de
+  // FECHAMENTO daquela data_posicao — ou seja, quanto sobrou em conta naquele período. A posição
+  // de hoje fica no card principal e não se repete aqui. Máximo de 5 registros EXIBIDOS; nada é
+  // apagado do banco. Duplicidade por período é impossível: a chave é (cliente_id, data_posicao).
+  const saldoHistorico=React.useMemo(()=>
+    (saldoLista||[]).filter(r=>r&&r.data_posicao!==hoje).slice(0,5)
+  ,[saldoLista,hoje]);
+
+  // ── CAMADA DE PREVISÃO 15/30/60 ──
+  // A série é construída UMA vez para a janela cheia de 60 dias (amanhã → hoje+60).
+  // Trocar 15/30/60 apenas fatia esse array em memória: nenhuma consulta nova ao Supabase.
+  const serieProj=React.useMemo(()=>buildSerieProjecao({
+    entradas:carga.ent,contas:carga.con,dividas:carga.div,retiradas:carga.ret,
+    empresaIds:idsChave?idsChave.split(','):[],prazos,
+    inicio:addDays(hoje,1),fim:addDays(hoje,60),
+  }),[carga,idsChave,prazos,hoje]);
+
+  const fcRows=React.useMemo(()=>serieProj.rows.slice(0,fcHorizonte),[serieProj,fcHorizonte]);
+
+  // ── UMA ÚNICA VERDADE FINANCEIRA DA PROJEÇÃO ──
+  // fcRows é a fatia da série diária correspondente ao horizonte selecionado. Dela — e
+  // SÓ dela — derivam: a linha verde e a linha vermelha do gráfico, os totais da legenda,
+  // "Vai entrar" / "Vai sair" / "Saldo no fim" e o Resumo semanal. Nenhum desses números
+  // é recalculado por outra fonte; trocar 15/30/60 apenas refatia o array em memória.
+  const fcTotais=React.useMemo(()=>({
+    entradas:projCents(fcRows.reduce((s,r)=>s+projNum(r.entradas),0)),
+    saidas:projCents(fcRows.reduce((s,r)=>s+projNum(r.saidas),0)),
+  }),[fcRows]);
+
+  // SALDO NO FIM — posição projetada ao término do horizonte.
+  // Fórmula: saldo em conta hoje + entradas do horizonte − saídas do horizonte. É
+  // EXATAMENTE a acumulação do cenário GARANTIDO de buildProjecaoCaixa (gar = saldo +
+  // Σcomprometido − Σsaidas) sobre a mesma janela (amanhã → hoje+horizonte), porque
+  // `serieProj.entradas` usa a mesma regra de projDataRecebimento que alimenta
+  // `comprometido`. Não é uma fórmula concorrente — é o mesmo motor, reexpresso sobre a
+  // série que já está em memória e que não depende de posição do próprio dia.
+  // Capital de Giro NÃO entra: continua sendo reserva separada do caixa operacional.
+  // Sem saldo em conta informado não há posição de partida → null (nunca assume zero).
+  const fcSaldoFim=React.useMemo(()=>{
+    if(emConta.valor==null)return null;
+    return projCents(projNum(emConta.valor)+fcTotais.entradas-fcTotais.saidas);
+  },[emConta,fcTotais]);
+
+  // Resumo semanal — mesmas linhas de fcRows, agrupadas por semana civil.
+  const fcSemanas=React.useMemo(()=>rdpSemanas(fcRows),[fcRows]);
+
+  // ── Comparativo de HOJE contra ONTEM (chips de tendência de Entra/Sai) ──
+  // Reaproveita buildCaixaDoDia — o MESMO motor de "Hoje", só com dataAlvo=ontem. Não é
+  // métrica nova: é a mesma leitura de um dia, aplicada ao dia anterior. A carga já cobre
+  // essa data (entradas desde hoje−(56|maxPrazo)−14; contas sem filtro; retiradas desde
+  // hoje−90). Sem movimento ontem, rdpVariacao devolve null e o chip não é renderizado.
+  const ontemCaixa=React.useMemo(()=>buildCaixaDoDia({
+    entradas:carga.ent,contas:carga.con,dividas:carga.div,retiradas:carga.ret,
+    empresaIds:idsChave?idsChave.split(','):[],prazos,dataAlvo:addDays(hoje,-1),
+  }),[carga,idsChave,prazos,hoje]);
+
+  // Variação do saldo em conta desde a ÚLTIMA posição registrada antes de hoje — dado real
+  // de saldos_caixa_consolidados, não uma projeção. Ausente quando não há posição anterior.
+  const heroTrend=React.useMemo(()=>{
+    if(emConta.valor==null)return null;
+    const ant=(saldoLista||[]).find(r=>r&&projDataValida(r.data_posicao)&&r.data_posicao<hoje);
+    if(!ant)return null;
+    const base=projNum(ant.valor);
+    if(base===0)return null;
+    const d=(projNum(emConta.valor)-base)/Math.abs(base)*100;
+    if(!Number.isFinite(d))return null;
+    return{pct:d,data:ant.data_posicao};
+  },[emConta,saldoLista,hoje]);
+
   // ── Abrir editor do "Em Conta" a partir do card (pré-preenche com o valor calculado) ──
   const abrirEditorSaldo=()=>{
     setAviso(null);
@@ -5189,6 +5771,84 @@ function Projecao({empresas}){
   };
   useChart(chartRef,chartCfg);
 
+  // ── Gráfico da camada de previsão: Entradas × Saídas POR DIA (não acumulado) ──
+  // Mesmos dados de sempre (fcRows); a linguagem visual é a do mockup: linhas de 2.5px com
+  // ponta arredondada em #16a34a / #dc2626, áreas em degradê da cor até transparente,
+  // grid horizontal pontilhado #eef0f4 (4 5) sem grid vertical, rótulos 11px #94a3b8 e
+  // tooltip carbon com raio 8. Chart.js já existente — nenhuma biblioteca ou CDN novo.
+  const fcLabels=fcRows.map(r=>`${r.data.slice(8,10)} ${(MONTHS_SHORT[Number(r.data.slice(5,7))-1]||'').toLowerCase()}`);
+  // Degradê do mockup: stop 0 = cor com alfa (0.14 verde / 0.16 vermelho), stop 100% = 0.
+  const fcFill=(cor,alfa)=>ctx=>{
+    const{ctx:c,chartArea}=ctx.chart;
+    if(!chartArea)return `rgba(${cor},0)`;
+    const g=c.createLinearGradient(0,chartArea.top,0,chartArea.bottom);
+    g.addColorStop(0,`rgba(${cor},${alfa})`);
+    g.addColorStop(1,`rgba(${cor},0)`);
+    return g;
+  };
+  // Acabamento do mockup, desenhado explicitamente — puramente decorativo, não lê nem
+  // altera nenhum valor. Duas coisas que a config declarativa do Chart.js 4 não entrega
+  // do jeito da referência:
+  //   1. grid horizontal PONTILHADO (#eef0f4, traço 4 5) — em v4 `grid.borderDash` passou
+  //      a valer para a borda do eixo, não para as linhas-guia;
+  //   2. linha vertical pontilhada no ponto sob o cursor.
+  const fcSkin={
+    id:'rdpSkin',
+    beforeDatasetsDraw(chart){
+      const y=chart.scales&&chart.scales.y;
+      if(!y)return;
+      const{ctx:c,chartArea}=chart;
+      c.save();
+      c.setLineDash([4,5]);c.lineWidth=1;c.strokeStyle='#eef0f4';
+      (y.ticks||[]).forEach((_,i)=>{
+        const py=Math.round(y.getPixelForTick(i))+.5;
+        c.beginPath();c.moveTo(chartArea.left,py);c.lineTo(chartArea.right,py);c.stroke();
+      });
+      c.restore();
+    },
+    afterDatasetsDraw(chart){
+      const act=chart.tooltip&&chart.tooltip.getActiveElements&&chart.tooltip.getActiveElements();
+      if(!act||!act.length)return;
+      const{ctx:c,chartArea}=chart;
+      const x=act[0].element.x;
+      c.save();
+      c.beginPath();c.setLineDash([3,3]);c.lineWidth=1;c.strokeStyle='rgba(148,163,184,.75)';
+      c.moveTo(x,chartArea.top);c.lineTo(x,chartArea.bottom);c.stroke();
+      c.restore();
+    },
+  };
+  const fcCfg={
+    type:'line',
+    plugins:[fcSkin],
+    data:{labels:fcLabels,datasets:[
+      {label:'Entradas',data:fcRows.map(r=>r.entradas),borderColor:'#16a34a',backgroundColor:fcFill('22,163,74',.14),
+       borderWidth:2.5,borderCapStyle:'round',fill:true,tension:.35,pointRadius:0,pointHoverRadius:5.5,
+       pointHoverBackgroundColor:'#fff',pointHoverBorderColor:'#16a34a',pointHoverBorderWidth:3,order:1},
+      {label:'Saídas',data:fcRows.map(r=>r.saidas),borderColor:'#dc2626',backgroundColor:fcFill('220,38,38',.16),
+       borderWidth:2.5,borderCapStyle:'round',fill:true,tension:.35,pointRadius:0,pointHoverRadius:5.5,
+       pointHoverBackgroundColor:'#fff',pointHoverBorderColor:'#dc2626',pointHoverBorderWidth:3,order:2},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      layout:{padding:{top:6}},
+      plugins:{legend:{display:false},tooltip:{
+        backgroundColor:'#1B1C20',padding:10,cornerRadius:8,displayColors:true,boxWidth:8,boxHeight:8,boxPadding:4,
+        titleFont:{size:11,weight:'600'},titleColor:'rgba(255,255,255,.72)',
+        bodyFont:{size:12.5,weight:'700'},bodyColor:'#fff',
+        callbacks:{
+          title:it=>{const i=it&&it[0]?it[0].dataIndex:-1;const r=fcRows[i];return r?fmtDate(r.data):'';},
+          label:c=>`${c.dataset.label}: ${fmt(c.parsed.y)}`,
+        }}},
+      // Densidade dos rótulos do mockup (5 marcas em 15 dias) escalada por horizonte,
+      // para que 60 dias não polua o eixo. Eixo Y em BRL compacto (fcEixoY), com a mesma
+      // quantidade de linhas-guia do mockup (4–5).
+      scales:{x:{grid:{display:false},border:{display:false},
+                 ticks:{maxTicksLimit:fcHorizonte<=15?5:(fcHorizonte<=30?7:9),font:{size:11,weight:'500'},
+                        color:'#94a3b8',autoSkip:true,maxRotation:0,padding:6}},
+              y:{beginAtZero:true,border:{display:false},grid:{display:false},
+                 ticks:{font:{size:11,weight:'500'},color:'#94a3b8',maxTicksLimit:5,padding:8,callback:v=>fcEixoY(v)}}}},
+  };
+  useChart(fcRef,fcCfg);
+
   // ── Gravação do saldo consolidado ──
   const salvarSaldo=async()=>{
     setAviso(null);
@@ -5205,10 +5865,12 @@ function Projecao({empresas}){
       if(error)throw error;
       const{data,error:errLer}=await supabase.from('saldos_caixa_consolidados')
         .select('cliente_id,data_posicao,valor,atualizado_em')
-        .eq('cliente_id',clienteId).order('data_posicao',{ascending:false}).limit(1);
+        .eq('cliente_id',clienteId).order('data_posicao',{ascending:false}).limit(6);
       if(errLer)throw errLer;
-      const pos=(data&&data[0])||null;
+      const lista=data||[];
+      const pos=lista[0]||null;
       setSaldoPos(pos);
+      setSaldoLista(lista);
       if(pos)setForm({valor:String(pos.valor),data:pos.data_posicao});
       setEditando(false);
       setAviso({tipo:'ok',texto:'Saldo atualizado.'});
@@ -5243,27 +5905,275 @@ function Projecao({empresas}){
     ? (metricas.status==='verde'?metricas.menorSaldoGar:(metricas.deficitMax>0?-metricas.deficitMax:metricas.menorSaldoProv))
     : 0;
 
-  return(
-    <div className="prx-proj-wrap">
-      {/* ── CAMADA 1 · CAPITAL DE GIRO + MURAL CONSULTIVO ── */}
-      <CapitalDeGiroLayer
-        clienteId={clienteId}
-        hoje={hoje}
-        horizonte={horizonte}
-        metricas={metricas}
-        conf={conf}
-        proj30={proj30}
-      />
+  // ── APRESENTAÇÃO DO REDESIGN — derivações puramente visuais, sem cálculo financeiro ──
+  const emContaValor=emConta.valor;
+  const emContaFoot=emConta.origem==='manual'?'Saldo informado hoje'
+    :(emConta.origem==='automatico'?'Saldo acumulado desde a última posição':'Informe o saldo em conta');
+  const entraHoje=hojeCaixa.entraHoje,saiHoje=hojeCaixa.saiHoje,sobraHoje=hojeCaixa.sobraHoje;
+  // Proporção do movimento do dia — é o número que desenha as barras dos cards (mockup).
+  const movHoje=projNum(entraHoje)+projNum(saiHoje);
+  const pctEntraHoje=movHoje>0?Math.round(projNum(entraHoje)/movHoje*100):0;
+  const pctSaiHoje=movHoje>0?100-pctEntraHoje:0;
+  const sobraCls=sobraHoje>0?'pos':(sobraHoje<0?'neg':'flat');
+  // Chips de tendência de Entra/Sai contra ontem. A cor segue o que a variação significa
+  // para o caixa: mais entradas é bom, mais saídas é ruim.
+  const varEntra=rdpVariacao(entraHoje,ontemCaixa.entra);
+  const varSai=rdpVariacao(saiHoje,ontemCaixa.sai);
+  // Seletor de horizonte — o MESMO estado para os dois segmentados do mockup.
+  const segHorizonte=(
+    <div className="prx-rdp-seg" role="group" aria-label="Horizonte da projeção">
+      {[15,30,60].map(h=>(
+        <button key={h} type="button" className={fcHorizonte===h?'on':''}
+          onClick={()=>setFcHorizonte(h)} aria-pressed={fcHorizonte===h}>{h}d</button>
+      ))}
+    </div>
+  );
+  const fimHorizonte=addDays(hoje,fcHorizonte);
 
-      {/* ── CAMADA 2 · HOJE ── */}
-      <HojeLayer
-        emContaValor={emConta.valor}
-        emContaOrigem={emConta.origem}
-        onEditarSaldo={abrirEditorSaldo}
-        entraHoje={hojeCaixa.entraHoje}
-        saiHoje={hojeCaixa.saiHoje}
-        sobraHoje={hojeCaixa.sobraHoje}
-      />
+  return(
+    <div className="prx-rdp">
+      {/* ══ BLOCO 1 · HERO — Saldo acumulado · Capital de giro · Sobra prevista hoje ══ */}
+      <div className="prx-rdp-row prx-rdp-r-hero">
+
+        {/* SALDO ACUMULADO EM CONTA — card herói papaya. O valor é o MESMO `emConta`
+            que o sistema já usava (posição manual de hoje em saldos_caixa_consolidados
+            ou acumulado por buildCaixaDoDia desde a última posição). Não usa
+            config.saldoInicial nem Capital de Giro. A subdivisão Principal/Reserva/Caixa
+            do mockup foi omitida por decisão do produto: não existe base no banco e
+            preenchê-la seria inventar dado. */}
+        <div className="prx-rdp-card prx-rdp-hero prx-rdp-accent">
+          <div className="prx-rdp-sheen"></div>
+          <div className="prx-rdp-chead">
+            <div className="prx-rdp-label">
+              <span className="prx-rdp-ichip">{RdpIcon.card}</span>
+              Saldo acumulado em conta
+            </div>
+            <div className="prx-rdp-hero-tools">
+              {heroTrend&&(
+                <span className="prx-rdp-trend on-brand"
+                  title={`Variação desde a posição de ${fmtDate(heroTrend.data)}`}>
+                  {heroTrend.pct>=0?RdpIcon.chevronUp:RdpIcon.chevron}
+                  {Math.abs(heroTrend.pct).toLocaleString('pt-BR',{maximumFractionDigits:1})}%
+                </span>
+              )}
+              <button type="button" className="prx-rdp-hero-edit" onClick={abrirEditorSaldo}
+                aria-label="Editar saldo em conta" title="Editar saldo em conta">✎</button>
+            </div>
+          </div>
+          <div className={`prx-rdp-hero-value prx-rdp-num${emContaValor==null?' muted':''}`}>
+            {emContaValor==null?'Saldo ainda não informado':fmt(emContaValor)}
+          </div>
+          <div className="prx-rdp-hero-meta">{emContaFoot}</div>
+        </div>
+
+        {/* CAPITAL DE GIRO — componente existente, agora renderizando só o card. */}
+        <CapitalDeGiroLayer
+          clienteId={clienteId}
+          hoje={hoje}
+          horizonte={horizonte}
+          metricas={metricas}
+          conf={conf}
+          proj30={proj30}
+          emConta={emConta}
+          saldoHistorico={saldoHistorico}
+          onEditarSaldo={abrirEditorSaldo}
+          entraHoje={entraHoje}
+          saiHoje={saiHoje}
+          sobraHoje={sobraHoje}
+        />
+
+        {/* SOBRA PREVISTA HOJE — buildHojeCaixa.sobraHoje (Entra − Sai de hoje). */}
+        <div className="prx-rdp-card prx-rdp-stat">
+          <div className="prx-rdp-chead">
+            <div className="prx-rdp-label">
+              <span className={`prx-rdp-ichip ${sobraCls==='flat'?'':sobraCls}`}>{RdpIcon.seta}</span>
+              Sobra prevista hoje
+            </div>
+          </div>
+          <div className={`prx-rdp-stat-value prx-rdp-num ${sobraCls}`}>{fmt(sobraHoje)}</div>
+          <div className="prx-rdp-foot">
+            <span className="prx-rdp-meta">Entradas − saídas de hoje</span>
+            <span className={`prx-rdp-trend ${sobraCls}`}>
+              {sobraHoje<0?'déficit':(sobraHoje>0?'superávit':'neutro')}
+            </span>
+          </div>
+          <div className="prx-rdp-bar">
+            <span style={{width:`${pctEntraHoje}%`,background:'var(--rdp-pos)'}}></span>
+            <span style={{flex:1,background:'var(--rdp-line)'}}></span>
+          </div>
+        </div>
+      </div>
+
+      {/* ══ BLOCO 2 · MOVIMENTO DE HOJE — os três valores de buildHojeCaixa ══ */}
+      <div className="prx-rdp-section">
+        <span className="tk"></span><span className="t">Movimento de hoje</span><span className="rule"></span>
+      </div>
+      <div className="prx-rdp-row prx-rdp-r-today">
+        <div className="prx-rdp-card prx-rdp-stat">
+          <div className="prx-rdp-chead">
+            <div className="prx-rdp-label"><span className="prx-rdp-ichip pos">{RdpIcon.baixo}</span>Entra hoje</div>
+          </div>
+          <div className="prx-rdp-stat-value prx-rdp-num pos">{entraHoje>0?'+':''}{fmt(entraHoje)}</div>
+          <div className="prx-rdp-foot">
+            <span className="prx-rdp-meta">Recebimentos previstos</span>
+            {varEntra!==null&&(
+              <span className={`prx-rdp-trend ${varEntra>=0?'pos':'neg'}`} title="Comparado a ontem">
+                {rdpPct(varEntra)}
+              </span>
+            )}
+          </div>
+          <div className="prx-rdp-bar">
+            <span style={{width:`${pctEntraHoje}%`,background:'var(--rdp-pos)'}}></span>
+            <span style={{flex:1,background:'var(--rdp-line)'}}></span>
+          </div>
+        </div>
+
+        <div className="prx-rdp-card prx-rdp-stat">
+          <div className="prx-rdp-chead">
+            <div className="prx-rdp-label"><span className="prx-rdp-ichip neg">{RdpIcon.cima}</span>Sai hoje</div>
+          </div>
+          <div className="prx-rdp-stat-value prx-rdp-num neg">{saiHoje>0?fmt(-saiHoje):fmt(0)}</div>
+          <div className="prx-rdp-foot">
+            <span className="prx-rdp-meta">Pagamentos previstos</span>
+            {varSai!==null&&(
+              <span className={`prx-rdp-trend ${varSai>0?'neg':'pos'}`} title="Comparado a ontem">
+                {rdpPct(varSai)}
+              </span>
+            )}
+          </div>
+          <div className="prx-rdp-bar">
+            <span style={{width:`${pctSaiHoje}%`,background:'var(--rdp-neg)'}}></span>
+            <span style={{flex:1,background:'var(--rdp-line)'}}></span>
+          </div>
+        </div>
+
+        <div className="prx-rdp-card prx-rdp-stat">
+          <div className="prx-rdp-chead">
+            <div className="prx-rdp-label"><span className="prx-rdp-ichip warn">{RdpIcon.grafico}</span>Resultado do dia</div>
+          </div>
+          <div className={`prx-rdp-stat-value prx-rdp-num ${sobraCls}`}>{fmt(sobraHoje)}</div>
+          <div className="prx-rdp-foot">
+            <span className="prx-rdp-meta">Saldo líquido do dia</span>
+            <span className={`prx-rdp-trend ${sobraCls}`}>
+              {sobraHoje<0?'negativo':(sobraHoje>0?'positivo':'neutro')}
+            </span>
+          </div>
+          <div className="prx-rdp-bar">
+            <span style={{width:`${pctEntraHoje}%`,background:'var(--rdp-pos)'}}></span>
+            <span style={{width:`${pctSaiHoje}%`,background:'var(--rdp-neg)'}}></span>
+          </div>
+        </div>
+      </div>
+
+      {/* ══ BLOCO 3 · PROJEÇÃO — valores projetados + gráfico Entradas × Saídas.
+          Ambos os painéis leem a MESMA fatia fcRows de buildSerieProjecao, que reaproveita
+          projDataRecebimento e mergeContasComParcelas. Nenhuma regra financeira nova; o
+          gráfico mostra o montante POR DIA (não acumulado). ══ */}
+      <div className="prx-rdp-section">
+        <span className="tk"></span><span className="t">Projeção</span><span className="rule"></span>
+      </div>
+      <div className="prx-rdp-row prx-rdp-r-split">
+        <div className="prx-rdp-card">
+          <div className="prx-rdp-proj-head">
+            <div>
+              <div className="prx-rdp-proj-title">Valores projetados</div>
+              <div className="prx-rdp-proj-sub">até {fmtDate(fimHorizonte)}</div>
+            </div>
+            {segHorizonte}
+          </div>
+          <div className="prx-rdp-proj-grid">
+            <div className="prx-rdp-mini">
+              <div className="mh"><span className="idot pos">{RdpIcon.miniBaixo}</span><span className="n">Vai entrar</span></div>
+              <div className="v pos prx-rdp-num" title={fmt(fcTotais.entradas)}>{rdpFmt0(fcTotais.entradas)}</div>
+              <div className="d">próximos {fcHorizonte} dias</div>
+            </div>
+            <div className="prx-rdp-mini">
+              <div className="mh"><span className="idot neg">{RdpIcon.miniCima}</span><span className="n">Vai sair</span></div>
+              <div className="v neg prx-rdp-num" title={fmt(fcTotais.saidas)}>{rdpFmt0(fcTotais.saidas)}</div>
+              <div className="d">próximos {fcHorizonte} dias</div>
+            </div>
+            <div className={`prx-rdp-mini${fcSaldoFim==null?'':(fcSaldoFim<0?' accent-neg':' accent-pos')}`}>
+              <div className="mh">
+                <span className={`idot ${fcSaldoFim==null?'brand':(fcSaldoFim<0?'neg':'pos')}`}>{RdpIcon.miniGlobo}</span>
+                <span className="n">Saldo no fim</span>
+              </div>
+              <div className={`v prx-rdp-num${fcSaldoFim==null?'':(fcSaldoFim<0?' neg':' pos')}`}
+                title={fcSaldoFim==null?'':fmt(fcSaldoFim)}>
+                {fcSaldoFim==null?'—':rdpFmt0(fcSaldoFim)}
+              </div>
+              <div className="d">
+                {fcSaldoFim==null?'informe o saldo em conta':`posição em ${fmtDate(fimHorizonte).slice(0,5)}`}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="prx-rdp-card">
+          <div className="prx-rdp-chart-head">
+            <div>
+              <div className="prx-rdp-chart-title">Entradas × Saídas</div>
+              <div className="prx-rdp-legend">
+                <span className="li"><span className="prx-rdp-dot pos"></span>Entradas
+                  <b className="prx-rdp-num">{rdpFmt0(fcTotais.entradas)}</b></span>
+                <span className="li"><span className="prx-rdp-dot neg"></span>Saídas
+                  <b className="prx-rdp-num">{rdpFmt0(fcTotais.saidas)}</b></span>
+              </div>
+            </div>
+            {segHorizonte}
+          </div>
+          {fcRows.length===0?(
+            <div className="prx-rdp-chart-vazio">Sem movimentos previstos para os próximos dias.</div>
+          ):(
+            <div className="prx-rdp-canvas"><canvas ref={fcRef}></canvas></div>
+          )}
+        </div>
+      </div>
+
+      {/* ══ BLOCO 4 · RESUMO SEMANAL — agrupamento por semana civil das MESMAS linhas
+          verde/vermelha de fcRows. Nenhum valor é recalculado por outra fonte. ══ */}
+      <div className="prx-rdp-section">
+        <span className="tk"></span>
+        <span className="t">Resumo semanal{fcRows.length?` · ${rdpTituloPeriodo(fcRows)}`:''}</span>
+        <span className="rule"></span>
+      </div>
+      <div className="prx-rdp-card prx-rdp-tablecard">
+        {fcSemanas.length===0?(
+          <div className="prx-rdp-table-vazio">Sem movimentos previstos no período selecionado.</div>
+        ):(
+          <div className="prx-rdp-tablewrap">
+            <table className="prx-rdp-table">
+              <thead>
+                <tr>
+                  <th>Semana e período</th>
+                  <th>Entradas</th>
+                  <th>Saídas</th>
+                  <th>Resultado</th>
+                  <th>Situação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fcSemanas.map(s=>(
+                  <tr key={s.ini}>
+                    <td>
+                      <div className="prx-rdp-week">
+                        <span className="prx-rdp-wk-ic">S{s.n}</span>
+                        <div>
+                          <div className="wn">Semana {s.n}</div>
+                          <div className="wp">{rdpPeriodo(s.ini,s.fim)}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="pos prx-rdp-num">{rdpFmt0(s.entradas)}</td>
+                    <td className="neg prx-rdp-num">{rdpFmt0(s.saidas)}</td>
+                    <td className={`${s.cls} prx-rdp-num`}>{s.resultado>0?'+':''}{rdpFmt0(s.resultado)}</td>
+                    <td><span className={`prx-rdp-pill ${s.cls}`}><span className="pd"></span>{s.situacao}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* ── EDITAR SALDO EM CONTA — reutiliza o mecanismo existente de gravação em
           saldos_caixa_consolidados (salvarSaldo); data_posicao é sempre hoje aqui. ── */}
