@@ -1459,7 +1459,23 @@ textarea{resize:vertical;min-height:58px;}
 .prx-rdp-cg-split .n{font-size:10.5px;color:var(--rdp-ink-3);font-weight:600;letter-spacing:.03em;text-transform:uppercase;}
 .prx-rdp-cg-split .v{font-size:15.5px;font-weight:700;margin-top:4px;}
 .prx-rdp-cg-split .v.warn{color:var(--rdp-warn);}
-.prx-rdp-cg-actions{display:flex;gap:7px;flex:none;}
+.prx-rdp-cg-actions{display:flex;gap:7px;flex:none;align-items:center;}
+/* Nota: com o 3º controle no cabeçalho, o rótulo "Capital de giro" passa a ocupar duas
+   linhas em larguras intermediárias. Foi a alternativa de MENOR impacto: a altura do card
+   (e da linha inteira do hero, que é um grid stretch) permanece exatamente a mesma e não há
+   overflow. Deixar o rótulo em uma linha exigiria quebrar o cabeçalho em duas faixas, o que
+   aumentava a altura de todos os três cards do bloco. */
+/* Lápis do Capital de Giro — MESMA geometria, área clicável e interação do lápis do Hero
+   (.prx-rdp-hero-edit): 26×26, radius 8, grid centrado, transição idêntica. Só a superfície
+   muda, porque aqui o fundo é branco e não o papaya — o translúcido do Hero sumiria. Usa a
+   mesma linguagem de hover dos chips vizinhos. Escopo exclusivo do card; o Hero não é tocado. */
+.prx-rdp-cg-edit{
+  width:26px;height:26px;border-radius:8px;flex:none;display:grid;place-items:center;padding:0;
+  border:1px solid var(--rdp-border);background:var(--rdp-surface-2);color:var(--rdp-ink-2);
+  font-size:12px;line-height:1;cursor:pointer;transition:background .15s,border-color .15s,color .15s;
+}
+.prx-rdp-cg-edit:hover{border-color:#d9d7d0;color:var(--rdp-ink);}
+.prx-rdp-cg-edit:focus-visible{outline:2px solid var(--rdp-carbon);outline-offset:2px;}
 .prx-rdp-chip{
   display:inline-flex;gap:6px;align-items:center;font-family:inherit;font-size:12px;font-weight:600;
   padding:7px 12px;border-radius:9px;border:1px solid var(--rdp-border);cursor:pointer;
@@ -5256,6 +5272,30 @@ const cgAviso3Texto=(cgCalc,hoje)=>{
 // Mantidos de propósito (mesma política do motor da Projeção antiga): são funções puras, derivadas
 // de metricas/conf/proj30/cgCalc, e serão reaproveitadas quando o Mural voltar em outra camada.
 
+// ── POSIÇÃO MANUAL DO CAPITAL DE GIRO (public.capital_giro_posicoes) ──
+// Instante do corte, em ms. A comparação é SEMPRE por timestamp real (criado_em do movimento
+// × posicao_em da posição), nunca por `data`: os botões Entrada/Saída gravam movimentos no
+// mesmo dia da posição, e um corte por data os descartaria indevidamente.
+const cgTs=v=>{const t=Date.parse(v);return Number.isFinite(t)?t:NaN;};
+
+// Um movimento só entra no DISPONÍVEL quando é comprovadamente posterior à posição.
+// Sem posição, tudo entra (comportamento atual preservado). Com posição, um movimento cujo
+// criado_em não seja legível NÃO entra: não dá para provar que é posterior, e reaplicá-lo
+// sobre a posição seria dupla contagem.
+const cgPosterior=(criadoEm,corte)=>{
+  if(corte===null)return true;
+  const t=cgTs(criadoEm);
+  return Number.isFinite(t)&&t>corte;
+};
+
+// parseNum devolve 0 para texto inválido, então a validade do TEXTO é checada antes —
+// é o que separa "0" (valor legítimo) de "abc" (entrada inválida).
+const cgEntradaValida=t=>{
+  const s=String(t==null?'':t).trim();
+  if(!s||!/\d/.test(s))return false;
+  return /^-?\s*(R\$)?\s*-?[\d.,]+$/.test(s);
+};
+
 // Data curta para o histórico de saldos: "08 Ago". Reutiliza MONTHS_SHORT já definido no projeto.
 const accDataCurta=d=>{
   if(!projDataValida(d))return '—';
@@ -5364,57 +5404,144 @@ const RdpIcon={
 };
 
 function CapitalDeGiroLayer({clienteId,hoje,horizonte,metricas,conf,proj30,emConta,saldoHistorico,onEditarSaldo,entraHoje,saiHoje,sobraHoje}){
-  const[cg,setCg]=useState({estado:'idle',mov:[]}); // idle|carregando|ok|erro
+  const[cg,setCg]=useState({estado:'idle',mov:[],pos:null}); // idle|carregando|ok|erro
   const[acaoModal,setAcaoModal]=useState(null);      // null|'aporte'|'retorno'|'saida'
   const[valorInput,setValorInput]=useState('');
   const[salvandoCg,setSalvandoCg]=useState(false);
   const[erroCg,setErroCg]=useState('');
   const[feedbackCg,setFeedbackCg]=useState('');
+  const[editandoPos,setEditandoPos]=useState(false); // modal do lápis (posição manual)
+  const[valorPos,setValorPos]=useState('');
 
-  // Carregamento do ledger do CLIENTE — independente das unidades/entradas/contas da Projeção.
-  // Guard de corrida: resposta atrasada de um cliente anterior nunca sobrescreve o atual.
+  // Carregamento do ledger + da POSIÇÃO MANUAL do CLIENTE — independente das unidades/entradas/
+  // contas da Projeção. Guard de corrida preservado: resposta atrasada de um cliente anterior
+  // nunca sobrescreve o atual (o mesmo `cancelado` cobre as duas consultas).
   useEffect(()=>{
-    if(!clienteId){setCg({estado:'idle',mov:[]});return;}
+    if(!clienteId){setCg({estado:'idle',mov:[],pos:null});return;}
     let cancelado=false;
-    setCg({estado:'carregando',mov:[]});
+    setCg({estado:'carregando',mov:[],pos:null});
     (async()=>{
       try{
-        const mov=await fetchAllPages((from,to)=>supabase.from('capital_giro_movimentos')
-          .select('tipo,valor,data').eq('cliente_id',clienteId)
-          .order('id',{ascending:true}).range(from,to),'capitalGiro:movimentos');
+        const[mov,posRes]=await Promise.all([
+          // criado_em entrou no select porque é o lado do movimento no corte temporal.
+          // Filtro por cliente_id e paginação inalterados.
+          fetchAllPages((from,to)=>supabase.from('capital_giro_movimentos')
+            .select('tipo,valor,data,criado_em').eq('cliente_id',clienteId)
+            .order('id',{ascending:true}).range(from,to),'capitalGiro:movimentos'),
+          // Posição manual mais recente do MESMO cliente. Nunca por empresa, nunca por UUID fixo.
+          supabase.from('capital_giro_posicoes')
+            .select('valor,data_posicao,posicao_em').eq('cliente_id',clienteId)
+            .order('posicao_em',{ascending:false}).limit(1),
+        ]);
         if(cancelado)return;
-        setCg({estado:'ok',mov:mov||[]});
+        if(posRes&&posRes.error)throw posRes.error;
+        setCg({estado:'ok',mov:mov||[],pos:((posRes&&posRes.data)||[])[0]||null});
       }catch(err){
         if(cancelado)return;
         console.error('Erro ao carregar o Capital de Giro:',err);
-        setCg({estado:'erro',mov:[]});
+        setCg({estado:'erro',mov:[],pos:null});
       }
     })();
     return()=>{cancelado=true;};
   },[clienteId]);
 
   // Derivações — fórmula oficial, única fonte de verdade para os 3 indicadores exibidos.
+  //
+  // Uma única passada sobre o ledger alimenta DOIS grupos de acumuladores (nenhuma lógica
+  // financeira duplicada):
+  //   (A) ...Disp — só movimentos POSTERIORES à posição manual. Alimentam o disponível.
+  //   (B) ...Hist — TODOS os movimentos, sem filtro. Alimentam "A retornar", "Utilizado no
+  //       mês" e "Retornado no mês", que continuam sendo leitura do histórico real e por
+  //       isso NUNCA mudam quando o lápis é usado.
+  //
+  // Disponível = posição manual + aportes + retornos − saídas posteriores a ela.
+  // Sem posição manual, `corte` é null, todo movimento entra em (A) e a fórmula recai
+  // exatamente na anterior: Σaportes + Σretornos − Σsaídas.
   const cgCalc=React.useMemo(()=>{
     const mesRef=hoje.slice(0,7);
-    let aportes=0,saidas=0,retornos=0,utilizadoMes=0,retornadoMes=0;
+    // base e corte andam JUNTOS: a posição só é usada como ponto de partida se o seu
+    // posicao_em for utilizável como fronteira. Se não for, cai inteiramente no
+    // comportamento antigo (base 0 + todos os movimentos) — nunca soma a posição e os
+    // movimentos que ela já contempla, o que seria dupla contagem.
+    const corteBruto=cg.pos&&cg.pos.posicao_em?cgTs(cg.pos.posicao_em):NaN;
+    const temPos=!!cg.pos&&Number.isFinite(corteBruto);
+    const corteOk=temPos?corteBruto:null;
+    let aportesDisp=0,saidasDisp=0,retornosDisp=0;
+    let saidasHist=0,retornosHist=0,utilizadoMes=0,retornadoMes=0;
     (cg.mov||[]).forEach(m=>{
       const v=projNum(m.valor);
       if(v<=0)return;
       const doMes=(m.data||'').slice(0,7)===mesRef;
-      if(m.tipo==='aporte')aportes+=v;
-      else if(m.tipo==='saida'){saidas+=v;if(doMes)utilizadoMes+=v;}
-      else if(m.tipo==='retorno'){retornos+=v;if(doMes)retornadoMes+=v;}
+      const posterior=cgPosterior(m.criado_em,corteOk);
+      if(m.tipo==='aporte'){
+        if(posterior)aportesDisp+=v;
+      }else if(m.tipo==='saida'){
+        saidasHist+=v;if(doMes)utilizadoMes+=v;
+        if(posterior)saidasDisp+=v;
+      }else if(m.tipo==='retorno'){
+        retornosHist+=v;if(doMes)retornadoMes+=v;
+        if(posterior)retornosDisp+=v;
+      }
     });
+    const base=temPos?projNum(cg.pos.valor):0;
     return{
-      disponivel:projCents(aportes+retornos-saidas),
-      aRetornar:projCents(Math.max(0,saidas-retornos)),
+      disponivel:projCents(base+aportesDisp+retornosDisp-saidasDisp),
+      aRetornar:projCents(Math.max(0,saidasHist-retornosHist)),
       utilizadoMes:projCents(utilizadoMes),
       retornadoMes:projCents(retornadoMes),
     };
-  },[cg.mov,hoje]);
+  },[cg.mov,cg.pos,hoje]);
 
   const abrirModal=tipo=>{setAcaoModal(tipo);setValorInput('');setErroCg('');setFeedbackCg('');};
   const fecharModal=()=>{if(salvandoCg)return;setAcaoModal(null);setValorInput('');setErroCg('');};
+
+  // ── LÁPIS: POSIÇÃO MANUAL ──
+  // "O Capital de Giro real disponível neste momento é este valor." Grava um valor ABSOLUTO em
+  // capital_giro_posicoes; NÃO gera aporte, saída, retorno nem qualquer movimento. O campo é
+  // pré-preenchido com o disponível EXIBIDO (cgCalc.disponivel), não com a soma histórica.
+  const abrirEditorPosicao=()=>{
+    setEditandoPos(true);
+    setValorPos(String(cgCalc.disponivel));
+    setErroCg('');setFeedbackCg('');
+  };
+  const fecharEditorPosicao=()=>{if(salvandoCg)return;setEditandoPos(false);setValorPos('');setErroCg('');};
+
+  const salvarPosicaoCg=async()=>{
+    if(salvandoCg)return;
+    if(!cgEntradaValida(valorPos)){setErroCg('Informe um valor válido.');return;}
+    const valor=projCents(parseNum(valorPos));
+    if(!Number.isFinite(valor)){setErroCg('Informe um valor válido.');return;}
+    if(valor<0){setErroCg('O Capital de Giro não pode ser negativo.');return;}
+    if(!clienteId){setErroCg('Não foi possível identificar o cliente.');return;}
+    // Igual ao disponível atual: nada mudou, então nenhuma posição é gravada.
+    if(valor===cgCalc.disponivel){fecharEditorPosicao();return;}
+    setSalvandoCg(true);setErroCg('');
+    try{
+      // UNIQUE(cliente_id,data_posicao): a 2ª edição do mesmo dia atualiza a MESMA linha e o
+      // trigger renova posicao_em, que passa a ser a nova fronteira temporal.
+      // Envia só cliente_id/data_posicao/valor — posicao_em/atualizado_em/atualizado_por são do banco.
+      const{error}=await supabase.from('capital_giro_posicoes')
+        .upsert({cliente_id:clienteId,data_posicao:hoje,valor},{onConflict:'cliente_id,data_posicao'});
+      if(error)throw error;
+      // Relê a posição gravada: o posicao_em vem do trigger e define o corte — nunca é assumido
+      // localmente. Estado atualizado só após a confirmação do banco (sem atualização otimista).
+      const{data,error:errLer}=await supabase.from('capital_giro_posicoes')
+        .select('valor,data_posicao,posicao_em').eq('cliente_id',clienteId)
+        .order('posicao_em',{ascending:false}).limit(1);
+      if(errLer)throw errLer;
+      setCg(c=>({...c,pos:((data||[])[0])||null}));
+      setEditandoPos(false);setValorPos('');
+      setFeedbackCg('Capital de Giro atualizado.');
+    }catch(err){
+      console.error('Erro ao salvar a posição do Capital de Giro:',err);
+      const msg=String((err&&(err.message||err.details))||'');
+      if(/row-level security|permission denied|violates/i.test(msg)){
+        setErroCg('Você tem acesso somente para consulta ao Capital de Giro.');
+      }else{
+        setErroCg('Não foi possível salvar. Tente novamente.');
+      }
+    }finally{setSalvandoCg(false);}
+  };
 
   // INSERT único por confirmação — botão desabilitado durante o salvamento impede duplo clique.
   // Envia SOMENTE cliente_id/tipo/valor/data — id/criado_em/criado_por são do trigger do banco.
@@ -5427,11 +5554,16 @@ function CapitalDeGiroLayer({clienteId,hoje,horizonte,metricas,conf,proj30,emCon
     if(!clienteId){setErroCg('Não foi possível identificar o cliente.');return;}
     setSalvandoCg(true);setErroCg('');
     try{
-      const{error}=await supabase.from('capital_giro_movimentos')
-        .insert({cliente_id:clienteId,tipo:acaoModal,valor,data:hoje});
+      // .select() devolve a linha gravada com o criado_em REAL do trigger. É indispensável:
+      // o criado_em é o lado do movimento no corte temporal, e um movimento sem ele não é
+      // reconhecido como posterior à posição — o valor recém-lançado não entraria no
+      // disponível até o próximo carregamento. O envio segue sendo só cliente_id/tipo/valor/data.
+      const{data:novo,error}=await supabase.from('capital_giro_movimentos')
+        .insert({cliente_id:clienteId,tipo:acaoModal,valor,data:hoje})
+        .select('tipo,valor,data,criado_em').single();
       if(error)throw error;
       // Estado local atualizado após confirmação do banco — nunca antes (evita movimento fictício).
-      setCg(c=>({...c,mov:[...c.mov,{tipo:acaoModal,valor,data:hoje}]}));
+      setCg(c=>({...c,mov:[...c.mov,novo||{tipo:acaoModal,valor,data:hoje,criado_em:new Date().toISOString()}]}));
       setAcaoModal(null);setValorInput('');
       setFeedbackCg('Capital atualizado.');
     }catch(err){
@@ -5467,6 +5599,8 @@ function CapitalDeGiroLayer({clienteId,hoje,horizonte,metricas,conf,proj30,emCon
           <div className="prx-rdp-cg-actions">
             <button type="button" className="prx-rdp-chip pos" onClick={()=>abrirModal('aporte')}>+ Entrada</button>
             <button type="button" className="prx-rdp-chip neg" onClick={()=>abrirModal('saida')}>− Saída</button>
+            <button type="button" className="prx-rdp-cg-edit" onClick={abrirEditorPosicao}
+              aria-label="Editar Capital de Giro" title="Editar Capital de Giro">✎</button>
           </div>
         )}
       </div>
@@ -5488,7 +5622,7 @@ function CapitalDeGiroLayer({clienteId,hoje,horizonte,metricas,conf,proj30,emCon
           </div>
         </div>
         {feedbackCg&&<div className="prx-rdp-cg-msg ok">{feedbackCg}</div>}
-        {erroCg&&!acaoModal&&<div className="prx-rdp-cg-msg erro">{erroCg}</div>}
+        {erroCg&&!acaoModal&&!editandoPos&&<div className="prx-rdp-cg-msg erro">{erroCg}</div>}
       </>)}
 
       {acaoModal&&(
@@ -5516,6 +5650,32 @@ function CapitalDeGiroLayer({clienteId,hoje,horizonte,metricas,conf,proj30,emCon
             <button className="btn btn-secondary" onClick={fecharModal} disabled={salvandoCg}>Cancelar</button>
             <button className="btn btn-primary" onClick={confirmarAcaoCg} disabled={salvandoCg}>
               {salvandoCg?'Salvando…':(acaoModal==='aporte'?'Confirmar aporte':(acaoModal==='retorno'?'Confirmar retorno':'Confirmar saída'))}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── EDITAR CAPITAL DE GIRO (lápis) — posição manual ABSOLUTA.
+          Mesmo componente Modal, mesmo input monetário e mesmo par de botões dos demais
+          modais do Capital de Giro. Não registra movimento algum. ── */}
+      {editandoPos&&(
+        <Modal title="Editar Capital de Giro" onClose={fecharEditorPosicao}>
+          <p className="prx-cg-modal-info">
+            Informe o Capital de Giro real disponível agora. Isto <strong>não</strong> registra
+            entrada, saída nem retorno, e não altera “Utilizado no mês” ou “A retornar”.
+          </p>
+          {erroCg&&<div className="alert alert-r" style={{marginBottom:12}}>{erroCg}</div>}
+          <div className="form-grid">
+            <div className="fg full"><label>Capital de Giro atual</label>
+              <input type="text" inputMode="decimal" placeholder="R$ 0,00" autoFocus
+                value={valorPos} onChange={e=>{setValorPos(e.target.value);setErroCg('');}}
+                onKeyDown={e=>{if(e.key==='Enter')salvarPosicaoCg();}}/>
+            </div>
+          </div>
+          <div style={{marginTop:12,display:'flex',gap:8,justifyContent:'flex-end'}}>
+            <button className="btn btn-secondary" onClick={fecharEditorPosicao} disabled={salvandoCg}>Cancelar</button>
+            <button className="btn btn-primary" onClick={salvarPosicaoCg} disabled={salvandoCg}>
+              {salvandoCg?'Salvando…':'Salvar'}
             </button>
           </div>
         </Modal>
@@ -5716,7 +5876,14 @@ function Projecao({empresas}){
   },[emConta,fcTotais]);
 
   // Resumo semanal — mesmas linhas de fcRows, agrupadas por semana civil.
-  const fcSemanas=React.useMemo(()=>rdpSemanas(fcRows),[fcRows]);
+  // LIMITE DE APRESENTAÇÃO: no máximo 5 semanas, sempre as 5 primeiras em ordem
+  // cronológica. É um corte só de exibição, aplicado DEPOIS do agrupamento: rdpSemanas
+  // (o motor) não muda, fcRows não muda, e o gráfico / Vai entrar / Vai sair / Saldo no
+  // fim seguem lendo o horizonte inteiro. Nenhum valor é estimado ou completado — cada
+  // semana continua sendo a soma dos recebimentos comprometidos e das despesas já
+  // cadastradas daquelas datas, consolidados entre TODAS as unidades ativas do cliente.
+  const RDP_MAX_SEMANAS=5;
+  const fcSemanas=React.useMemo(()=>rdpSemanas(fcRows).slice(0,RDP_MAX_SEMANAS),[fcRows]);
 
   // ── Comparativo de HOJE contra ONTEM (chips de tendência de Entra/Sai) ──
   // Reaproveita buildCaixaDoDia — o MESMO motor de "Hoje", só com dataAlvo=ontem. Não é
@@ -6133,7 +6300,10 @@ function Projecao({empresas}){
           verde/vermelha de fcRows. Nenhum valor é recalculado por outra fonte. ══ */}
       <div className="prx-rdp-section">
         <span className="tk"></span>
-        <span className="t">Resumo semanal{fcRows.length?` · ${rdpTituloPeriodo(fcRows)}`:''}</span>
+        {/* O período do título passa a ser o das semanas EXIBIDAS (≤5), não o do horizonte
+            inteiro — senão o rótulo anunciaria meses que a tabela deixou de mostrar.
+            Mesmo helper de sempre, alimentado com o primeiro e o último dia exibidos. */}
+        <span className="t">Resumo semanal{fcSemanas.length?` · ${rdpTituloPeriodo([{data:fcSemanas[0].ini},{data:fcSemanas[fcSemanas.length-1].fim}])}`:''}</span>
         <span className="rule"></span>
       </div>
       <div className="prx-rdp-card prx-rdp-tablecard">
