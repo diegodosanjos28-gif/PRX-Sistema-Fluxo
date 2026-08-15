@@ -7887,17 +7887,10 @@ function Portfolio({empresas,selYear,selMonth,setSelYear,setSelMonth,empresaAtiv
             </div>
           </div>
 
-          <div className="pf-chips">
-            {statusChips.map(c=>{
-              const cnt=c.key==='todos'?compData.length:(statusCounts[c.key]||0);
-              return(
-                <button key={c.key} className={`pf-chip${statusFilter===c.key?' on':''}`} onClick={()=>setStatusFilter(c.key)}>
-                  {c.key!=='todos'&&<span className="dot" style={{background:chipDot(c.key)}}></span>}
-                  {c.label}<span className="cnt">{cnt}</span>
-                </button>
-              );
-            })}
-          </div>
+          {/* Os chips agregadores de status (Todas/Saudável/Atenção/Crítica/Sem movimentação)
+              deixaram de ser renderizados. A classificação de saúde por unidade segue intacta e
+              continua colorindo cada card (pf-pill / u.status.key). statusFilter permanece em
+              'todos', então a lista exibe todas as unidades. */}
 
           {display.length===0?(
             <div className="pf-empty">Nenhuma unidade corresponde ao filtro atual.</div>
@@ -8587,10 +8580,23 @@ function App(){
       return'Já existe uma unidade com este nome.';
     }
     try{
-      const{error}=await supabase.from('empresas').update({nome:nomeTrimmed}).eq('id',empresaId);
+      // .select() devolve as linhas REALMENTE afetadas. É indispensável: sob RLS, um UPDATE que
+      // não casa com nenhuma policy não gera `error` — retorna sucesso com zero linhas. Sem esta
+      // checagem o nome era trocado só no estado local e "voltava" no próximo carregamento.
+      // Somente `nome` é enviado; cnpj, cliente_id e ativo não são tocados.
+      const{data,error}=await supabase.from('empresas')
+        .update({nome:nomeTrimmed}).eq('id',empresaId).select('id,nome');
       if(error)return error.message||'Erro ao renomear unidade.';
+      if(!data||data.length===0){
+        return'Não foi possível salvar o nome: seu acesso não permite alterar esta unidade.';
+      }
+      // Estado atualizado só após a confirmação do banco.
       setEmpresasDisponiveis(prev=>prev.map(e=>e.id===empresaId?{...e,nome:nomeTrimmed}:e));
       setEmpresaAtiva(prev=>prev&&prev.id===empresaId?{...prev,nome:nomeTrimmed}:prev);
+      // empresasSeletorPRX é carregada uma única vez no login e é a fonte que o EmpresaSelector
+      // usa para REMONTAR empresasDisponiveis ao trocar de cliente. Sem sincronizá-la aqui, o
+      // nome antigo ressurgia ao usar "Trocar empresa" e voltar, mesmo com o banco já correto.
+      setEmpresasSeletorPRX(prev=>prev.map(e=>e.id===empresaId?{...e,nome:nomeTrimmed}:e));
       return null;
     }catch(err){
       return err.message||'Erro inesperado ao renomear unidade.';
