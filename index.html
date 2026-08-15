@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
@@ -469,6 +470,15 @@ textarea{resize:vertical;min-height:58px;}
 .imp-err-item{font-size:11px;color:var(--red-dim);padding:3px 0;border-bottom:1px solid var(--border);}
 .imp-err-item:last-child{border-bottom:none;}
 .imp-success-banner{background:var(--green-light);border:1px solid #bbf7d0;border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;color:var(--green-dim);font-weight:500;}
+/* Importador de ENTRADAS — grade dos prazos por modalidade. Prefixo exclusivo impent-;
+   reaproveita as classes .imp-* do importador de Contas para o resto e não as altera. */
+.impent-prazos{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.impent-prazo{display:flex;flex-direction:column;gap:4px;min-width:0;}
+.impent-prazo>span{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);}
+.impent-prazo>select{font-family:inherit;font-size:13px;font-weight:600;color:var(--text-primary);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;outline:none;}
+.impent-prazo>select:focus{border-color:var(--carbon);box-shadow:0 0 0 3px rgba(18,18,20,.08);}
+.impent-prazo>select:disabled{background:var(--ink-100);color:var(--text-muted);cursor:not-allowed;}
+@media(max-width:480px){.impent-prazos{grid-template-columns:1fr;}}
 
 .painel-kpi-grid{grid-template-columns:repeat(3,1fr);}.painel-kpi-row2{grid-template-columns:repeat(3,1fr);}.comp-inner{grid-template-columns:1fr;}.comp-inner .comp-group:nth-child(odd){border-right:none;}.comp-inner .comp-group:nth-last-child(-n+2){border-bottom:1px solid var(--border);}.comp-inner .comp-group:last-child{border-bottom:none;}}
 @media(max-width:900px){.painel-kpi-grid{grid-template-columns:repeat(2,1fr);}.painel-kpi-row2{grid-template-columns:repeat(2,1fr);}.painel-duplex{grid-template-columns:1fr;}.painel-layout-3{grid-template-columns:1fr;}}
@@ -1898,6 +1908,142 @@ const STATUS_DIVIDA = ['Ativa','Quitada','Renegociada','Suspensa'];
 // Receivables default settlement days by payment method
 const DEFAULT_PRAZOS = { dinheiro: 0, pix: 0, debito: 1, credito: 30, voucher: 30, outros: 1 };
 
+// ══════════════════════════════════════════════════════════════════════════
+// IMPORTAÇÃO DE ENTRADAS VIA EXCEL (.xlsx) — helpers puros, sem I/O.
+// Formato de referência: aba "Consolidado", colunas DATA | DÉBITO | CRÉDITO |
+// VOUCHER | PIX | TOTAL, uma linha por dia e uma linha final "TOTAL GERAL".
+// ══════════════════════════════════════════════════════════════════════════
+const ENT_IMP_ABA='Consolidado';
+const ENT_IMP_COLS=['DATA','DEBITO','CREDITO','VOUCHER','PIX','TOTAL'];
+// Prazos oferecidos por modalidade na etapa "Regras de recebimento". São PRAZOS normais,
+// nunca antecipação.
+const ENT_IMP_PRAZOS={debito:[0,1,2],credito:[0,1,30],voucher:[0,1,30],pix:[0]};
+const ENT_IMP_PADRAO={debito:1,credito:30,voucher:30,pix:0};
+
+// Normaliza cabeçalho: sem acento, sem espaço nas pontas, maiúsculo.
+const entImpNorm=s=>String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').trim().toUpperCase();
+
+// Serial do Excel (base 1900) → 'YYYY-MM-DD'. Conversão inteiramente em UTC: usar Date local
+// deslocaria o dia em fusos negativos como o do Brasil. Também aceita string dd/mm/aaaa ou
+// já-ISO, para o caso de a planilha vir com a coluna formatada como texto.
+const entImpData=v=>{
+  if(typeof v==='number'&&Number.isFinite(v)){
+    if(v<1||v>2958465)return null; // fora do intervalo de datas do Excel
+    const d=new Date(Math.round((v-25569)*86400000));
+    return isNaN(d.getTime())?null:d.toISOString().slice(0,10);
+  }
+  const s=String(v==null?'':v).trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  const br=s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if(br)return `${br[3]}-${br[2]}-${br[1]}`;
+  return null;
+};
+
+// Valor monetário de célula: número, ou string numérica (BR ou EN). Vazio = 0.
+// Devolve null quando o conteúdo não é interpretável — a linha vira inválida.
+const entImpValor=v=>{
+  if(v==null||v==='')return 0;
+  if(typeof v==='number')return Number.isFinite(v)?Math.round(v*100)/100:null;
+  const s=String(v).trim();
+  if(!s)return 0;
+  if(!/[\d]/.test(s))return null;
+  if(!/^-?\s*(R\$)?\s*[\d.,]+$/.test(s))return null;
+  const n=parseCurrencyBR(s);
+  return Number.isFinite(n)?Math.round(n*100)/100:null;
+};
+
+// Detecta a linha de fechamento do arquivo (não é uma Entrada diária).
+const entImpEhTotalGeral=v=>/^TOTAL\s*GERAL$/.test(entImpNorm(v));
+
+// ── PARSER ──
+// Recebe a matriz (array de arrays) da aba e devolve diagnóstico + linhas classificadas.
+// Não decide persistência; só interpreta e valida.
+const entImpParse=(aoa,datasExistentes)=>{
+  const res={erroFatal:null,cabecalho:null,linhas:[],totalGeral:null};
+  const linhasBrutas=(aoa||[]).filter(r=>Array.isArray(r));
+  if(!linhasBrutas.length){res.erroFatal='A aba está vazia.';return res;}
+  const head=linhasBrutas[0].map(entImpNorm);
+  const faltando=ENT_IMP_COLS.filter(c=>!head.includes(c));
+  if(faltando.length){
+    res.erroFatal=`Cabeçalho incompatível. Não encontrei: ${faltando.join(', ')}. Esperado: ${ENT_IMP_COLS.join(' | ')}.`;
+    return res;
+  }
+  res.cabecalho=head;
+  const ix={};ENT_IMP_COLS.forEach(c=>{ix[c]=head.indexOf(c);});
+  const jaVistas=new Set();
+  const existentes=new Set(datasExistentes||[]);
+
+  linhasBrutas.slice(1).forEach((r,i)=>{
+    const nLinha=i+2; // 1-based, contando o cabeçalho
+    const vazia=r.every(c=>c==null||String(c).trim()==='');
+    if(vazia)return;
+    const bruta=r[ix.DATA];
+    // TOTAL GERAL — conferência do arquivo, jamais um lançamento
+    if(entImpEhTotalGeral(bruta)){
+      res.totalGeral={
+        debito:entImpValor(r[ix.DEBITO]),credito:entImpValor(r[ix.CREDITO]),
+        voucher:entImpValor(r[ix.VOUCHER]),pix:entImpValor(r[ix.PIX]),
+        total:entImpValor(r[ix.TOTAL]),linha:nLinha,
+      };
+      return;
+    }
+    const data=entImpData(bruta);
+    if(!data){res.linhas.push({linha:nLinha,status:'invalida',motivo:'Data inválida ou não reconhecida.',dataBruta:String(bruta==null?'':bruta)});return;}
+    const debito=entImpValor(r[ix.DEBITO]),credito=entImpValor(r[ix.CREDITO]);
+    const voucher=entImpValor(r[ix.VOUCHER]),pix=entImpValor(r[ix.PIX]);
+    const totalArq=entImpValor(r[ix.TOTAL]);
+    if([debito,credito,voucher,pix].some(v=>v===null)){
+      res.linhas.push({linha:nLinha,data,status:'invalida',motivo:'Há valor não numérico entre as modalidades.'});return;
+    }
+    if([debito,credito,voucher,pix].some(v=>v<0)){
+      res.linhas.push({linha:nLinha,data,status:'invalida',motivo:'Valor negativo não é aceito.'});return;
+    }
+    // O valor da Entrada vem SEMPRE das modalidades; a coluna TOTAL só confere.
+    const total=Math.round((debito+credito+voucher+pix)*100)/100;
+    if(totalArq!==null&&Math.abs(total-totalArq)>0.01){
+      res.linhas.push({linha:nLinha,data,debito,credito,voucher,pix,total,totalArq,status:'invalida',
+        motivo:`TOTAL divergente: planilha ${fmt(totalArq)} × soma das modalidades ${fmt(total)}.`});return;
+    }
+    if(total<=0){res.linhas.push({linha:nLinha,data,status:'invalida',motivo:'Linha sem valor (total zero).'});return;}
+    if(jaVistas.has(data)){res.linhas.push({linha:nLinha,data,status:'invalida',motivo:'Data repetida dentro do próprio arquivo.'});return;}
+    jaVistas.add(data);
+    if(existentes.has(data)){
+      res.linhas.push({linha:nLinha,data,debito,credito,voucher,pix,total,status:'existente',
+        motivo:'Já existe um lançamento desta data nesta unidade.'});return;
+    }
+    res.linhas.push({linha:nLinha,data,debito,credito,voucher,pix,total,status:'valida'});
+  });
+  return res;
+};
+
+// Agrega a prévia a partir do resultado do parser.
+const entImpResumo=res=>{
+  const validas=res.linhas.filter(l=>l.status==='valida');
+  const existentes=res.linhas.filter(l=>l.status==='existente');
+  const invalidas=res.linhas.filter(l=>l.status==='invalida');
+  const soma=k=>Math.round(validas.reduce((s,l)=>s+(l[k]||0),0)*100)/100;
+  const datas=validas.map(l=>l.data).sort();
+  return{
+    validas,existentes,invalidas,
+    debito:soma('debito'),credito:soma('credito'),voucher:soma('voucher'),pix:soma('pix'),
+    total:soma('total'),
+    de:datas[0]||null,ate:datas[datas.length-1]||null,dias:validas.length,
+  };
+};
+
+// Converte uma linha válida em Entrada, congelando os prazos escolhidos.
+// `prazos_recebimento` guarda o PRAZO EM DIAS aplicado a esta venda — nunca antecipação.
+const entImpParaEntrada=(l,prazosSel)=>({
+  id:genId(),
+  data:l.data,
+  dinheiro:0,pix:l.pix,debito:l.debito,credito:l.credito,voucher:l.voucher,outros:0,
+  total:l.total,
+  obs:'',
+  voucherAntecipado:'nao',voucherDataReceb:'',
+  creditoAntecipado:'nao',creditoDataReceb:'',
+  prazos_recebimento:{debito:prazosSel.debito,credito:prazosSel.credito,voucher:prazosSel.voucher,pix:prazosSel.pix},
+});
+
 // Calendar health threshold: days between "on-target" (green) and "critical" (red)
 const FAIXA_ATENCAO_CALENDARIO = 2000;
 
@@ -2246,6 +2392,29 @@ const insertContasBatch=async(contas,empresaId)=>{
   const rows=contas.map(c=>sanitizeContaForSupabase(c,empresaId));
   const{error}=await supabase.from('contas').insert(rows);
   if(error)throw error;
+};
+
+// ─── Entrada operations — INSERT incremental para o importador ────────────────
+// NUNCA usar saveS aqui: saveS apaga todas as Entradas da empresa e reinsere o array inteiro,
+// o que destruiria o histórico a cada importação. Este caminho só ACRESCENTA linhas novas.
+const sanitizeEntradaForSupabase=(e,empresaId)=>{
+  const row={empresa_id:empresaId};
+  Object.entries(e).forEach(([k,v])=>{if(!k.startsWith('_')&&v!==undefined)row[k]=v;});
+  return row;
+};
+// AUTORIDADE FINAL no banco: o índice único entradas_empresa_data_uidx (empresa_id, data).
+// `ignoreDuplicates:true` emite INSERT ... ON CONFLICT DO NOTHING — a linha em conflito é
+// IGNORADA, nunca sobrescrita nem atualizada, e nada é apagado. O .select() devolve SOMENTE
+// as linhas efetivamente inseridas, o que permite reportar números reais mesmo se outra
+// sessão gravar a mesma data enquanto a importação era preparada.
+const insertEntradasBatch=async(lista,empresaId)=>{
+  if(!lista||!lista.length)return[];
+  const rows=lista.map(e=>sanitizeEntradaForSupabase(e,empresaId));
+  const{data,error}=await supabase.from('entradas')
+    .upsert(rows,{onConflict:'empresa_id,data',ignoreDuplicates:true})
+    .select('id,data');
+  if(error)throw error;
+  return data||[];
 };
 
 // ─── Dívida operations — individual, safe (no DELETE-all) ─────────────────────
@@ -3180,7 +3349,198 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
 // SECTION 8 — ENTRADAS
 // ─────────────────────────────────────────────────────────────
 
-function Entradas({entradas,setEntradas,contas,dividas,selectedYear,selectedMonth}){
+// ══════════════════════════════════════════════════════════════════════════
+// IMPORTAR ENTRADAS (.xlsx) — modal em 4 etapas: arquivo → regras → prévia → resultado.
+// Reaproveita a linguagem visual do importador de Contas (.imp-*); a lógica financeira e a
+// persistência são próprias de `entradas`. NUNCA usa saveS: insere apenas as linhas novas.
+// ══════════════════════════════════════════════════════════════════════════
+function ImportEntradasModal({onClose,entradasExistentes,empresaId,onImportado}){
+  const[etapa,setEtapa]=useState('arquivo'); // arquivo|regras|previa|resultado
+  const[nomeArq,setNomeArq]=useState('');
+  const[erro,setErro]=useState('');
+  const[lendo,setLendo]=useState(false);
+  const[parse,setParse]=useState(null);
+  const[prazosSel,setPrazosSel]=useState({...ENT_IMP_PADRAO});
+  const[enviando,setEnviando]=useState(false);
+  const[resultado,setResultado]=useState(null);
+  const[dragging,setDragging]=useState(false);
+  const inputRef=useRef(null);
+  const envioLock=useRef(false);
+
+  const datasExistentes=React.useMemo(()=>(entradasExistentes||[]).map(e=>e.data),[entradasExistentes]);
+  const resumo=React.useMemo(()=>parse?entImpResumo(parse):null,[parse]);
+
+  const lerArquivo=async file=>{
+    setErro('');setParse(null);setNomeArq(file?file.name:'');
+    if(!file)return;
+    if(!/\.xlsx$/i.test(file.name)){setErro('Somente arquivos .xlsx são aceitos nesta versão.');return;}
+    if(typeof XLSX==='undefined'){setErro('O leitor de planilhas não carregou. Verifique a conexão e recarregue a página.');return;}
+    setLendo(true);
+    try{
+      const buf=await file.arrayBuffer();
+      const wb=XLSX.read(buf,{type:'array'});
+      if(!wb||!wb.SheetNames||!wb.SheetNames.length){setErro('Não foi possível ler a planilha.');return;}
+      const nomeAba=wb.SheetNames.find(n=>entImpNorm(n)===entImpNorm(ENT_IMP_ABA));
+      if(!nomeAba){setErro(`A planilha não tem a aba "${ENT_IMP_ABA}". Abas encontradas: ${wb.SheetNames.join(', ')}.`);return;}
+      const aoa=XLSX.utils.sheet_to_json(wb.Sheets[nomeAba],{header:1,raw:true,defval:null});
+      const p=entImpParse(aoa,datasExistentes);
+      if(p.erroFatal){setErro(p.erroFatal);return;}
+      if(!p.linhas.length){setErro('A aba não tem nenhuma linha de dados.');return;}
+      setParse(p);setEtapa('regras');
+    }catch(err){
+      console.error('Erro ao ler a planilha de entradas:',err);
+      setErro('Arquivo inválido ou corrompido. Confirme que é um .xlsx gerado pelo Excel.');
+    }finally{setLendo(false);}
+  };
+
+  const confirmar=async()=>{
+    if(envioLock.current)return;
+    if(!resumo||!resumo.validas.length)return;
+    if(!empresaId){setErro('Não foi possível identificar a unidade ativa.');return;}
+    envioLock.current=true;setEnviando(true);setErro('');
+    try{
+      const novas=resumo.validas.map(l=>entImpParaEntrada(l,prazosSel));
+      const inseridas=await insertEntradasBatch(novas,empresaId);
+      // Contagem pelo que o BANCO confirmou, não pelo que foi enviado: se o índice único
+      // ignorou alguma data, ela não entra no total nem no número de importadas.
+      const datasOk=new Set((inseridas||[]).map(r=>r.data));
+      const totalOk=Math.round(novas.filter(e=>datasOk.has(e.data)).reduce((s,e)=>s+e.total,0)*100)/100;
+      // Recarga REAL antes de mostrar o resultado — o state local não pode ficar defasado.
+      if(onImportado)await onImportado();
+      setResultado({importadas:datasOk.size,ignoradasBanco:novas.length-datasOk.size,
+        existentes:resumo.existentes.length,invalidas:resumo.invalidas.length,
+        total:totalOk,lidas:parse.linhas.length});
+      setEtapa('resultado');
+    }catch(err){
+      console.error('Erro ao importar entradas:',err);
+      const msg=String((err&&(err.message||err.details))||'');
+      if(/row-level security|permission denied/i.test(msg)){
+        setErro('Seu acesso não permite gravar entradas nesta unidade.');
+      }else if(/duplicate key|23505/i.test(msg)){
+        setErro('Alguma data deste arquivo já foi cadastrada enquanto a importação era preparada. Feche e refaça a importação.');
+      }else{
+        setErro('Não foi possível concluir a importação. Nenhuma entrada foi gravada.');
+      }
+    }finally{setEnviando(false);envioLock.current=false;}
+  };
+
+  const rotuloPrazo=d=>`D+${d}`;
+  const titulo=etapa==='resultado'?'Importação concluída':'Importar Entradas (Excel)';
+
+  return(
+    <Modal title={titulo} onClose={enviando?()=>{}:onClose}>
+      {erro&&<div className="alert alert-r" style={{marginBottom:12}}>{erro}</div>}
+
+      {etapa==='arquivo'&&(<>
+        <div className={`imp-drop${dragging?' drag':''}`}
+          onClick={()=>inputRef.current&&inputRef.current.click()}
+          onDragOver={e=>{e.preventDefault();setDragging(true);}}
+          onDragLeave={()=>setDragging(false)}
+          onDrop={e=>{e.preventDefault();setDragging(false);lerArquivo(e.dataTransfer.files&&e.dataTransfer.files[0]);}}>
+          <div className="imp-drop-icon">📊</div>
+          <div className="imp-drop-text">{lendo?'Lendo a planilha…':'Clique ou arraste a planilha .xlsx aqui'}</div>
+          <div className="imp-drop-sub">Aba “{ENT_IMP_ABA}” · colunas {ENT_IMP_COLS.join(' · ')}</div>
+        </div>
+        <input ref={inputRef} type="file" accept=".xlsx" style={{display:'none'}}
+          onChange={e=>{lerArquivo(e.target.files&&e.target.files[0]);e.target.value='';}}/>
+      </>)}
+
+      {etapa==='regras'&&resumo&&(<>
+        <div className="imp-preview">
+          <div className="imp-preview-title">Regras de recebimento</div>
+          <p style={{fontSize:11.5,color:'var(--text-muted)',lineHeight:1.5,margin:'0 0 10px'}}>
+            Estes prazos ficam gravados <strong>nesta importação</strong> e não mudam se a
+            configuração padrão for alterada depois. Não representam antecipação.
+          </p>
+          <div className="impent-prazos">
+            {[['debito','Débito'],['credito','Crédito'],['voucher','Voucher'],['pix','PIX']].map(([k,lbl])=>(
+              <label key={k} className="impent-prazo">
+                <span>{lbl}</span>
+                <select value={prazosSel[k]} disabled={ENT_IMP_PRAZOS[k].length<2}
+                  onChange={e=>setPrazosSel({...prazosSel,[k]:parseInt(e.target.value,10)})}>
+                  {ENT_IMP_PRAZOS[k].map(d=><option key={d} value={d}>{rotuloPrazo(d)}</option>)}
+                </select>
+              </label>
+            ))}
+          </div>
+        </div>
+        <div style={{marginTop:12,display:'flex',gap:8,justifyContent:'flex-end'}}>
+          <button className="btn btn-secondary" onClick={()=>{setEtapa('arquivo');setParse(null);}}>Voltar</button>
+          <button className="btn btn-primary" onClick={()=>setEtapa('previa')}>Ver prévia</button>
+        </div>
+      </>)}
+
+      {etapa==='previa'&&resumo&&(<>
+        <div className="imp-preview">
+          <div className="imp-preview-title">Prévia da importação · {nomeArq}</div>
+          <div className="imp-stat"><span className="imp-stat-label">📄 Linhas lidas</span><span className="imp-stat-val">{parse.linhas.length}</span></div>
+          <div className="imp-stat"><span className="imp-stat-label">✅ Entradas a importar</span><span className="imp-stat-val green">{resumo.validas.length}</span></div>
+          <div className="imp-stat"><span className="imp-stat-label">↩️ Já existentes (ignoradas)</span><span className="imp-stat-val amber">{resumo.existentes.length}</span></div>
+          <div className="imp-stat"><span className="imp-stat-label">❌ Inválidas</span><span className="imp-stat-val red">{resumo.invalidas.length}</span></div>
+          <div className="imp-stat"><span className="imp-stat-label">📅 Período</span><span className="imp-stat-val">{resumo.de?`${fmtDate(resumo.de)} a ${fmtDate(resumo.ate)}`:'—'}</span></div>
+        </div>
+        <div className="imp-preview">
+          <div className="imp-preview-title">Valores a importar</div>
+          <div className="imp-seg-row"><span>Débito <strong>{rotuloPrazo(prazosSel.debito)}</strong></span><strong>{fmt(resumo.debito)}</strong></div>
+          <div className="imp-seg-row"><span>Crédito <strong>{rotuloPrazo(prazosSel.credito)}</strong></span><strong>{fmt(resumo.credito)}</strong></div>
+          <div className="imp-seg-row"><span>Voucher <strong>{rotuloPrazo(prazosSel.voucher)}</strong></span><strong>{fmt(resumo.voucher)}</strong></div>
+          <div className="imp-seg-row"><span>PIX <strong>{rotuloPrazo(prazosSel.pix)}</strong></span><strong>{fmt(resumo.pix)}</strong></div>
+          <div className="imp-stat" style={{marginTop:6}}><span className="imp-stat-label">Total</span><span className="imp-stat-val green">{fmt(resumo.total)}</span></div>
+          {parse.totalGeral&&(
+            <div className="imp-seg-row" style={{marginTop:4}}>
+              <span>TOTAL GERAL da planilha (conferência, não importado)</span>
+              <strong>{fmt(parse.totalGeral.total)}</strong>
+            </div>
+          )}
+        </div>
+        {(resumo.invalidas.length>0||resumo.existentes.length>0)&&(
+          <div className="imp-preview">
+            <div className="imp-preview-title">Linhas não importadas</div>
+            <div className="imp-err-list">
+              {resumo.existentes.map(l=>(
+                <div className="imp-err-item" key={'e'+l.linha} style={{color:'var(--amber-dim)'}}>
+                  Linha {l.linha} · {fmtDate(l.data)} — já existe no sistema
+                </div>
+              ))}
+              {resumo.invalidas.map(l=>(
+                <div className="imp-err-item" key={'i'+l.linha}>
+                  Linha {l.linha}{l.data?` · ${fmtDate(l.data)}`:''} — {l.motivo}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        <div style={{marginTop:12,display:'flex',gap:8,justifyContent:'flex-end'}}>
+          <button className="btn btn-secondary" onClick={()=>setEtapa('regras')} disabled={enviando}>Voltar</button>
+          <button className="btn btn-primary" onClick={confirmar} disabled={enviando||resumo.validas.length===0}>
+            {enviando?'Importando…':`Importar ${resumo.validas.length} entrada${resumo.validas.length===1?'':'s'}`}
+          </button>
+        </div>
+      </>)}
+
+      {etapa==='resultado'&&resultado&&(<>
+        <div className="imp-success-banner">
+          {resultado.importadas} entrada{resultado.importadas===1?'':'s'} importada{resultado.importadas===1?'':'s'} com sucesso.
+        </div>
+        <div className="imp-preview">
+          <div className="imp-stat"><span className="imp-stat-label">📄 Linhas encontradas</span><span className="imp-stat-val">{resultado.lidas}</span></div>
+          <div className="imp-stat"><span className="imp-stat-label">✅ Importadas</span><span className="imp-stat-val green">{resultado.importadas}</span></div>
+          <div className="imp-stat"><span className="imp-stat-label">↩️ Já existentes</span><span className="imp-stat-val amber">{resultado.existentes}</span></div>
+          {resultado.ignoradasBanco>0&&(
+            <div className="imp-stat"><span className="imp-stat-label">🛡️ Ignoradas pela trava de data</span><span className="imp-stat-val amber">{resultado.ignoradasBanco}</span></div>
+          )}
+          <div className="imp-stat"><span className="imp-stat-label">❌ Inválidas</span><span className="imp-stat-val red">{resultado.invalidas}</span></div>
+          <div className="imp-stat"><span className="imp-stat-label">💰 Total importado</span><span className="imp-stat-val green">{fmt(resultado.total)}</span></div>
+        </div>
+        <div style={{marginTop:12,display:'flex',justifyContent:'flex-end'}}>
+          <button className="btn btn-primary" onClick={onClose}>Concluir</button>
+        </div>
+      </>)}
+    </Modal>
+  );
+}
+
+function Entradas({entradas,setEntradas,onRecarregarEntradas,contas,dividas,selectedYear,selectedMonth}){
   const now=new Date();
   const selYear=selectedYear;
   const selMonth=selectedMonth;
@@ -3194,6 +3554,7 @@ function Entradas({entradas,setEntradas,contas,dividas,selectedYear,selectedMont
   const chartDayRef=useRef(null);
   const totalF=f=>['dinheiro','pix','debito','credito','voucher','outros'].reduce((s,k)=>s+parseNum(f[k]),0);
   const todayStr=today();
+  const[showImportEnt,setShowImportEnt]=useState(false);
 
   // ── Filtro mensal: todas as entradas usadas nesta aba são as do mês/ano selecionado ──
   const mStart=monthStart(selYear,selMonth);
@@ -3212,6 +3573,16 @@ function Entradas({entradas,setEntradas,contas,dividas,selectedYear,selectedMont
     if(creditoVal>0&&form.creditoAntecipado==='sim'&&!form.creditoDataReceb)return alert('Informe a data de recebimento do crédito antecipado.');
     // Crédito zero não guarda configuração de antecipação (evita metadado órfão).
     const creditoAnt=creditoVal>0?(form.creditoAntecipado||'nao'):'nao';
+    // ── TRAVA DE DATA ÚNICA POR UNIDADE ──
+    // Detectada ANTES de qualquer gravação. `setEntradas` chama saveS, que faz DELETE de todas
+    // as linhas da empresa e depois INSERT do array: se o array tiver duas Entradas na mesma
+    // data, o INSERT falha DEPOIS do DELETE e o histórico se perde. Na edição a substituição é
+    // por id e não checava data, então mudar um lançamento para uma data já ocupada produzia
+    // exatamente esse array inválido. A própria Entrada editada é ignorada na comparação.
+    const conflitoData=entradas.find(e=>e.data===form.data&&e.id!==editId);
+    if(conflitoData){
+      return alert(`Já existe um lançamento de entradas em ${fmtDate(form.data)}.\n\nCada unidade admite um único consolidado por data. Edite o lançamento existente em vez de criar outro para a mesma data.`);
+    }
     const entry={...form,id:editId||genId(),dinheiro:parseNum(form.dinheiro),pix:parseNum(form.pix),debito:parseNum(form.debito),credito:creditoVal,voucher:parseNum(form.voucher),outros:parseNum(form.outros),total:t,voucherAntecipado:form.voucherAntecipado||'nao',voucherDataReceb:form.voucherDataReceb||'',creditoAntecipado:creditoAnt,creditoDataReceb:creditoAnt==='sim'?(form.creditoDataReceb||''):''};
     const updated=editId?entradas.map(e=>e.id===editId?entry:e):[...entradas.filter(e=>e.data!==form.data||editId),entry];
     setEntradas(updated.sort((a,b)=>a.data.localeCompare(b.data)));
@@ -3232,17 +3603,20 @@ function Entradas({entradas,setEntradas,contas,dividas,selectedYear,selectedMont
   const sorted=[...entradasDoMes].sort((a,b)=>b.data.localeCompare(a.data));
 
   // ── Lógica de disponibilidade de caixa ──
+  // Mesma precedência de projDataRecebimento (antecipação › prazo congelado na Entrada ›
+  // prazo global), via o MESMO helper projPrazoEntrada — nenhuma segunda regra. Sem isto, uma
+  // Entrada importada com prazo próprio apareceria aqui numa data e na Projeção em outra.
   const calcRecebimento=(entry,forma)=>{
     if(forma==='voucher'){
       if(entry.voucherAntecipado==='sim'&&entry.voucherDataReceb) return entry.voucherDataReceb;
-      return addDays(entry.data,prazos.voucher);
+      return addDays(entry.data,projPrazoEntrada(entry,'voucher',prazos));
     }
     // Crédito antecipado: a data informada substitui o prazo. Mesma regra do voucher.
     if(forma==='credito'){
       if(entry.creditoAntecipado==='sim'&&entry.creditoDataReceb) return entry.creditoDataReceb;
-      return addDays(entry.data,prazos.credito);
+      return addDays(entry.data,projPrazoEntrada(entry,'credito',prazos));
     }
-    return addDays(entry.data,prazos[forma]||0);
+    return addDays(entry.data,projPrazoEntrada(entry,forma,prazos));
   };
 
   const FORMAS=[
@@ -3335,6 +3709,7 @@ function Entradas({entradas,setEntradas,contas,dividas,selectedYear,selectedMont
         <div className="section-title">Entradas Diárias</div>
         <div style={{display:'flex',gap:6}}>
           <button className="btn btn-secondary btn-sm" onClick={()=>setShowConfig(!showConfig)}>⚙️ Prazos</button>
+          <button className="btn btn-secondary btn-sm" onClick={()=>setShowImportEnt(true)}>📊 Importar Excel</button>
           <button className="btn btn-primary" onClick={()=>openForm()}>+ Adicionar</button>
         </div>
       </div>
@@ -3557,6 +3932,16 @@ function Entradas({entradas,setEntradas,contas,dividas,selectedYear,selectedMont
             <button className="btn btn-primary" onClick={save_}>Salvar</button>
           </div>
         </Modal>
+      )}
+
+      {/* Importação de Entradas via Excel — pertence SOMENTE à unidade ativa (EMPRESA_ID). */}
+      {showImportEnt&&(
+        <ImportEntradasModal
+          onClose={()=>setShowImportEnt(false)}
+          entradasExistentes={entradas}
+          empresaId={EMPRESA_ID}
+          onImportado={onRecarregarEntradas}
+        />
       )}
     </div>
   );
@@ -4926,16 +5311,29 @@ const projDiasEntre=(a,b)=>Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:0
 
 // Espelha calcRecebimento da aba Entradas: dias CORRIDOS (addDays), com o caso
 // especial do voucher antecipado. Não cria regra concorrente de liquidação.
+// PRAZO APLICÁVEL a uma modalidade, em dias. O prazo CONGELADO na própria Entrada
+// (entradas.prazos_recebimento, jsonb) tem precedência sobre a configuração global, que é
+// mutável e vale por navegador. É isso que impede uma venda já lançada de mudar de data de
+// recebimento retroativamente quando o cliente altera o prazo padrão depois.
+// Entrada legada (prazos_recebimento NULL) → prazo global, exatamente como antes.
+// Este campo NUNCA representa antecipação: antecipação continua sendo decidida antes, pelos
+// campos creditoAntecipado/creditoDataReceb e voucherAntecipado/voucherDataReceb.
+const projPrazoEntrada=(entry,forma,prazos)=>{
+  const p=entry&&entry.prazos_recebimento;
+  if(p&&typeof p==='object'&&p[forma]!=null&&Number.isFinite(Number(p[forma])))return projNum(p[forma]);
+  return projNum(prazos[forma]);
+};
+
 const projDataRecebimento=(entry,forma,prazos)=>{
   if(forma==='voucher'){
     if(entry.voucherAntecipado==='sim'&&projDataValida(entry.voucherDataReceb))return entry.voucherDataReceb;
-    return addDays(entry.data,projNum(prazos.voucher));
+    return addDays(entry.data,projPrazoEntrada(entry,'voucher',prazos));
   }
   if(forma==='credito'){
     if(entry.creditoAntecipado==='sim'&&projDataValida(entry.creditoDataReceb))return entry.creditoDataReceb;
-    return addDays(entry.data,projNum(prazos.credito));
+    return addDays(entry.data,projPrazoEntrada(entry,'credito',prazos));
   }
-  return addDays(entry.data,projNum(prazos[forma]));
+  return addDays(entry.data,projPrazoEntrada(entry,forma,prazos));
 };
 
 // Monta a série diária consolidada. Tudo derivado de dados reais; nada é inventado.
@@ -5814,7 +6212,7 @@ function Projecao({empresas}){
 
         const[ent,con,div,ret,saldo]=await Promise.all([
           fetchAllPages((from,to)=>supabase.from('entradas')
-            .select('empresa_id,data,total,dinheiro,pix,debito,credito,voucher,outros,voucherAntecipado,voucherDataReceb,creditoAntecipado,creditoDataReceb')
+            .select('empresa_id,data,total,dinheiro,pix,debito,credito,voucher,outros,voucherAntecipado,voucherDataReceb,creditoAntecipado,creditoDataReceb,prazos_recebimento')
             .in('empresa_id',ids).gte('data',entIni).order('id',{ascending:true}).range(from,to),'projecao:entradas'),
           fetchAllPages((from,to)=>supabase.from('contas')
             .select('id,empresa_id,valor,status,vencimento,tipoDespesa,dividaVinculadaId,descricao')
@@ -8571,6 +8969,14 @@ function App(){
 
   // ── Setters assíncronos com optimistic update e indicador isSaving ──
   const setEntradas=async d=>{setE_(d);setIsSaving(true);try{await saveS(KEYS.entradas,d);}catch(err){console.error('Erro ao salvar entradas:',err);}finally{setIsSaving(false);}};
+  // Recarga REAL das Entradas a partir do Supabase, sem gravar nada. Obrigatória após a
+  // importação: o importador insere direto no banco, e um saveS posterior (disparado por
+  // qualquer edição manual) opera sobre o array em memória — se ele estivesse desatualizado,
+  // o DELETE+INSERT do saveS apagaria as linhas recém-importadas.
+  const recarregarEntradas=async()=>{
+    const ent=await loadS(KEYS.entradas);
+    setE_(Array.isArray(ent)?ent:[]);
+  };
   const setContas=d=>setC_(d);
   const onContaCriar=async entry=>{const eid=EMPRESA_ID;setIsSaving(true);try{await insertConta(entry,eid);}catch(err){console.error('Erro ao criar conta:',err);setIsSaving(false);throw err;}setIsSaving(false);};
   const onContaEditar=async entry=>{const eid=EMPRESA_ID;setIsSaving(true);try{await updateConta(entry,eid);}catch(err){console.error('Erro ao editar conta:',err);setIsSaving(false);throw err;}setIsSaving(false);};
@@ -8825,7 +9231,7 @@ function App(){
       <div className="page-wrap">
         {activeTab!=='painel'&&pageHeaderEl}
         {activeTab==='painel'&&<Painel entradas={entradas} contas={contasComParcelas} dividas={dividas} retiradas={retiradas} config={config} setConfig={setConfig} selectedYear={selectedYear} setSelectedYear={setSelectedYear} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} header={pageHeaderEl} nomeUnidadeAtiva={empresaAtiva?.nome}/>}
-        {activeTab==='entradas'&&<Entradas entradas={entradas} setEntradas={setEntradas} contas={contasComParcelas} dividas={dividas} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
+        {activeTab==='entradas'&&<Entradas entradas={entradas} setEntradas={setEntradas} onRecarregarEntradas={recarregarEntradas} contas={contasComParcelas} dividas={dividas} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
         {activeTab==='contas'&&<Contas contas={contas} setContas={setContas} onContaCriar={onContaCriar} onContaEditar={onContaEditar} onContaExcluir={onContaExcluir} onContasImportar={onContasImportar} contasComParcelas={contasComParcelas} mediaDiariaEntrada={mediaDiaria} dividas={dividas} setDividas={setDividas} onDividaEditar={onDividaEditar} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
         {activeTab==='fornecedores'&&<Fornecedores contas={contasComParcelas} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
         {activeTab==='dividas'&&<Dividas dividas={dividas} setDividas={setDividas} onDividaCriar={onDividaCriar} onDividaEditar={onDividaEditar} onDividaExcluir={onDividaExcluir} entradaMensal={totalEntMes}/>}
