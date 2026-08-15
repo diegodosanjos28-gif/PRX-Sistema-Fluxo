@@ -3982,8 +3982,8 @@ function ContaAgendaItem({c,dividas,onPago,onEdit,onRemove}){
       <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
         <span style={{fontWeight:700,fontSize:14,color:isVenc?'var(--red)':'var(--text-primary)'}}>{fmtFull(c.valor)}</span>
         {c.status!=='Pago'&&<button className="btn btn-secondary btn-sm" style={{fontSize:11,padding:'3px 8px',color:'var(--green)',borderColor:'var(--green)'}} onClick={()=>onPago(c)}>✓ Pago</button>}
-        {!c._autoGerado&&<button className="btn btn-secondary btn-sm" style={{fontSize:11,padding:'3px 8px'}} onClick={()=>onEdit(c)}>✏️</button>}
-        {!c._autoGerado&&<button className="btn btn-danger btn-sm" style={{fontSize:11,padding:'3px 8px'}} onClick={()=>onRemove(c.id)}>✕</button>}
+        {podeEditarConta(c)&&<button className="btn btn-secondary btn-sm" style={{fontSize:11,padding:'3px 8px'}} onClick={()=>onEdit(c)}>✏️</button>}
+        {podeEditarConta(c)&&<button className="btn btn-danger btn-sm" style={{fontSize:11,padding:'3px 8px'}} onClick={()=>onRemove(c.id)}>✕</button>}
       </div>
     </div>
   );
@@ -4000,6 +4000,9 @@ function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onCo
   const[showImport,setShowImport]=useState(false);
   const[contaErro,setContaErro]=useState(null);
   const contaOpLock=useRef(false);
+  // Marco de corte quando a edição parte de uma ocorrência FUTURA de despesa fixa.
+  // null = edição comum (demais categorias e linha-base da própria fixa) — caminho inalterado.
+  const[fixaCorte,setFixaCorte]=useState(null);
   // Categoria (tipoDespesa) selecionada nos chips do cabeçalho da Agenda do Dia — estado único,
   // combinado (não substitui) com filtroStatus, data/mês e afeta toda a aba.
   const[categoriaSelecionada,setCategoriaSelecionada]=useState('Todas');
@@ -4056,10 +4059,56 @@ function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onCo
   const openForm=(c=null)=>{
     if(c){
       // Se auto-gerada, abre para editar (salvará como manual)
-      setForm({...c,valor:c.valor.toString(),tipoDespesa:c.tipoDespesa||'Variável',dividaVinculadaId:c.dividaVinculadaId||'',contaSaida:c.contaSaida||'Banco principal'});
+      // Em ocorrência de FIXA o `obs` vem decorado com "Recorrência automática (mês …)";
+      // a nova base recebe o `obs` da base de origem, para o rótulo não se acumular.
+      const baseFixa=ehOcorrenciaFixa(c)?contas.find(x=>x.id===c._fixaRecorrenteOrigemId):null;
+      setForm({...c,obs:baseFixa?(baseFixa.obs||''):(c.obs||''),valor:c.valor.toString(),tipoDespesa:c.tipoDespesa||'Variável',dividaVinculadaId:c.dividaVinculadaId||'',contaSaida:c.contaSaida||'Banco principal'});
       setEditId(c._autoGerado?null:c.id);// auto-geradas criam nova entrada manual
-    } else {setForm(emptyContaForm);setEditId(null);}
+      // Ocorrência futura de FIXA: guarda o marco do corte. Editar a própria linha-base não
+      // entra aqui (ela não é _autoGerado) — nesse caso a base é atualizada direto, pois não
+      // existe mês anterior daquela série a preservar.
+      setFixaCorte(ehOcorrenciaFixa(c)?{origemId:c._fixaRecorrenteOrigemId,vencimentoOcorrencia:c.vencimento}:null);
+    } else {setForm(emptyContaForm);setEditId(null);setFixaCorte(null);}
     setShowForm(true);
+  };
+
+  // ── EDIÇÃO PROSPECTIVA DE DESPESA FIXA ──
+  // Duas operações relacionadas: encerrar a vigência da base antiga e criar a base nova.
+  // O PostgREST não expõe transação para o cliente, então NÃO existe atomicidade real aqui —
+  // e não vou simular uma. A mitigação é a ORDEM e a COMPENSAÇÃO:
+  //   1º UPDATE (encerra a base antiga) → 2º INSERT (cria a base nova).
+  // Se o passo 2 falhar, o pior estado possível é a recorrência PARADA no corte: nada é
+  // duplicado, nada do passado se perde e o efeito é visível e reversível. A ordem inversa
+  // produziria duas bases ativas, ou seja, despesa DUPLICADA nas projeções — silenciosa e
+  // muito mais danosa. Além disso, ao falhar o INSERT devolvemos o vigencia_ate anterior da
+  // base (compensação); se essa compensação também falhar, o usuário é avisado explicitamente.
+  const salvarFixaProspectiva=(entry,corte)=>{
+    const base=contas.find(c=>c.id===corte.origemId);
+    if(!base){
+      setContaErro('Não foi possível localizar a despesa fixa de origem. Recarregue a página.');
+      contaOpLock.current=false;return;
+    }
+    const fimVigencia=fixaFimVigenciaAntes(corte.vencimentoOcorrencia);
+    if(!fimVigencia){
+      setContaErro('Não foi possível determinar a competência da edição.');
+      contaOpLock.current=false;return;
+    }
+    const vigenciaAnterior=base.vigencia_ate??null;
+    const baseEncerrada={...base,vigencia_ate:fimVigencia};
+    // A base nova nasce da ocorrência editada e não tem fim de vigência.
+    const novaBase={...entry,vigencia_ate:null};
+    const prevContas=contas;
+    setContas(contas.map(c=>c.id===base.id?baseEncerrada:c).concat([novaBase]));
+    onContaEditar(baseEncerrada)
+      .then(()=>onContaCriar(novaBase).catch(errIns=>{
+        // Compensação: desfaz o encerramento para não deixar a recorrência interrompida.
+        return onContaEditar({...base,vigencia_ate:vigenciaAnterior})
+          .then(()=>{setContas(prevContas);setContaErro('Não foi possível criar a nova configuração da despesa fixa. Nada foi alterado.');})
+          .catch(()=>{setContas(contas.map(c=>c.id===base.id?baseEncerrada:c));
+            setContaErro(`A despesa fixa foi encerrada em ${fmtDate(fimVigencia)}, mas a nova configuração não foi criada. Ela não vai recorrer a partir dessa data até que você a cadastre novamente.`);});
+      }))
+      .catch(()=>{setContas(prevContas);setContaErro('Erro ao salvar a despesa fixa. Alteração revertida.');})
+      .finally(()=>{contaOpLock.current=false;});
   };
 
   const marcarPago=(c)=>{
@@ -4087,6 +4136,16 @@ function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onCo
     if(!form.vencimento||!form.descricao||!form.valor)return alert('Preencha vencimento, descrição e valor.');
     contaOpLock.current=true;
     const entry={...form,valor:parseNum(form.valor),id:editId||genId()};
+    // Desvio EXCLUSIVO da despesa fixa editada a partir de uma ocorrência futura. Sai antes do
+    // fluxo comum, que segue intacto para Variáveis, Fornecedores, Financeiras e para a
+    // linha-base da própria fixa. Campos `_` não são persistidos (sanitizeContaForSupabase).
+    if(fixaCorte){
+      const limpo={...entry};
+      Object.keys(limpo).forEach(k=>{if(k.startsWith('_'))delete limpo[k];});
+      salvarFixaProspectiva(limpo,fixaCorte);
+      setShowForm(false);setEditId(null);setForm(emptyContaForm);setFixaCorte(null);
+      return;
+    }
     let nd=[...(dividas||[])];
     const prevContas=contas;
     const prevDividas=dividas;
@@ -4113,11 +4172,31 @@ function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onCo
         .catch(err=>{setContas(prevContas);if(divAfetadaIds.length>0)setDividas(prevDividas);setContaErro('Erro ao salvar a conta. Alteração revertida.');})
         .finally(()=>{contaOpLock.current=false;});
     }
-    setShowForm(false);setEditId(null);setForm(emptyContaForm);
+    setShowForm(false);setEditId(null);setForm(emptyContaForm);setFixaCorte(null);
   };
 
   const remove=id=>{
     if(contaOpLock.current)return;
+    // ── EXCLUSÃO PROSPECTIVA DE DESPESA FIXA ──
+    // A ocorrência futura não existe no banco (id sintético), então não há o que deletar.
+    // Excluir NUNCA remove a base: apenas encerra a vigência no fim do mês anterior. É uma
+    // ÚNICA operação (UPDATE), portanto atômica por natureza — sem risco de estado parcial.
+    const ocorrencia=(contasComParcelas||[]).find(x=>x.id===id);
+    if(ehOcorrenciaFixa(ocorrencia)){
+      const base=contas.find(c=>c.id===ocorrencia._fixaRecorrenteOrigemId);
+      const fimVigencia=fixaFimVigenciaAntes(ocorrencia.vencimento);
+      if(!base||!fimVigencia){setContaErro('Não foi possível localizar a despesa fixa de origem. Recarregue a página.');return;}
+      const compet=fmtDate(ocorrencia.vencimento);
+      if(!confirm(`Interromper a despesa fixa "${ocorrencia.descricao}" a partir de ${compet}?\n\nEla deixa de recorrer desta competência em diante. Os meses anteriores, inclusive os já pagos, permanecem no histórico e não são apagados.`))return;
+      contaOpLock.current=true;
+      const prevContas=contas;
+      const baseEncerrada={...base,vigencia_ate:fimVigencia};
+      setContas(contas.map(c=>c.id===base.id?baseEncerrada:c));
+      onContaEditar(baseEncerrada)
+        .catch(()=>{setContas(prevContas);setContaErro('Erro ao interromper a despesa fixa. Operação revertida.');})
+        .finally(()=>{contaOpLock.current=false;});
+      return;
+    }
     if(confirm('Remover?')){
       const c=contas.find(x=>x.id===id);
       let nd=[...(dividas||[])];
@@ -4340,9 +4419,9 @@ function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onCo
                         <td style={{padding:'8px 12px',borderBottom:'1px solid var(--border)'}}>
                           <div style={{display:'flex',gap:3}}>
                             {c.status!=='Pago'&&<button className="btn btn-secondary btn-sm" style={{color:'var(--green)',borderColor:'var(--green)',fontSize:11}} title="Marcar como pago" onClick={()=>marcarPago(c)}>✓</button>}
-                            {!c._autoGerado&&<button className="btn btn-secondary btn-sm" onClick={()=>openForm(c)}>✏️</button>}
-                            {!c._autoGerado&&<button className="btn btn-danger btn-sm" onClick={()=>remove(c.id)}>✕</button>}
-                            {c._autoGerado&&<span style={{fontSize:10,color:'var(--text-muted)',whiteSpace:'nowrap'}}>via Dívidas</span>}
+                            {podeEditarConta(c)&&<button className="btn btn-secondary btn-sm" onClick={()=>openForm(c)}>✏️</button>}
+                            {podeEditarConta(c)&&<button className="btn btn-danger btn-sm" onClick={()=>remove(c.id)}>✕</button>}
+                            {c._autoGerado&&!ehOcorrenciaFixa(c)&&<span style={{fontSize:10,color:'var(--text-muted)',whiteSpace:'nowrap'}}>via Dívidas</span>}
                           </div>
                         </td>
                       </tr>
@@ -4357,7 +4436,7 @@ function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onCo
 
       {/* ── MODAL ── */}
       {showForm&&(
-        <Modal title={editId?'Editar Conta':'Nova Conta a Pagar'} onClose={()=>{setShowForm(false);setEditId(null);setForm(emptyContaForm);}}>
+        <Modal title={editId?'Editar Conta':'Nova Conta a Pagar'} onClose={()=>{setShowForm(false);setEditId(null);setForm(emptyContaForm);setFixaCorte(null);}}>
           <div className="form-grid">
             <div className="fg"><label>Vencimento</label><input type="date" value={form.vencimento} onChange={e=>setForm({...form,vencimento:e.target.value})}/></div>
             <div className="fg"><label>Valor (R$)</label><input type="number" placeholder="0" value={form.valor} onChange={e=>setForm({...form,valor:e.target.value})}/></div>
@@ -4390,7 +4469,7 @@ function Contas({contas,setContas,onContaCriar,onContaEditar,onContaExcluir,onCo
             <div className="fg full"><label>Observação</label><textarea placeholder="Obs..." value={form.obs} onChange={e=>setForm({...form,obs:e.target.value})}/></div>
           </div>
           <div style={{marginTop:12,display:'flex',gap:8,justifyContent:'flex-end'}}>
-            <button className="btn btn-secondary" onClick={()=>{setShowForm(false);setEditId(null);setForm(emptyContaForm);}}>Cancelar</button>
+            <button className="btn btn-secondary" onClick={()=>{setShowForm(false);setEditId(null);setForm(emptyContaForm);setFixaCorte(null);}}>Cancelar</button>
             <button className="btn btn-primary" onClick={save_}>Salvar</button>
           </div>
         </Modal>
@@ -6741,6 +6820,13 @@ const expandirFixasRecorrentes=contas=>{
     // primeira posição é o próprio mês original — já está em "contas", pula
     for(let i=1;i<vencs.length;i++){
       const venc=vencs[i];
+      // FIM DE VIGÊNCIA — a base só recorre enquanto `venc <= vigencia_ate`. `vigencia_ate`
+      // NULL/ausente = sem fim, exatamente o comportamento anterior (é o estado de 100% das
+      // linhas já existentes). `vencs` é crescente, então `break` encerra a série.
+      if(f.vigencia_ate&&venc>f.vigencia_ate){
+        __auditLog('Recorrência encerrada por vigência',{origemId:f.id,descricao:f.descricao,empresa_id:f.empresa_id,vigencia_ate:f.vigencia_ate,primeiroVencimentoDescartado:venc});
+        break;
+      }
       // Não duplica se já existir conta manual da mesma fixa neste mês
       const jaExiste=contas.find(c=>
         c.tipoDespesa==='Fixa'&&
@@ -6767,6 +6853,24 @@ const expandirFixasRecorrentes=contas=>{
     __auditLog('Recorrência processada',{origemId:f.id,descricao:f.descricao,empresa_id:f.empresa_id,vencimentoOrigem:f.vencimento,janelaMeses:vencs.length,geradas:__geradas,descartadas:__descartadas});
   });
   return result;
+};
+
+// ── DESPESAS FIXAS: edição/exclusão PROSPECTIVA ──
+// Uma ocorrência auto-gerada de FIXA pode ser editada/excluída; uma parcela auto-gerada de
+// DÍVIDA continua sem esses botões (só se altera pela aba Dívidas). O que separa as duas é
+// `_fixaRecorrenteOrigemId`, presente apenas nas ocorrências de recorrência fixa.
+const ehOcorrenciaFixa=c=>!!(c&&c._autoGerado&&c._fixaRecorrenteOrigemId);
+const podeEditarConta=c=>!!c&&(!c._autoGerado||ehOcorrenciaFixa(c));
+
+// Último dia do mês ANTERIOR à competência da ocorrência editada — é o marco que encerra a
+// vigência da base antiga. Ex.: ocorrência de 15/09/2026 → '2026-08-31'. Assim agosto ainda é
+// gerado pela base antiga e setembro em diante passa a vir da base nova, sem sobreposição.
+// Tudo em UTC para não escorregar de dia por fuso.
+const fixaFimVigenciaAntes=venc=>{
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(venc||'')))return null;
+  const d=new Date(Date.UTC(Number(venc.slice(0,4)),Number(venc.slice(5,7))-1,1));
+  d.setUTCDate(0); // dia 0 do mês da ocorrência = último dia do mês anterior
+  return d.toISOString().slice(0,10);
 };
 
 const gerarParcelaDividaLegacy=null; // legado removido
