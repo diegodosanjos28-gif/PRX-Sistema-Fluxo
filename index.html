@@ -580,6 +580,139 @@ textarea{resize:vertical;min-height:58px;}
 }
 
 /* Linha inferior: forn-pago-compact + calendário (full width, stacked) */
+/* ═══ Painel do Dono — PLACAR DO MÊS ═══
+   Migração fiel do painel `.board` de CALENDÁRIO V4.html. Prefixo exclusivo
+   prx-owner-score-; nenhum seletor global e nenhum token :root tocado. Os valores abaixo
+   foram lidos do CSS do mockup, não aproximados. Única adaptação deliberada: o
+   `margin-bottom:14px` do mockup foi omitido porque .painel-layout-bottom já aplica
+   gap:11px — somar os dois deslocaria o calendário para baixo. */
+.prx-owner-score{background:#141414;color:#fff;border-radius:16px;padding:18px 22px;display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr auto;gap:20px;align-items:center;line-height:1.4;}
+.prx-owner-score h2{font-size:12px;letter-spacing:1px;color:#b9b6b0;font-weight:600;text-transform:uppercase;margin:0;}
+.prx-owner-score-sub{font-size:12px;color:#8f8c86;margin-top:2px;}
+.prx-owner-score-sub b{color:#cfae8a;font-weight:700;}
+.prx-owner-score-lab{font-size:10.5px;letter-spacing:.5px;color:#9b9893;text-transform:uppercase;font-weight:600;}
+.prx-owner-score-val{font-size:21px;font-weight:800;margin-top:3px;color:#fff;word-break:break-word;}
+.prx-owner-score-val.ok{color:#5fd08a;}
+.prx-owner-score-val.warn{color:#f2b84b;}
+.prx-owner-score-nav{display:flex;align-items:center;gap:8px;}
+.prx-owner-score-nav button{background:rgba(255,106,0,.15);color:#FF6A00;border:1px solid rgba(255,106,0,.4);border-radius:8px;width:30px;height:30px;font-size:16px;font-weight:700;cursor:pointer;line-height:1;font-family:inherit;padding:0;flex-shrink:0;}
+.prx-owner-score-nav button:hover{background:rgba(255,106,0,.3);}
+.prx-owner-score-nav button:focus-visible{outline:2px solid #FF6A00;outline-offset:2px;}
+.prx-owner-score-mlabel{font-weight:700;font-size:14px;min-width:120px;text-align:center;color:#FF6A00;}
+@media(max-width:1024px){
+  .prx-owner-score{grid-template-columns:1fr 1fr;gap:16px;}
+  .prx-owner-score-nav{grid-column:1/-1;justify-content:flex-end;}
+}
+@media(max-width:560px){
+  .prx-owner-score{grid-template-columns:1fr;padding:16px 18px;}
+  .prx-owner-score-mlabel{min-width:0;flex:1;}
+}
+
+/* ═══ Painel do Dono — CALENDÁRIO INTELIGENTE ═══
+   Porte fiel do calendário de CALENDÁRIO V4.html. Prefixo exclusivo prx-owner-cal-;
+   as classes genéricas do mockup (.day/.week/.panel/.status/.mini/.badge/.dot…) NÃO são
+   usadas, para não colidir com produção. Nenhum seletor global, nenhum token :root tocado.
+   Cores do mockup inlined: card #fff · line #e4e1da · muted #8a8781 · ink #1b1b1b ·
+   accent #FF6A00 · green #2e9e5b · amber #E0961A · red #D64545 · proj #6b7cff · bg #ECEAE5.
+   line-height:1.4 no container reproduz a métrica do body do mockup. */
+.prx-owner-cal{line-height:1.4;color:#1b1b1b;}
+.prx-owner-cal-controls{display:flex;align-items:center;gap:20px;flex-wrap:wrap;background:#fff;border:1px solid #e4e1da;border-radius:12px;padding:11px 16px;margin-bottom:14px;}
+.prx-owner-cal-field{display:flex;align-items:center;gap:10px;font-size:13px;}
+.prx-owner-cal-field label{color:#8a8781;font-weight:600;}
+.prx-owner-cal-range{width:150px;accent-color:#FF6A00;}
+.prx-owner-cal-ratioval{font-weight:800;color:#FF6A00;min-width:44px;}
+.prx-owner-cal-hint{font-size:11px;color:#8a8781;}
+.prx-owner-cal-legend{display:flex;gap:14px;margin-left:auto;flex-wrap:wrap;}
+.prx-owner-cal-legend span{display:flex;align-items:center;gap:6px;font-size:12px;color:#8a8781;}
+.prx-owner-cal-dot{width:11px;height:11px;border-radius:3px;display:inline-block;}
+.prx-owner-cal-dot.g{background:#2e9e5b;}
+.prx-owner-cal-dot.a{background:#E0961A;}
+.prx-owner-cal-dot.r{background:#D64545;}
+.prx-owner-cal-dot.p{background:#6b7cff;border-radius:50%;}
+
+.prx-owner-cal-head{display:grid;grid-template-columns:repeat(7,1fr) 158px;gap:8px;margin-bottom:8px;}
+.prx-owner-cal-head>div{font-size:11px;font-weight:700;color:#8a8781;text-transform:uppercase;letter-spacing:.5px;text-align:center;padding:4px 0;}
+.prx-owner-cal-head>div.wk{color:#FF6A00;text-align:right;padding-right:8px;}
+.prx-owner-cal-week{display:grid;grid-template-columns:repeat(7,1fr) 158px;gap:8px;margin-bottom:8px;}
+
+/* O dia é <button> por acessibilidade (foco/teclado). O UA stylesheet aplica a shorthand
+   `font` e uma cor própria a botões, o que zerava o line-height:1.4 e a cor #1b1b1b do
+   mockup — daí os resets explícitos abaixo. */
+.prx-owner-cal-day{background:#fff;border:1px solid #e4e1da;border-radius:11px;padding:9px 9px 11px;min-height:132px;cursor:pointer;position:relative;transition:.12s;display:flex;flex-direction:column;text-align:left;font-family:inherit;font-size:inherit;line-height:inherit;color:#1b1b1b;width:100%;}
+.prx-owner-cal-day:hover{border-color:#FF6A00;box-shadow:0 3px 12px rgba(0,0,0,.07);transform:translateY(-1px);}
+.prx-owner-cal-day:focus-visible{outline:2px solid #FF6A00;outline-offset:2px;}
+.prx-owner-cal-day.empty{background:transparent;border:1px dashed #dcd8d0;cursor:default;}
+.prx-owner-cal-day.empty:hover{transform:none;box-shadow:none;border-color:#dcd8d0;}
+.prx-owner-cal-day.today{outline:2px solid #FF6A00;outline-offset:-2px;}
+.prx-owner-cal-drow{display:flex;justify-content:space-between;align-items:center;}
+.prx-owner-cal-dnum{font-weight:800;font-size:15px;}
+.prx-owner-cal-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px;}
+.prx-owner-cal-badge.real{background:#eee;color:#666;}
+.prx-owner-cal-badge.proj{background:#eaecff;color:#6b7cff;}
+.prx-owner-cal-entra{font-size:10.5px;color:#8a8781;margin-top:6px;}
+.prx-owner-cal-entra b{color:#2e9e5b;font-weight:800;}
+.prx-owner-cal-pgrow{display:flex;justify-content:space-between;gap:5px;margin-top:7px;font-size:9.5px;}
+.prx-owner-cal-pgrow .lab{color:#8a8781;display:block;font-size:8px;text-transform:uppercase;letter-spacing:.2px;font-weight:700;}
+.prx-owner-cal-pgrow .num{font-weight:400;font-size:9.5px;white-space:nowrap;}
+.prx-owner-cal-folga{font-size:9.5px;color:#8a8781;margin-top:5px;}
+.prx-owner-cal-folga b{font-weight:400;}
+.prx-owner-cal-folga b.pos{color:#2e9e5b;}
+.prx-owner-cal-folga b.neg{color:#D64545;}
+.prx-owner-cal-barwrap{margin-top:auto;padding-top:9px;}
+.prx-owner-cal-bar{height:10px;border-radius:6px;background:#f0ede7;overflow:hidden;position:relative;}
+.prx-owner-cal-fill{height:100%;border-radius:6px;}
+.prx-owner-cal-fill.g{background:#2e9e5b;}
+.prx-owner-cal-fill.a{background:#E0961A;}
+.prx-owner-cal-fill.r{background:#D64545;}
+.prx-owner-cal-over{position:absolute;top:0;right:0;height:100%;background:repeating-linear-gradient(45deg,#D64545,#D64545 3px,#b03939 3px,#b03939 6px);}
+.prx-owner-cal-xchip{position:absolute;right:3px;top:50%;transform:translateY(-50%);font-size:8px;font-weight:800;color:#fff;background:rgba(0,0,0,.35);border-radius:6px;padding:0 4px;}
+
+.prx-owner-cal-wkcard{background:#faf9f6;border:1px solid #e4e1da;border-radius:11px;padding:9px 11px;font-size:11px;display:flex;flex-direction:column;justify-content:center;}
+.prx-owner-cal-wkcard .wt{font-size:10px;color:#8a8781;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:6px;}
+.prx-owner-cal-wkcard .li{display:flex;justify-content:space-between;margin:1px 0;}
+.prx-owner-cal-wkcard .li span{color:#8a8781;}
+.prx-owner-cal-wkcard .li b{font-weight:700;}
+.prx-owner-cal-wkcard .folgaw{margin-top:5px;padding-top:5px;border-top:1px dashed #e4e1da;font-weight:800;}
+.prx-owner-cal-wkcard .folgaw.ok{color:#2e9e5b;}
+.prx-owner-cal-wkcard .folgaw.bad{color:#D64545;}
+
+.prx-owner-cal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:.2s;z-index:40;border:none;padding:0;}
+.prx-owner-cal-overlay.on{opacity:1;pointer-events:auto;}
+.prx-owner-cal-panel{position:fixed;top:0;right:0;height:100%;width:400px;max-width:93vw;background:#fff;z-index:50;transform:translateX(100%);transition:.24s cubic-bezier(.4,0,.2,1);box-shadow:-8px 0 30px rgba(0,0,0,.15);display:flex;flex-direction:column;line-height:1.4;color:#1b1b1b;}
+.prx-owner-cal-panel.on{transform:translateX(0);}
+.prx-owner-cal-ph{padding:20px 22px;border-bottom:1px solid #e4e1da;position:relative;}
+.prx-owner-cal-ph .close{position:absolute;top:16px;right:18px;font-size:20px;color:#8a8781;cursor:pointer;background:none;border:none;font-family:inherit;line-height:1;padding:0;}
+.prx-owner-cal-ph .pdate{font-size:19px;font-weight:800;}
+.prx-owner-cal-ph .pweekday{color:#8a8781;font-size:13px;margin-top:1px;}
+.prx-owner-cal-pbody{padding:18px 22px;overflow-y:auto;flex:1;}
+.prx-owner-cal-status{padding:10px 13px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:16px;}
+.prx-owner-cal-status.g{background:#e7f4ec;color:#1e6e3d;}
+.prx-owner-cal-status.a{background:#fbf1dc;color:#96650d;}
+.prx-owner-cal-status.r{background:#fbe7e7;color:#a52f2f;}
+.prx-owner-cal-mini{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px;}
+.prx-owner-cal-mini .box{background:#ECEAE5;border-radius:10px;padding:10px 11px;}
+.prx-owner-cal-mini .box .l{font-size:10px;color:#8a8781;text-transform:uppercase;letter-spacing:.4px;font-weight:700;}
+.prx-owner-cal-mini .box .v{font-size:16px;font-weight:800;margin-top:3px;}
+.prx-owner-cal-sec{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:#8a8781;font-weight:700;margin:14px 0 8px;}
+.prx-owner-cal-expbox{background:#ffe9d7;border:1px solid #f6cfa8;border-radius:10px;padding:6px 12px;margin-bottom:6px;}
+.prx-owner-cal-exprow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f2d3b4;font-size:12.5px;}
+.prx-owner-cal-exprow:last-child{border:none;}
+.prx-owner-cal-exprow .cat{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:#b5651d;background:#fff;border-radius:5px;padding:1px 5px;margin-left:6px;}
+.prx-owner-cal-exprow .who{font-weight:600;}
+.prx-owner-cal-exprow .amt{font-weight:700;}
+.prx-owner-cal-locknote{font-size:10.5px;color:#b5651d;margin:2px 0 4px;font-weight:600;}
+.prx-owner-cal-bol{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #e4e1da;font-size:12.5px;}
+.prx-owner-cal-bol:last-child{border:none;}
+.prx-owner-cal-bol .who{font-weight:600;}
+.prx-owner-cal-bol .amt{font-weight:700;}
+
+/* Abaixo de 1100px a grade de 8 colunas não cabe legível: rola horizontalmente preservando
+   a composição, em vez de esmagar os cards. Nenhum breakpoint global é alterado. */
+@media(max-width:1100px){
+  .prx-owner-cal-scroll{overflow-x:auto;}
+  .prx-owner-cal-scroll>div{min-width:1040px;}
+}
+
 .painel-layout-bottom{display:flex;flex-direction:column;gap:11px;margin-bottom:11px;}
 .painel-layout-bottom>.calendario{display:flex;flex-direction:column;}
 .painel-layout-bottom>.calendario .cal-grid{flex:1;}
@@ -2161,6 +2294,52 @@ const getMetaDiariaEfetiva = (mediaDiariaEnt, metaPercentual, config, year, mont
   return { valor: mediaDiariaEnt * (metaPercentual / 100), isManual: false, chaveMes };
 };
 
+// ══════════════════════════════════════════════════════════════════════════
+// CALENDÁRIO INTELIGENTE (Painel do Dono) — motor diário de CAIXA.
+// Helpers puros, sem I/O. Não substituem nenhum motor existente: a conversão
+// venda → caixa das vendas REAIS continua sendo feita por projDataRecebimento.
+// ══════════════════════════════════════════════════════════════════════════
+
+const CAL_WD_NOMES=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+
+// Ocorrência ordinal de uma data: "2ª quinta" = {weekday:4, ordinal:2}.
+// T12:00:00 evita a virada de dia por fuso (mesmo padrão de projDow).
+const calOrdinalDe=iso=>{
+  const d=new Date(iso+'T12:00:00');
+  return{weekday:d.getDay(),ordinal:Math.ceil(d.getDate()/7)};
+};
+
+// Referência histórica do MÊS ANTERIOR ao mês (ano,mes) informado, indexada por
+// (dia da semana × ocorrência ordinal) — nunca pelo número da data.
+// Também acumula a média por dia da semana, usada como fallback quando o mês
+// anterior não tem a n-ésima ocorrência (ex.: 5ª sexta contra um mês de 4 sextas).
+const calRefAnterior=(entradas,ano,mes)=>{
+  const py=mes===0?ano-1:ano,pm=mes===0?11:mes-1;
+  const ini=monthStart(py,pm),fim=monthEnd(py,pm);
+  const porOrd={},porWd={};
+  (entradas||[]).forEach(e=>{
+    if(!e||!projDataValida(e.data)||e.data<ini||e.data>fim)return;
+    const{weekday,ordinal}=calOrdinalDe(e.data);
+    const deb=projNum(e.debito),pix=projNum(e.pix);
+    porOrd[weekday+'-'+ordinal]={debito:deb,pix:pix};
+    if(!porWd[weekday])porWd[weekday]={debito:0,pix:0,n:0};
+    porWd[weekday].debito+=deb;porWd[weekday].pix+=pix;porWd[weekday].n+=1;
+  });
+  return{porOrd,porWd};
+};
+
+// Venda projetada de Débito/PIX para uma data futura, pela ocorrência ordinal
+// equivalente do mês anterior. Fallback aprovado: média das ocorrências daquele
+// MESMO dia da semana no mês anterior. Dinheiro e Outros NUNCA são projetados.
+const calVendaProjetada=(ref,iso)=>{
+  const{weekday,ordinal}=calOrdinalDe(iso);
+  const exata=ref.porOrd[weekday+'-'+ordinal];
+  if(exata)return{debito:exata.debito,pix:exata.pix,fallback:false};
+  const m=ref.porWd[weekday];
+  if(m&&m.n>0)return{debito:m.debito/m.n,pix:m.pix/m.n,fallback:true};
+  return{debito:0,pix:0,fallback:false};
+};
+
 // Resolves the display name for a bill: fornecedor → descricao → fallback.
 // Shared between Painel and Fornecedores — defined once here.
 const fornNome = c =>
@@ -2888,6 +3067,45 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
   const metaIsManual=metaInfo.isManual;
   const chaveMesAtual=metaInfo.chaveMes;
   const mesLabel=`${MONTHS[selMonth]}/${selYear}`;
+
+  // ── PLACAR DO MÊS — Entrada de caixa projetada ──
+  // É o que efetivamente CAI NO CAIXA dentro do mês selecionado, não o faturamento por data
+  // de venda (`totalEnt`). Reutiliza projDataRecebimento, o MESMO motor da Projeção e da aba
+  // Entradas: cobre PIX, débito, crédito, voucher e outros, respeitando antecipações e o
+  // prazo congelado em `prazos_recebimento`. Nenhum segundo motor de recebimento.
+  // Varre TODAS as entradas da unidade (o prop traz o histórico completo, sem filtro de data)
+  // porque uma venda de julho no crédito D+30 é caixa de agosto.
+  const prazosPlacar=React.useMemo(()=>({...DEFAULT_PRAZOS,...(loadLocalS('zanon_prazos')||{})}),[]);
+  const entradaCaixaProjetadaMes=React.useMemo(()=>{
+    let t=0;
+    (entradas||[]).forEach(e=>{
+      if(!e||!projDataValida(e.data))return;
+      PROJ_MODALIDADES.forEach(forma=>{
+        const v=projNum(e[forma]);
+        if(v<=0)return;
+        const dr=projDataRecebimento(e,forma,prazosPlacar);
+        if(projDataValida(dr)&&dr>=mStart&&dr<=mEnd)t+=v;
+      });
+    });
+    return projCents(t);
+  },[entradas,prazosPlacar,mStart,mEnd]);
+  // ── FATIA COMPROMETÍVEL — fonte ÚNICA do percentual de Meta ──
+  // Nasce de config.metaPagamentoPercentual (mesmo fallback 85). Durante o arraste vive em
+  // estado local para dar feedback imediato; a gravação acontece uma única vez, no fim da
+  // interação (onChange/onPointerUp), reutilizando o setConfig existente. Sem localStorage,
+  // sem campo novo, sem configuração paralela.
+  const[fatiaPct,setFatiaPct]=useState(metaPercentual);
+  useEffect(()=>{setFatiaPct(metaPercentual);},[metaPercentual]);
+  const persistirFatia=()=>{
+    if(fatiaPct===metaPercentual)return;
+    setConfig({...config,metaPagamentoPercentual:fatiaPct});
+  };
+  const fatia=fatiaPct/100;
+
+  // Meta mensal = entrada projetada × fatia comprometível (a MESMA que rege o calendário).
+  // Não usa mediaDiariaEnt, não usa metasManuaisPorMes e não cria configuração nova.
+  const metaPagamentoMes=projCents(entradaCaixaProjetadaMes*fatia);
+
   const prevYear=selMonth===0?selYear-1:selYear;
   const prevMonth=selMonth===0?11:selMonth-1;
   const mStartPrev=monthStart(prevYear,prevMonth);
@@ -2978,6 +3196,96 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
   const offsetDays=firstDay===0?6:firstDay-1;
   const contasPorDia={};
   contasMesCal.forEach(c=>{const d=parseInt(c.vencimento.split('-')[2]);if(!contasPorDia[d])contasPorDia[d]=[];contasPorDia[d].push(c);});
+
+  // ══ CALENDÁRIO INTELIGENTE — série diária de CAIXA do mês exibido ══
+  // Regra aprovada, por dia:
+  //   ENTRA = crédito/voucher REAIS já vendidos que caem naquele dia (projDataRecebimento)
+  //         + demais modalidades REAIS convertidas pelo mesmo motor
+  //         + débito/PIX PROJETADOS para dias sem venda registrada, pela ocorrência ordinal
+  //           do mês anterior, deslocados pelo PRAZO ATUAL da unidade (débito D+X, PIX D+0).
+  //   Dinheiro e Outros nunca são projetados; só aparecem quando reais.
+  //   REAL prevalece: dia com lançamento real não recebe projeção.
+  const calSerie=React.useMemo(()=>{
+    const dias={};
+    for(let d=1;d<=totalDays;d++){
+      const iso=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      dias[iso]={entra:0,projetado:0};
+    }
+    const dentro=iso=>Object.prototype.hasOwnProperty.call(dias,iso);
+
+    // 1) Vendas REAIS → caixa, pelo motor existente (respeita prazo congelado e antecipação).
+    const datasReais=new Set();
+    (entradas||[]).forEach(e=>{
+      if(!e||!projDataValida(e.data))return;
+      datasReais.add(e.data);
+      PROJ_MODALIDADES.forEach(forma=>{
+        const v=projNum(e[forma]);
+        if(v<=0)return;
+        const dr=projDataRecebimento(e,forma,prazosPlacar);
+        if(projDataValida(dr)&&dentro(dr))dias[dr].entra+=v;
+      });
+    });
+
+    // 2) Vendas PROJETADAS de débito/PIX para dias FUTUROS sem lançamento real.
+    //    A janela de origem começa antes do mês para capturar uma venda projetada do fim do
+    //    mês anterior cujo caixa (D+prazo) cai já dentro do mês exibido.
+    const ref=calRefAnterior(entradas,calYear,calMonth);
+    const pDeb=Math.max(0,projNum(prazosPlacar.debito));
+    const pPix=Math.max(0,projNum(prazosPlacar.pix));
+    const inicioOrigem=addDays(calMStart,-Math.max(pDeb,pPix));
+    for(let s=inicioOrigem;s<=calMEnd;s=addDays(s,1)){
+      if(s<=todayStr)continue;          // só dia estritamente futuro é projetável
+      if(datasReais.has(s))continue;     // REAL prevalece — nunca sobrepor venda registrada
+      const vp=calVendaProjetada(ref,s);
+      const alvoDeb=addDays(s,pDeb),alvoPix=addDays(s,pPix);
+      if(vp.debito>0&&dentro(alvoDeb)){dias[alvoDeb].entra+=vp.debito;dias[alvoDeb].projetado+=vp.debito;}
+      if(vp.pix>0&&dentro(alvoPix)){dias[alvoPix].entra+=vp.pix;dias[alvoPix].projetado+=vp.pix;}
+    }
+
+    // 3) Consolida com despesas, meta, folga e badge.
+    const out={};
+    for(let d=1;d<=totalDays;d++){
+      const iso=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const itens=contasPorDia[d]||[];
+      const aPagar=projCents(itens.reduce((s,c)=>s+projNum(c.valor),0));
+      const entra=projCents(dias[iso].entra);
+      const meta=projCents(entra*fatia);
+      out[d]={
+        dia:d,iso,itens,
+        entra,meta,aPagar,
+        folga:projCents(entra-aPagar),
+        // PROJ quando qualquer parcela de débito/PIX daquele dia veio da projeção histórica.
+        projetado:dias[iso].projetado>0,
+      };
+    }
+    return out;
+  },[entradas,contasPorDia,prazosPlacar,calYear,calMonth,totalDays,calMStart,calMEnd,todayStr,fatia]);
+
+  // Semanas iniciando no DOMINGO (ordem do mockup), com nulos nas bordas.
+  const calSemanas=React.useMemo(()=>{
+    const primeiro=new Date(calYear,calMonth,1).getDay(); // 0=Dom
+    const semanas=[];let cur=[];
+    for(let i=0;i<primeiro;i++)cur.push(null);
+    for(let d=1;d<=totalDays;d++){cur.push(d);if(cur.length===7){semanas.push(cur);cur=[];}}
+    if(cur.length){while(cur.length<7)cur.push(null);semanas.push(cur);}
+    return semanas.map(dias=>{
+      let entra=0,meta=0,aPagar=0;
+      dias.forEach(d=>{if(d&&calSerie[d]){entra+=calSerie[d].entra;meta+=calSerie[d].meta;aPagar+=calSerie[d].aPagar;}});
+      entra=projCents(entra);meta=projCents(meta);aPagar=projCents(aPagar);
+      // weekOver = a SEMANA estoura sua meta — é o que decide amarelo × vermelho nos dias.
+      return{dias,entra,meta,aPagar,folga:projCents(entra-aPagar),weekOver:aPagar>meta};
+    });
+  },[calSerie,calYear,calMonth,totalDays]);
+
+  // Cor do dia — regra idêntica ao mockup: cabe → verde; estoura o dia mas a semana cobre →
+  // amarelo; estoura o dia e a semana → vermelho.
+  const calCorDia=(d,weekOver)=>{
+    const c=calSerie[d];
+    if(!c)return'g';
+    if(c.aPagar<=c.meta)return'g';
+    return weekOver?'r':'a';
+  };
+  const[calDiaAberto,setCalDiaAberto]=useState(null);
   // Semana de maior pressão recalculada para o mês do calendário (regra de cores funciona em qualquer mês)
   const semaMapCal={};
   contasMesCal.filter(c=>c.status!=='Pago').forEach(c=>{const s=weekOf(c.vencimento);semaMapCal[s]=(semaMapCal[s]||0)+c.valor;});
@@ -3173,171 +3481,184 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
       {/* LAYOUT INFERIOR: Pago a Fornecedores (largura total) + Calendário (largura total) */}
       <div className="painel-layout-bottom">
 
-        {/* ── PAGO A FORNECEDORES NO MÊS — barra horizontal compacta ── */}
-        <div className="forn-pago-compact">
-          <div className="fpc-main">
-            <div className="fpc-label"><span>✓</span> Pago a Fornecedores no Mês</div>
-            <div className="fpc-value">{fmtFull(totalPagoForn)}</div>
-            <div className="fpc-sub">{MONTHS[selMonth]} {selYear}</div>
-            {totForn>0&&(
-              <div className="fpc-prog-bg">
-                <div className="fpc-prog" style={{width:Math.min(100,pctPagoForn)+'%'}}></div>
-              </div>
-            )}
+        {/* ── PLACAR DO MÊS — substitui a barra "Pago a Fornecedores no Mês" neste espaço.
+            Visual migrado do painel .board de CALENDÁRIO V4.html; todos os valores vêm dos
+            dados reais já carregados. A navegação usa calPrev/calNext, que operam sobre o
+            mês GLOBAL — sem estado paralelo. ── */}
+        <div className="prx-owner-score">
+          <div>
+            <h2>Placar do mês</h2>
+            <div className="prx-owner-score-sub">Tudo nasce da <b>entrada de caixa</b> projetada (com prazos)</div>
           </div>
-          <div className="fpc-cell">
-            <div className="fpc-cell-lbl">% do total</div>
-            <div className="fpc-cell-val">{pctPagoForn}%</div>
-            <div className="fpc-cell-sub">de {fmtFull(totForn)}</div>
+          <div>
+            <div className="prx-owner-score-lab">Entrada de caixa projetada</div>
+            <div className="prx-owner-score-val">{fmtFull(entradaCaixaProjetadaMes)}</div>
           </div>
-          <div className="fpc-cell">
-            <div className="fpc-cell-lbl">Restante a pagar</div>
-            <div className="fpc-cell-val">{fmtFull(totalRestanteForn)}</div>
-            <div className="fpc-cell-sub">{Math.max(0,qtdTotalFornBoletos-qtdPagosForn)} boleto{(qtdTotalFornBoletos-qtdPagosForn)===1?'':'s'}</div>
+          <div>
+            <div className="prx-owner-score-lab">Meta de pagamento</div>
+            <div className="prx-owner-score-val">{fmtFull(metaPagamentoMes)}</div>
           </div>
-          <div className="fpc-cell">
-            <div className="fpc-cell-lbl">Boletos quitados</div>
-            <div className="fpc-cell-val">{qtdPagosForn} / {qtdTotalFornBoletos}</div>
-            <div className="fpc-cell-sub">{qtdPagosForn>0?'pagamento'+(qtdPagosForn===1?'':'s')+' no mês':'nenhum pagamento'}</div>
+          <div>
+            <div className="prx-owner-score-lab">A pagar (total)</div>
+            {/* Mesma leitura do mockup: acima da meta = atenção, dentro dela = saudável. */}
+            <div className={`prx-owner-score-val ${totalSaiMes>metaPagamentoMes?'warn':'ok'}`}>{fmtFull(totalSaiMes)}</div>
+          </div>
+          <div className="prx-owner-score-nav">
+            <button type="button" onClick={calPrev} title="Mês anterior" aria-label="Mês anterior">‹</button>
+            <span className="prx-owner-score-mlabel">{mesLabel}</span>
+            <button type="button" onClick={calNext} title="Próximo mês" aria-label="Próximo mês">›</button>
           </div>
         </div>
 
-        {/* CALENDÁRIO FINANCEIRO — largura total */}
-        <div className="calendario">
-          <div className="cal-head">
-            <div className="cal-title-wrap">
-              <div className="cal-nav">
-                <button className="cal-nav-btn" onClick={calPrev} title="Mês anterior" aria-label="Mês anterior">‹</button>
-                <button className="cal-nav-btn" onClick={calNext} title="Próximo mês" aria-label="Próximo mês">›</button>
-                {!calEhMesAtual&&(
-                  <button className="cal-nav-today" onClick={calHoje} title="Voltar ao mês atual">Hoje</button>
-                )}
-              </div>
-              <div className="cal-title">Calendário Financeiro — {MONTHS[calMonth]} {calYear}</div>
+        {/* ── CALENDÁRIO INTELIGENTE — porte fiel do calendário de CALENDÁRIO V4.html.
+            Substitui integralmente o calendário anterior. Estrutura, proporções, cores e
+            comportamento são do mockup; todos os números vêm dos dados reais da unidade.
+            O mês é o GLOBAL (calYear/calMonth) — a navegação vive no Placar, como no mockup. ── */}
+        <div className="prx-owner-cal">
+
+          <div className="prx-owner-cal-controls">
+            <div className="prx-owner-cal-field">
+              <label htmlFor="prxCalFatia">Fatia comprometível da entrada</label>
+              {/* Feedback imediato em memória durante o arraste; grava uma única vez ao concluir. */}
+              <input id="prxCalFatia" className="prx-owner-cal-range" type="range"
+                min="60" max="100" step="1" value={fatiaPct}
+                onChange={e=>setFatiaPct(parseInt(e.target.value,10))}
+                onPointerUp={persistirFatia} onKeyUp={persistirFatia} onBlur={persistirFatia}/>
+              <span className="prx-owner-cal-ratioval">{fatiaPct}%</span>
+              <span className="prx-owner-cal-hint">(define a Meta; o restante é reserva)</span>
             </div>
-            <div className="cal-head-right">
-              <div className="cal-legend">
-                <div className="cal-leg"><div className="cal-leg-dot" style={{background:'#dcfce7'}}></div>Saudável</div>
-                <div className="cal-leg"><div className="cal-leg-dot" style={{background:'#fef9c3'}}></div>Atenção</div>
-                <div className="cal-leg"><div className="cal-leg-dot" style={{background:'#fee2e2'}}></div>Crítico</div>
-              </div>
-              <button className="cal-meta-btn" onClick={()=>{setMetaInput(String(metaPercentual));setShowMeta(s=>!s);}} title="Ajustar a meta diária de pagamento">
-                ⚙ Ajustar meta
-              </button>
+            <div className="prx-owner-cal-legend">
+              <span><i className="prx-owner-cal-dot g"></i> cabe</span>
+              <span><i className="prx-owner-cal-dot a"></i> aperta / semana cobre</span>
+              <span><i className="prx-owner-cal-dot r"></i> estoura a semana</span>
+              <span><i className="prx-owner-cal-dot p"></i> projeção</span>
             </div>
           </div>
 
-          {showMeta&&(
-            <div className="cal-meta-panel">
-              <div className="cal-meta-panel-title">Meta diária de pagamento</div>
-              <div className="cal-meta-panel-row">
-                <input type="number" min="1" max="200" step="1" className="cal-meta-input"
-                  value={metaInput} onChange={e=>setMetaInput(e.target.value)}/>
-                <span className="cal-meta-pct">%</span>
-                <div className="cal-meta-preview">
-                  Valor atual: <strong>{fmtFull(mediaDiariaEnt*((parseFloat(metaInput)||metaPercentual)/100))}</strong>
-                </div>
+          <div className="prx-owner-cal-scroll">
+            <div>
+              <div className="prx-owner-cal-head">
+                <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+                <div className="wk">Fechamento semana</div>
               </div>
-              <div className="cal-meta-actions">
-                <button className="cal-meta-save" onClick={()=>{
-                  const v=parseFloat(metaInput);
-                  if(isNaN(v)||v<=0||v>200){alert('Informe um percentual válido entre 1 e 200.');return;}
-                  setConfig({...config,metaPagamentoPercentual:v});
-                  setShowMeta(false);
-                }}>Salvar</button>
-                <button className="cal-meta-reset" onClick={()=>{
-                  setConfig({...config,metaPagamentoPercentual:85});
-                  setMetaInput('85');
-                }}>Restaurar padrão 85%</button>
-                <button className="cal-meta-cancel" onClick={()=>setShowMeta(false)}>Cancelar</button>
-              </div>
-              <div className="cal-meta-footnote">Padrão: 85% da média diária de entrada · esta meta é usada no calendário, na sugestão de redistribuição e no card de meta diária.</div>
-            </div>
-          )}
 
-          {/* Barra de resumo dos dias selecionados */}
-          {diasSelecionados.size>0&&(()=>{
-            const dias=Array.from(diasSelecionados);
-            const totalSelecionado=dias.reduce((s,d)=>{
-              const itens=contasPorDia[d]||[];
-              return s+itens.reduce((ss,c)=>ss+c.valor,0);
-            },0);
-            const metaAcumulada=metaDiariaPagamento*diasSelecionados.size;
-            const diff=totalSelecionado-metaAcumulada;
-            const isOver=diff>0;
-            const diffPct=metaAcumulada>0?Math.round((diff/metaAcumulada)*100):0;
-            return(
-              <div className="cal-sel-bar">
-                <div className="cal-sel-bar-block">
-                  <div className="cal-sel-bar-lbl">Dias selecionados</div>
-                  <div className="cal-sel-bar-val">{diasSelecionados.size}</div>
-                </div>
-                <div className="cal-sel-bar-div"></div>
-                <div className="cal-sel-bar-block">
-                  <div className="cal-sel-bar-lbl">Total a pagar</div>
-                  <div className={`cal-sel-bar-val ${isOver?'over':'under'}`}>{fmtFull(totalSelecionado)}</div>
-                </div>
-                <div className="cal-sel-bar-div"></div>
-                <div className="cal-sel-bar-block">
-                  <div className="cal-sel-bar-lbl">Meta acumulada</div>
-                  <div className="cal-sel-bar-val">{fmtFull(metaAcumulada)}</div>
-                </div>
-                {metaAcumulada>0&&(
-                  <span className={`cal-sel-bar-diff ${isOver?'over':'under'}`}>
-                    {isOver?'+':''}{diffPct}% {isOver?'acima':'abaixo'} da meta
-                  </span>
-                )}
-                <button className="cal-sel-bar-clear" onClick={()=>setDiasSelecionados(new Set())}>Limpar</button>
-              </div>
-            );
-          })()}
-
-          <div className="cal-grid"
-            onMouseDown={e=>{e.preventDefault();}}
-            onMouseUp={()=>setIsArrastando(false)}
-            onMouseLeave={()=>setIsArrastando(false)}
-          >
-            {['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(d=><div key={d} className="cal-dow">{d}</div>)}
-            {Array(offsetDays).fill(null).map((_,i)=><div key={'e'+i} className="cal-day empty"></div>)}
-            {Array(totalDays).fill(null).map((_,i)=>{
-              const day=i+1;
-              const itens=contasPorDia[day]||[];
-              const totalDia=itens.reduce((s,c)=>s+c.valor,0);
-              const int=calInt(totalDia,day);
-              const inSem=isInSemP(day);
-              const isToday=isTodayCell(day);
-              const isSelecionado=diasSelecionados.has(day);
-              return(
-                <div key={day} className={`cal-day${int?' '+int:' cal-leve'}${isToday?' cal-today':''}${isSelecionado?' cal-selected':''}`}
-                  onMouseDown={e=>{
-                    if(e.button!==0)return;
-                    e.preventDefault();
-                    setIsArrastando(true);
-                    setDiasSelecionados(new Set([day]));
-                  }}
-                  onMouseEnter={()=>{
-                    if(!isArrastando)return;
-                    setDiasSelecionados(prev=>{
-                      if(prev.has(day))return prev;
-                      const n=new Set(prev);n.add(day);return n;
-                    });
-                  }}
-                  style={inSem&&int&&int!=='cal-saudavel'?{borderLeftColor:'var(--amber)',borderLeftWidth:'2px'}:{}}>
-                  <div className="cal-day-n">{day}</div>
-                  {totalDia>0&&(<>
-                    <div className="cal-day-total">{fmt(totalDia)}</div>
-                    <div className="cal-day-items">
-                      {itens.slice(0,2).map((c,j)=>(
-                        <div key={j} style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(c.descricao||'').substring(0,10)} {fmt(c.valor)}</div>
-                      ))}
-                      {itens.length>2&&<div className="cal-day-more">+{itens.length-2}</div>}
+              {calSemanas.map((sem,wi)=>(
+                <div className="prx-owner-cal-week" key={wi}>
+                  {sem.dias.map((d,di)=>{
+                    if(!d)return <div key={'v'+di} className="prx-owner-cal-day empty"></div>;
+                    const c=calSerie[d];
+                    const col=calCorDia(d,sem.weekOver);
+                    const pctBar=c.meta>0?Math.min(c.aPagar/c.meta,1)*100:0;
+                    const over=c.meta>0&&c.aPagar>c.meta;
+                    const overW=over?Math.min((c.aPagar-c.meta)/c.meta,1)*100:0;
+                    return(
+                      <button type="button" key={d}
+                        className={`prx-owner-cal-day${c.iso===todayStr?' today':''}`}
+                        onClick={()=>setCalDiaAberto(d)}
+                        aria-label={`${d} de ${MONTHS[calMonth].toLowerCase()} — entra ${rdpFmt0(c.entra)}, a pagar ${rdpFmt0(c.aPagar)}`}>
+                        <div className="prx-owner-cal-drow">
+                          <span className="prx-owner-cal-dnum">{d}</span>
+                          <span className={`prx-owner-cal-badge ${c.projetado?'proj':'real'}`}>{c.projetado?'proj':'real'}</span>
+                        </div>
+                        <div className="prx-owner-cal-entra">entra <b>{rdpFmt0(c.entra)}</b></div>
+                        <div className="prx-owner-cal-pgrow">
+                          <div><span className="lab">A pagar</span><span className="num">{rdpFmt0(c.aPagar)}</span></div>
+                          <div style={{textAlign:'right'}}><span className="lab">Meta</span><span className="num">{rdpFmt0(c.meta)}</span></div>
+                        </div>
+                        <div className="prx-owner-cal-folga">folga: <b className={c.folga>=0?'pos':'neg'}>{c.folga>=0?'+ ':'− '}{rdpFmt0(Math.abs(c.folga))}</b></div>
+                        <div className="prx-owner-cal-barwrap">
+                          <div className="prx-owner-cal-bar">
+                            <div className={`prx-owner-cal-fill ${col}`} style={{width:pctBar+'%'}}></div>
+                            {over&&(<>
+                              <div className="prx-owner-cal-over" style={{width:overW+'%'}}></div>
+                              <span className="prx-owner-cal-xchip">{(c.aPagar/c.meta).toFixed(1)}×</span>
+                            </>)}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                  <div className="prx-owner-cal-wkcard">
+                    <div className="wt"><i className={`prx-owner-cal-dot ${sem.weekOver?'r':'g'}`}></i>Semana</div>
+                    <div className="li"><span>Entra caixa</span><b>{rdpFmt0(sem.entra)}</b></div>
+                    <div className="li"><span>Meta</span><b>{rdpFmt0(sem.meta)}</b></div>
+                    <div className="li"><span>A pagar</span><b>{rdpFmt0(sem.aPagar)}</b></div>
+                    <div className={`li folgaw ${sem.folga>=0?'ok':'bad'}`}>
+                      <span>Folga</span><b>{sem.folga>=0?'+ ':'− '}{rdpFmt0(Math.abs(sem.folga))}</b>
                     </div>
-                  </>)}
+                  </div>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
         </div>
+
+        {/* ── DRAWER LATERAL DO DIA — dados reais do dia clicado ── */}
+        {(()=>{
+          const c=calDiaAberto!=null?calSerie[calDiaAberto]:null;
+          const sem=c?calSemanas.find(s=>s.dias.indexOf(calDiaAberto)>=0):null;
+          const col=c?calCorDia(calDiaAberto,sem?sem.weekOver:false):'g';
+          const fornDia=c?c.itens.filter(i=>i.tipoDespesa==='Fornecedor'):[];
+          const fixasDia=c?c.itens.filter(i=>i.tipoDespesa!=='Fornecedor'):[];
+          const wdNome=c?CAL_WD_NOMES[new Date(c.iso+'T12:00:00').getDay()]:'';
+          const fechar=()=>setCalDiaAberto(null);
+          return(
+            <React.Fragment>
+              <div className={`prx-owner-cal-overlay${c?' on':''}`} onClick={fechar}></div>
+              <div className={`prx-owner-cal-panel${c?' on':''}`} role="dialog" aria-modal="true"
+                aria-label="Detalhes financeiros do dia" aria-hidden={!c}
+                onKeyDown={e=>{if(e.key==='Escape')fechar();}}>
+                {c&&(<React.Fragment>
+                  <div className="prx-owner-cal-ph">
+                    <button className="close" onClick={fechar} aria-label="Fechar">✕</button>
+                    <div className="pdate">{c.dia} de {MONTHS[calMonth].toLowerCase()}, {calYear}</div>
+                    <div className="pweekday">{wdNome}{c.projetado?' · projeção':' · realizado'}</div>
+                  </div>
+                  <div className="prx-owner-cal-pbody">
+                    <div className={`prx-owner-cal-status ${col}`}>
+                      {col==='g'?'Cabe na capacidade do dia.'
+                        :(col==='a'?'Aperta no dia, mas a semana cobre. Ok manter — ou puxar um boleto para um dia mais verde.'
+                          :'Estoura a semana. Renegocie ou empurre um boleto para outra semana.')}
+                    </div>
+                    <div className="prx-owner-cal-mini">
+                      <div className="box"><div className="l">Entra no caixa</div><div className="v">{fmtFull(c.entra)}</div></div>
+                      <div className="box"><div className="l">Meta de pagto.</div><div className="v">{fmtFull(c.meta)}</div></div>
+                      <div className="box"><div className="l">A pagar (total)</div><div className="v">{fmtFull(c.aPagar)}</div></div>
+                      <div className="box"><div className="l">Folga (entra − a pagar)</div>
+                        <div className="v" style={{color:c.folga>=0?'#2e9e5b':'#D64545'}}>
+                          {c.folga>=0?'+ ':'− '}{fmtFull(Math.abs(c.folga))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="prx-owner-cal-sec">Despesas fixas / variáveis / financeiras do dia</div>
+                    {fixasDia.length>0&&<div className="prx-owner-cal-locknote">🔒 travadas por data</div>}
+                    <div className="prx-owner-cal-expbox">
+                      {fixasDia.length===0?(
+                        <div className="prx-owner-cal-exprow"><span className="who" style={{color:'#b5651d'}}>Nenhuma despesa fixa neste dia</span></div>
+                      ):fixasDia.map((x,i)=>(
+                        <div className="prx-owner-cal-exprow" key={i}>
+                          <span className="who">{fornNome(x)}<span className="cat">{x.tipoDespesa||'Variável'}</span></span>
+                          <span className="amt">{fmtFull(projNum(x.valor))}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="prx-owner-cal-sec">Boletos de fornecedor</div>
+                    {fornDia.length===0?(
+                      <div className="prx-owner-cal-bol"><span className="who" style={{color:'#8a8781'}}>Nenhum boleto neste dia</span></div>
+                    ):fornDia.map((x,i)=>(
+                      <div className="prx-owner-cal-bol" key={i}>
+                        <span className="who">{fornNome(x)}</span>
+                        <span className="amt">{fmtFull(projNum(x.valor))}</span>
+                      </div>
+                    ))}
+                  </div>
+                </React.Fragment>)}
+              </div>
+            </React.Fragment>
+          );
+        })()}
 
       </div>
 
