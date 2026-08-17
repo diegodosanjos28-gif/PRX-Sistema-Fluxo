@@ -9182,14 +9182,9 @@ function App(){
             fontSize:14,transition:'all .15s',
           }}
         >🏢</button>
-        <button
-          type="button"
-          className={`prx-proj-nav${activeTab==='projecao'?' active':''}`}
-          onClick={()=>setActiveTab('projecao')}
-          title="Projeção"
-          aria-label="Projeção"
-          aria-pressed={activeTab==='projecao'}
-        >{TABS.find(t=>t.id==='projecao')?.icon}</button>
+        {/* Acesso visual à aba Projeção retirado do header. A aba e todo o seu código
+            (componente Projecao, motores, helpers, CSS .prx-proj-nav) seguem intactos —
+            apenas não há mais ponto de entrada na interface. */}
         {(()=>{
           // Identificação do cliente ativo a partir de TODAS as fontes já carregadas em empresaAtiva
           // (clienteNome vem do join com `clientes`; nome é o nome da própria empresa/unidade).
