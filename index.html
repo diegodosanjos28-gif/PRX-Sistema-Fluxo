@@ -2313,6 +2313,10 @@ const calOrdinalDe=iso=>{
 // (dia da semana × ocorrência ordinal) — nunca pelo número da data.
 // Também acumula a média por dia da semana, usada como fallback quando o mês
 // anterior não tem a n-ésima ocorrência (ex.: 5ª sexta contra um mês de 4 sextas).
+// Modalidades que admitem projeção histórica. Dinheiro e Outros NUNCA são projetados
+// (regra aprovada): só aparecem quando há venda real.
+const CAL_MOD_PROJETADAS=['debito','pix','credito','voucher'];
+
 const calRefAnterior=(entradas,ano,mes)=>{
   const py=mes===0?ano-1:ano,pm=mes===0?11:mes-1;
   const ini=monthStart(py,pm),fim=monthEnd(py,pm);
@@ -2320,24 +2324,103 @@ const calRefAnterior=(entradas,ano,mes)=>{
   (entradas||[]).forEach(e=>{
     if(!e||!projDataValida(e.data)||e.data<ini||e.data>fim)return;
     const{weekday,ordinal}=calOrdinalDe(e.data);
-    const deb=projNum(e.debito),pix=projNum(e.pix);
-    porOrd[weekday+'-'+ordinal]={debito:deb,pix:pix};
-    if(!porWd[weekday])porWd[weekday]={debito:0,pix:0,n:0};
-    porWd[weekday].debito+=deb;porWd[weekday].pix+=pix;porWd[weekday].n+=1;
+    const chave=weekday+'-'+ordinal;
+    if(!porOrd[chave])porOrd[chave]={};
+    if(!porWd[weekday])porWd[weekday]={n:0};
+    CAL_MOD_PROJETADAS.forEach(f=>{
+      const v=projNum(e[f]);
+      porOrd[chave][f]=(porOrd[chave][f]||0)+v;
+      porWd[weekday][f]=(porWd[weekday][f]||0)+v;
+    });
+    porWd[weekday].n+=1;
   });
   return{porOrd,porWd};
 };
 
-// Venda projetada de Débito/PIX para uma data futura, pela ocorrência ordinal
-// equivalente do mês anterior. Fallback aprovado: média das ocorrências daquele
-// MESMO dia da semana no mês anterior. Dinheiro e Outros NUNCA são projetados.
+// Venda projetada para uma data futura, pela ocorrência ordinal equivalente do mês
+// anterior. Fallback aprovado: média das ocorrências daquele MESMO dia da semana no mês
+// anterior. Devolve a VENDA — a conversão em caixa (D+X) é feita por quem chama.
 const calVendaProjetada=(ref,iso)=>{
   const{weekday,ordinal}=calOrdinalDe(iso);
   const exata=ref.porOrd[weekday+'-'+ordinal];
-  if(exata)return{debito:exata.debito,pix:exata.pix,fallback:false};
+  const out={fallback:false};
+  if(exata){
+    CAL_MOD_PROJETADAS.forEach(f=>{out[f]=projNum(exata[f]);});
+    return out;
+  }
   const m=ref.porWd[weekday];
-  if(m&&m.n>0)return{debito:m.debito/m.n,pix:m.pix/m.n,fallback:true};
-  return{debito:0,pix:0,fallback:false};
+  if(m&&m.n>0){
+    out.fallback=true;
+    CAL_MOD_PROJETADAS.forEach(f=>{out[f]=projNum(m[f])/m.n;});
+    return out;
+  }
+  CAL_MOD_PROJETADAS.forEach(f=>{out[f]=0;});
+  return out;
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+// SÉRIE ÚNICA DE ENTRADA DE CAIXA DO MÊS — fonte de verdade do Placar E do
+// Calendário. Não é um segundo motor: a conversão venda → caixa das vendas REAIS
+// continua sendo feita por projDataRecebimento, e a projeção reusa os helpers
+// ordinais acima. Nada aqui é persistido.
+//
+// Precedência: VENDA REAL > VENDA PROJETADA, decidida pela DATA DA VENDA.
+//
+// Janela de origem: recua o maior prazo configurado entre as modalidades projetadas,
+// porque uma venda projetada do mês anterior pode virar caixa dentro deste mês
+// (ex.: crédito D+30 vendido em 20/07 entra em 19/08). Sem esse recuo o mês
+// apareceria truncado. A referência ordinal é sempre a do mês ANTERIOR ao da própria
+// venda — por isso o cache por competência, e não uma referência única.
+// ══════════════════════════════════════════════════════════════════════════
+const buildCaixaProjetadoMes=({entradas,ano,mes,prazos,hoje})=>{
+  const ini=monthStart(ano,mes),fim=monthEnd(ano,mes);
+  const porDia={};
+  for(let d=ini;d<=fim;d=addDays(d,1))porDia[d]={data:d,real:0,projetado:0,entra:0};
+  const dentro=iso=>Object.prototype.hasOwnProperty.call(porDia,iso);
+
+  // 1) Vendas REAIS → caixa, pelo motor existente (antecipação › prazo congelado › global).
+  const datasReais=new Set();
+  (entradas||[]).forEach(e=>{
+    if(!e||!projDataValida(e.data))return;
+    datasReais.add(e.data);
+    PROJ_MODALIDADES.forEach(forma=>{
+      const v=projNum(e[forma]);
+      if(v<=0)return;
+      const dr=projDataRecebimento(e,forma,prazos);
+      if(projDataValida(dr)&&dentro(dr)){porDia[dr].real+=v;porDia[dr].entra+=v;}
+    });
+  });
+
+  // 2) Vendas PROJETADAS para dias FUTUROS sem venda real, convertidas em caixa pelo
+  //    prazo ATUAL da modalidade (projeção não tem prazo congelado).
+  const refs={};
+  const refDe=iso=>{
+    const y=Number(iso.slice(0,4)),m=Number(iso.slice(5,7))-1,k=y+'-'+m;
+    if(!refs[k])refs[k]=calRefAnterior(entradas,y,m);
+    return refs[k];
+  };
+  const prazoDe=f=>Math.max(0,projNum(prazos&&prazos[f]));
+  const maxPrazo=Math.max(0,...CAL_MOD_PROJETADAS.map(prazoDe));
+  for(let s=addDays(ini,-maxPrazo);s<=fim;s=addDays(s,1)){
+    if(s<=hoje)continue;        // só dia estritamente futuro é projetável
+    if(datasReais.has(s))continue; // REAL prevalece — nunca sobrepor venda registrada
+    const vp=calVendaProjetada(refDe(s),s);
+    CAL_MOD_PROJETADAS.forEach(f=>{
+      const v=projNum(vp[f]);
+      if(v<=0)return;
+      const alvo=addDays(s,prazoDe(f));
+      if(dentro(alvo)){porDia[alvo].projetado+=v;porDia[alvo].entra+=v;}
+    });
+  }
+
+  let total=0;
+  Object.keys(porDia).forEach(k=>{
+    porDia[k].real=projCents(porDia[k].real);
+    porDia[k].projetado=projCents(porDia[k].projetado);
+    porDia[k].entra=projCents(porDia[k].entra);
+    total+=porDia[k].entra;
+  });
+  return{porDia,total:projCents(total)};
 };
 
 // Resolves the display name for a bill: fornecedor → descricao → fallback.
@@ -3076,19 +3159,13 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
   // Varre TODAS as entradas da unidade (o prop traz o histórico completo, sem filtro de data)
   // porque uma venda de julho no crédito D+30 é caixa de agosto.
   const prazosPlacar=React.useMemo(()=>({...DEFAULT_PRAZOS,...(loadLocalS('zanon_prazos')||{})}),[]);
-  const entradaCaixaProjetadaMes=React.useMemo(()=>{
-    let t=0;
-    (entradas||[]).forEach(e=>{
-      if(!e||!projDataValida(e.data))return;
-      PROJ_MODALIDADES.forEach(forma=>{
-        const v=projNum(e[forma]);
-        if(v<=0)return;
-        const dr=projDataRecebimento(e,forma,prazosPlacar);
-        if(projDataValida(dr)&&dr>=mStart&&dr<=mEnd)t+=v;
-      });
-    });
-    return projCents(t);
-  },[entradas,prazosPlacar,mStart,mEnd]);
+  // SÉRIE ÚNICA — mesma fonte para o Placar e para o Calendário Inteligente. Antes o Placar
+  // somava só recebíveis de vendas JÁ realizadas, enquanto o Calendário também projetava o
+  // futuro: duas respostas para a mesma pergunta. Agora existe uma série só.
+  const caixaProjMes=React.useMemo(()=>buildCaixaProjetadoMes({
+    entradas,ano:selYear,mes:selMonth,prazos:prazosPlacar,hoje:todayStr,
+  }),[entradas,selYear,selMonth,prazosPlacar,todayStr]);
+  const entradaCaixaProjetadaMes=caixaProjMes.total;
   // ── FATIA COMPROMETÍVEL — fonte ÚNICA do percentual de Meta ──
   // Nasce de config.metaPagamentoPercentual (mesmo fallback 85). Durante o arraste vive em
   // estado local para dar feedback imediato; a gravação acontece uma única vez, no fim da
@@ -3205,61 +3282,28 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
   //           do mês anterior, deslocados pelo PRAZO ATUAL da unidade (débito D+X, PIX D+0).
   //   Dinheiro e Outros nunca são projetados; só aparecem quando reais.
   //   REAL prevalece: dia com lançamento real não recebe projeção.
+  // Consome a SÉRIE ÚNICA (caixaProjMes) e apenas acrescenta despesas, meta, folga e badge.
+  // Nenhuma regra de entrada é recalculada aqui — é a mesma fonte do Placar, o que garante
+  // que a soma dos dias do calendário bate exatamente com a Entrada de Caixa Projetada.
   const calSerie=React.useMemo(()=>{
-    const dias={};
-    for(let d=1;d<=totalDays;d++){
-      const iso=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      dias[iso]={entra:0,projetado:0};
-    }
-    const dentro=iso=>Object.prototype.hasOwnProperty.call(dias,iso);
-
-    // 1) Vendas REAIS → caixa, pelo motor existente (respeita prazo congelado e antecipação).
-    const datasReais=new Set();
-    (entradas||[]).forEach(e=>{
-      if(!e||!projDataValida(e.data))return;
-      datasReais.add(e.data);
-      PROJ_MODALIDADES.forEach(forma=>{
-        const v=projNum(e[forma]);
-        if(v<=0)return;
-        const dr=projDataRecebimento(e,forma,prazosPlacar);
-        if(projDataValida(dr)&&dentro(dr))dias[dr].entra+=v;
-      });
-    });
-
-    // 2) Vendas PROJETADAS de débito/PIX para dias FUTUROS sem lançamento real.
-    //    A janela de origem começa antes do mês para capturar uma venda projetada do fim do
-    //    mês anterior cujo caixa (D+prazo) cai já dentro do mês exibido.
-    const ref=calRefAnterior(entradas,calYear,calMonth);
-    const pDeb=Math.max(0,projNum(prazosPlacar.debito));
-    const pPix=Math.max(0,projNum(prazosPlacar.pix));
-    const inicioOrigem=addDays(calMStart,-Math.max(pDeb,pPix));
-    for(let s=inicioOrigem;s<=calMEnd;s=addDays(s,1)){
-      if(s<=todayStr)continue;          // só dia estritamente futuro é projetável
-      if(datasReais.has(s))continue;     // REAL prevalece — nunca sobrepor venda registrada
-      const vp=calVendaProjetada(ref,s);
-      const alvoDeb=addDays(s,pDeb),alvoPix=addDays(s,pPix);
-      if(vp.debito>0&&dentro(alvoDeb)){dias[alvoDeb].entra+=vp.debito;dias[alvoDeb].projetado+=vp.debito;}
-      if(vp.pix>0&&dentro(alvoPix)){dias[alvoPix].entra+=vp.pix;dias[alvoPix].projetado+=vp.pix;}
-    }
-
-    // 3) Consolida com despesas, meta, folga e badge.
     const out={};
     for(let d=1;d<=totalDays;d++){
       const iso=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const base=caixaProjMes.porDia[iso]||{entra:0,real:0,projetado:0};
       const itens=contasPorDia[d]||[];
       const aPagar=projCents(itens.reduce((s,c)=>s+projNum(c.valor),0));
-      const entra=projCents(dias[iso].entra);
+      const entra=projCents(base.entra);
       const meta=projCents(entra*fatia);
       out[d]={
         dia:d,iso,itens,
         entra,meta,aPagar,
         folga:projCents(entra-aPagar),
-        // PROJ quando qualquer parcela de débito/PIX daquele dia veio da projeção histórica.
-        projetado:dias[iso].projetado>0,
+        // PROJ quando qualquer parcela do caixa daquele dia veio de venda projetada.
+        projetado:base.projetado>0,
       };
     }
     return out;
-  },[entradas,contasPorDia,prazosPlacar,calYear,calMonth,totalDays,calMStart,calMEnd,todayStr,fatia]);
+  },[caixaProjMes,contasPorDia,calYear,calMonth,totalDays,fatia]);
 
   // Semanas iniciando no DOMINGO (ordem do mockup), com nulos nas bordas.
   const calSemanas=React.useMemo(()=>{
