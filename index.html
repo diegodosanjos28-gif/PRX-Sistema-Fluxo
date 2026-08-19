@@ -2031,10 +2031,15 @@ const TABELAS = {
   zanon_config:    'config',
 };
 
+// RESERVA DE SEGURANÇA — faixa 0%..20%, padrão 10%. A persistência guarda o percentual
+// COMPROMETIDO (100 − reserva), então o padrão de 10% de reserva equivale a 90.
+const PRX_RESERVA_MAX = 20;
+const PRX_COMPROMETIDO_PADRAO = 100 - 10;
+
 const defaultConfig = {
   saldoInicial:             15000,
   retiradaIdeal:            8000,
-  metaPagamentoPercentual:  85,
+  metaPagamentoPercentual:  PRX_COMPROMETIDO_PADRAO,
   metasManuaisPorMes:       {},
 };
 
@@ -3245,7 +3250,7 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
   //    este mês/ano (config.metasManuaisPorMes["YYYY-MM"]), ela tem prioridade.
   //    Permite simular meses futuros antes de existir entrada cadastrada.
   // Percentual da unidade ativa (comportamento atual, inalterado).
-  const metaPctUnidade=typeof config.metaPagamentoPercentual==='number'?config.metaPagamentoPercentual:85;
+  const metaPctUnidade=typeof config.metaPagamentoPercentual==='number'?config.metaPagamentoPercentual:PRX_COMPROMETIDO_PADRAO;
   // No CONSOLIDADO: se todas as unidades ativas usam o mesmo percentual, ele vale; se
   // divergirem, cai no fallback 85 que o sistema já aplica quando a config está vazia.
   // Regra aprovada — sem média, sem ponderação, sem "config da Matriz".
@@ -3253,10 +3258,10 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
     if(!ehConsolidado)return null;
     const vals=(consol.ids||[]).map(id=>{
       const c=consol.configs[id];
-      return c&&typeof c.metaPagamentoPercentual==='number'?c.metaPagamentoPercentual:85;
+      return c&&typeof c.metaPagamentoPercentual==='number'?c.metaPagamentoPercentual:PRX_COMPROMETIDO_PADRAO;
     });
-    if(!vals.length)return 85;
-    return vals.every(v=>v===vals[0])?vals[0]:85;
+    if(!vals.length)return PRX_COMPROMETIDO_PADRAO;
+    return vals.every(v=>v===vals[0])?vals[0]:PRX_COMPROMETIDO_PADRAO;
   },[ehConsolidado,consol]);
   const metaPercentual=ehConsolidado?metaPctConsolidado:metaPctUnidade;
 
@@ -3272,7 +3277,7 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
         .reduce((s,e)=>s+projNum(e.total),0);
       const mediaU=(totU>0&&diasCorridosBase>0)?totU/diasCorridosBase:0;
       const cfgU=consol.configs[id]||{};
-      const pctU=typeof cfgU.metaPagamentoPercentual==='number'?cfgU.metaPagamentoPercentual:85;
+      const pctU=typeof cfgU.metaPagamentoPercentual==='number'?cfgU.metaPagamentoPercentual:PRX_COMPROMETIDO_PADRAO;
       const infoU=getMetaDiariaEfetiva(mediaU,pctU,cfgU,selYear,selMonth);
       soma+=projNum(infoU.valor);
       if(infoU.isManual)algumManual=true;
@@ -3302,7 +3307,7 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
   }),[entradas,selYear,selMonth,prazosPlacar,todayStr]);
   const entradaCaixaProjetadaMes=caixaProjMes.total;
   // ── FATIA COMPROMETÍVEL — fonte ÚNICA do percentual de Meta ──
-  // Nasce de config.metaPagamentoPercentual (mesmo fallback 85). Durante o arraste vive em
+  // Nasce de config.metaPagamentoPercentual (padrão: reserva 10% = comprometido 90). Durante o arraste vive em
   // estado local para dar feedback imediato; a gravação acontece uma única vez, no fim da
   // interação (onChange/onPointerUp), reutilizando o setConfig existente. Sem localStorage,
   // sem campo novo, sem configuração paralela.
@@ -3719,14 +3724,19 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
 
           <div className="prx-owner-cal-controls">
             <div className="prx-owner-cal-field">
-              <label htmlFor="prxCalFatia">Fatia comprometível da entrada</label>
-              {/* Feedback imediato em memória durante o arraste; grava uma única vez ao concluir. */}
-              <input id="prxCalFatia" className="prx-owner-cal-range" type="range"
-                min="60" max="100" step="1" value={fatiaPct}
-                onChange={e=>setFatiaPct(parseInt(e.target.value,10))}
+              <label htmlFor="prxCalReserva">Reserva de segurança</label>
+              {/* O controle agora seleciona a RESERVA — quanto da entrada fica guardado.
+                  A inversão vive só aqui, na fronteira da UI: o estado interno (fatiaPct) e
+                  config.metaPagamentoPercentual continuam guardando o percentual COMPROMETIDO,
+                  então nem a matemática da Meta nem os dados já gravados mudam.
+                  Reserva = 100 − comprometido  ·  Meta = Entrada × (1 − reserva).
+                  Feedback imediato em memória durante o arraste; grava uma vez ao concluir. */}
+              <input id="prxCalReserva" className="prx-owner-cal-range" type="range"
+                min="0" max={PRX_RESERVA_MAX} step="1" value={100-fatiaPct}
+                onChange={e=>setFatiaPct(100-parseInt(e.target.value,10))}
                 onPointerUp={persistirFatia} onKeyUp={persistirFatia} onBlur={persistirFatia}/>
-              <span className="prx-owner-cal-ratioval">{fatiaPct}%</span>
-              <span className="prx-owner-cal-hint">(define a Meta; o restante é reserva)</span>
+              <span className="prx-owner-cal-ratioval">{100-fatiaPct}%</span>
+              <span className="prx-owner-cal-hint">(o restante da entrada vira a Meta de pagamento)</span>
             </div>
             <div className="prx-owner-cal-legend">
               <span><i className="prx-owner-cal-dot g"></i> cabe</span>
