@@ -516,6 +516,35 @@ textarea{resize:vertical;min-height:58px;}
 .painel-hero-chip .dot{width:7px;height:7px;border-radius:50%;background:var(--papaya);box-shadow:0 0 0 3px rgba(232,118,10,.32);}
 .painel-hero-prx{position:absolute;top:74px;right:32px;z-index:3;display:inline-flex;align-items:center;padding:7px 14px;border-radius:12px;background:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 6px 18px rgba(13,12,14,.32);}
 .painel-hero-prx img{height:19px;width:auto;display:block;}
+/* ═══ Painel do Dono — SELETOR HORIZONTAL DE VISÃO (Consolidado + unidades) ═══
+   Ocupa a região antes usada pelo chip do mês e pela logo PRX (topo direito do Hero).
+   Prefixo exclusivo prx-owner-unit-; nenhum seletor global tocado. Usa a família papaya
+   já existente. Sempre horizontal — nunca vira dropdown nem empilha. */
+.prx-owner-unit-switcher{
+  position:absolute;top:26px;right:32px;z-index:4;display:flex;align-items:center;gap:6px;
+  max-width:calc(100% - 380px);overflow-x:auto;padding:4px;border-radius:999px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  scrollbar-width:none;
+}
+.prx-owner-unit-switcher::-webkit-scrollbar{display:none;}
+.prx-owner-unit-btn{
+  flex:0 0 auto;font-family:inherit;font-size:11.5px;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;white-space:nowrap;padding:7px 14px;border-radius:999px;cursor:pointer;
+  color:rgba(255,255,255,.82);background:transparent;border:1px solid transparent;
+  transition:background .15s,color .15s,border-color .15s;
+}
+.prx-owner-unit-btn:hover{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(232,118,10,.45);}
+.prx-owner-unit-btn:focus-visible{outline:2px solid var(--papaya);outline-offset:2px;}
+.prx-owner-unit-btn.active{
+  background:var(--papaya);color:#fff;border-color:var(--papaya);
+  box-shadow:0 2px 10px rgba(232,118,10,.38);
+}
+.prx-owner-unit-btn:disabled{opacity:.55;cursor:default;}
+@media(max-width:900px){
+  .prx-owner-unit-switcher{position:static;margin:0 0 14px;max-width:100%;}
+}
+
 .painel-hero-kpis{position:relative;z-index:5;margin:-80px 20px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:13px;}
 /* ── Painel do Dono — HK KPI cards ── */
 .hk{background:#fff;border:1px solid rgba(213,213,208,.9);border-radius:15px;padding:16px 18px 15px;box-shadow:0 12px 28px rgba(18,18,20,.17),0 1px 3px rgba(18,18,20,.08);display:flex;flex-direction:column;min-height:114px;position:relative;}
@@ -3082,8 +3111,79 @@ function CustoSegmentos({contas,selYear,selMonth}){
 // ══════════════════
 // PAINEL DO DONO
 // ══════════════════
-function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear,setSelectedYear,selectedMonth,setSelectedMonth,header,nomeUnidadeAtiva}){
+function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,retiradas:retiradasProp,config,setConfig,selectedYear,setSelectedYear,selectedMonth,setSelectedMonth,header,nomeUnidadeAtiva,empresasDisponiveis,empresaAtiva,onTrocarUnidade}){
   const now=new Date();
+  // ── VISÃO DO PAINEL: unidade ativa (padrão) ou consolidado do cliente ──
+  // 'consolidado' é apenas um ESTADO DE VISUALIZAÇÃO: EMPRESA_ID nunca é alterado.
+  const[painelVisao,setPainelVisao]=useState('unidade');
+  const[consol,setConsol]=useState(null);        // dataset de todas as unidades ativas
+  const[consolCarregando,setConsolCarregando]=useState(false);
+  const[consolErro,setConsolErro]=useState('');
+
+  const unidadesAtivas=React.useMemo(()=>(empresasDisponiveis||[]).filter(u=>u&&u.id),[empresasDisponiveis]);
+  const idsUnidades=unidadesAtivas.map(u=>u.id).join(',');
+  // Ordem do seletor: Matriz primeiro (quando existir), demais em ordem alfabética.
+  // Nenhum nome é reescrito — usa empresas.nome como está.
+  const unidadesHero=React.useMemo(()=>{
+    const norm=s=>String(s||'').trim().toLowerCase();
+    const matriz=unidadesAtivas.filter(u=>norm(u.nome)==='matriz');
+    const resto=unidadesAtivas.filter(u=>norm(u.nome)!=='matriz')
+      .sort((a,b)=>String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR'));
+    return matriz.concat(resto);
+  },[unidadesAtivas]);
+
+  // Ao trocar de cliente a lista muda: sai do consolidado e descarta o dataset anterior,
+  // para nenhum número do cliente antigo sobreviver na tela.
+  useEffect(()=>{setPainelVisao('unidade');setConsol(null);setConsolErro('');},[idsUnidades]);
+
+  // Carregamento consolidado — camada MÍNIMA e local do Painel. Não altera loadS; o resto
+  // do sistema continua single-unit. Guard de corrida no mesmo padrão já usado no projeto.
+  useEffect(()=>{
+    if(painelVisao!=='consolidado'){setConsol(null);return;}
+    const ids=idsUnidades?idsUnidades.split(','):[];
+    if(!ids.length){setConsol(null);return;}
+    let cancelado=false;
+    setConsolCarregando(true);setConsolErro('');
+    (async()=>{
+      try{
+        const[ent,con,div,ret,cfg]=await Promise.all([
+          fetchAllPages((f,t)=>supabase.from('entradas').select('*').in('empresa_id',ids).order('id',{ascending:true}).range(f,t),'painel:consolidado:entradas'),
+          fetchAllPages((f,t)=>supabase.from('contas').select('*').in('empresa_id',ids).order('id',{ascending:true}).range(f,t),'painel:consolidado:contas'),
+          fetchAllPages((f,t)=>supabase.from('dividas').select('*').in('empresa_id',ids).order('id',{ascending:true}).range(f,t),'painel:consolidado:dividas'),
+          fetchAllPages((f,t)=>supabase.from('retiradas').select('*').in('empresa_id',ids).order('id',{ascending:true}).range(f,t),'painel:consolidado:retiradas'),
+          supabase.from('config').select('*').in('empresa_id',ids),
+        ]);
+        if(cancelado)return;
+        if(cfg&&cfg.error)throw cfg.error;
+        // Merge de contas POR UNIDADE e só depois concatenado: mergeContasComParcelas
+        // deduplica fixas por descrição+mês, então um merge global faria uma Fixa de mesma
+        // descrição em unidades diferentes suprimir a outra. Mesma abordagem da Projeção.
+        const contasMerge=[];
+        ids.forEach(id=>{
+          contasMerge.push(...mergeContasComParcelas(
+            (con||[]).filter(r=>r.empresa_id===id),
+            (div||[]).filter(r=>r.empresa_id===id)));
+        });
+        const configs={};
+        (((cfg&&cfg.data)||[])).forEach(c=>{if(c&&c.empresa_id)configs[c.empresa_id]=c;});
+        setConsol({ids,entradas:ent||[],contas:contasMerge,dividas:div||[],retiradas:ret||[],configs});
+      }catch(err){
+        if(cancelado)return;
+        console.error('Erro ao carregar o consolidado do Painel:',err);
+        setConsolErro('Não foi possível carregar a visão consolidada.');
+        setConsol(null);
+      }finally{if(!cancelado)setConsolCarregando(false);}
+    })();
+    return()=>{cancelado=true;};
+  },[painelVisao,idsUnidades]);
+
+  // Dataset efetivo. As constantes abaixo SOMBREIAM os props, então todo o cálculo do Painel
+  // a seguir permanece exatamente como está — só a fonte muda conforme a visão.
+  const ehConsolidado=painelVisao==='consolidado'&&!!consol;
+  const entradas=ehConsolidado?consol.entradas:entradasProp;
+  const contas=ehConsolidado?consol.contas:contasProp;
+  const dividas=ehConsolidado?consol.dividas:dividasProp;
+  const retiradas=ehConsolidado?consol.retiradas:retiradasProp;
   // Alias locais para manter o código existente legível — sem useState próprio.
   const selYear=selectedYear;
   const selMonth=selectedMonth;
@@ -3144,8 +3244,43 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
   //  • Manual por mês: se o usuário cadastrou uma meta financeira manual para
   //    este mês/ano (config.metasManuaisPorMes["YYYY-MM"]), ela tem prioridade.
   //    Permite simular meses futuros antes de existir entrada cadastrada.
-  const metaPercentual=typeof config.metaPagamentoPercentual==='number'?config.metaPagamentoPercentual:85;
-  const metaInfo=getMetaDiariaEfetiva(mediaDiariaEnt,metaPercentual,config,selYear,selMonth);
+  // Percentual da unidade ativa (comportamento atual, inalterado).
+  const metaPctUnidade=typeof config.metaPagamentoPercentual==='number'?config.metaPagamentoPercentual:85;
+  // No CONSOLIDADO: se todas as unidades ativas usam o mesmo percentual, ele vale; se
+  // divergirem, cai no fallback 85 que o sistema já aplica quando a config está vazia.
+  // Regra aprovada — sem média, sem ponderação, sem "config da Matriz".
+  const metaPctConsolidado=React.useMemo(()=>{
+    if(!ehConsolidado)return null;
+    const vals=(consol.ids||[]).map(id=>{
+      const c=consol.configs[id];
+      return c&&typeof c.metaPagamentoPercentual==='number'?c.metaPagamentoPercentual:85;
+    });
+    if(!vals.length)return 85;
+    return vals.every(v=>v===vals[0])?vals[0]:85;
+  },[ehConsolidado,consol]);
+  const metaPercentual=ehConsolidado?metaPctConsolidado:metaPctUnidade;
+
+  // Meta Diária de Pagamento no consolidado = soma da meta EFETIVA de cada unidade (manual
+  // quando a unidade tiver uma cadastrada, senão a automática dela). Cada unidade mantém a
+  // própria verdade; o consolidado é o total. A edição manual fica desabilitada nessa visão.
+  const metaConsolidada=React.useMemo(()=>{
+    if(!ehConsolidado)return null;
+    let soma=0,algumManual=false;
+    (consol.ids||[]).forEach(id=>{
+      const totU=(consol.entradas||[])
+        .filter(e=>e&&e.empresa_id===id&&e.data>=mStart&&e.data<=mEnd)
+        .reduce((s,e)=>s+projNum(e.total),0);
+      const mediaU=(totU>0&&diasCorridosBase>0)?totU/diasCorridosBase:0;
+      const cfgU=consol.configs[id]||{};
+      const pctU=typeof cfgU.metaPagamentoPercentual==='number'?cfgU.metaPagamentoPercentual:85;
+      const infoU=getMetaDiariaEfetiva(mediaU,pctU,cfgU,selYear,selMonth);
+      soma+=projNum(infoU.valor);
+      if(infoU.isManual)algumManual=true;
+    });
+    return{valor:soma,isManual:algumManual,chaveMes:chaveCompetencia(selYear,selMonth)};
+  },[ehConsolidado,consol,mStart,mEnd,diasCorridosBase,selYear,selMonth]);
+
+  const metaInfo=ehConsolidado?metaConsolidada:getMetaDiariaEfetiva(mediaDiariaEnt,metaPercentual,config,selYear,selMonth);
   const metaDiariaPagamento=metaInfo.valor;
   const metaIsManual=metaInfo.isManual;
   const chaveMesAtual=metaInfo.chaveMes;
@@ -3174,6 +3309,9 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
   const[fatiaPct,setFatiaPct]=useState(metaPercentual);
   useEffect(()=>{setFatiaPct(metaPercentual);},[metaPercentual]);
   const persistirFatia=()=>{
+    // No CONSOLIDADO o slider vale só para a sessão: recalcula tudo em memória e NÃO grava
+    // em unidade nenhuma (decisão aprovada — evita escrita em massa sobre configs individuais).
+    if(ehConsolidado)return;
     if(fatiaPct===metaPercentual)return;
     setConfig({...config,metaPagamentoPercentual:fatiaPct});
   };
@@ -3190,7 +3328,10 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
   const entMesPrev=entradas.filter(e=>e.data>=mStartPrev&&e.data<=mEndPrev);
   const totalEntPrev=entMesPrev.reduce((s,e)=>s+e.total,0);
   const deltaEntPct=totalEntPrev>0?((totalEnt-totalEntPrev)/totalEntPrev*100):null;
-  const saldoAtual=config.saldoInicial;
+  // No consolidado o saldo inicial é a soma das unidades (mesmo critério do Portfólio).
+  const saldoAtual=ehConsolidado
+    ?(consol.ids||[]).reduce((t,id)=>t+projNum((consol.configs[id]||{}).saldoInicial),0)
+    :config.saldoInicial;
   const saldoProj=saldoAtual+totalEnt-totalSaiMes;
   const semaMap={};
   contasPend.forEach(c=>{const s=weekOf(c.vencimento);semaMap[s]=(semaMap[s]||0)+c.valor;});
@@ -3366,12 +3507,28 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
         <div className="painel-hero">
           <img className="painel-hero-img" src={BANNER_SRC} alt="Corredor do Mercado Zanon"/>
           <div className="painel-hero-shade"></div>
-          <div className="painel-hero-chip"><span className="dot"></span>{mesLabel}</div>
-          <div className="painel-hero-prx" title="PRX — Gestão de recebíveis" aria-label="PRX">
-            <img src={PRX_LOGO_SRC} alt="PRX"/>
+          {/* SELETOR DE VISÃO — ocupa a região antes usada pelo chip do mês e pela logo PRX.
+              Consolidado primeiro, depois Matriz (quando existir) e as demais em ordem
+              alfabética. Clicar numa unidade reutiliza o trocarEmpresa já existente. */}
+          <div className="prx-owner-unit-switcher" role="group" aria-label="Visão do painel">
+            <button type="button"
+              className={`prx-owner-unit-btn${ehConsolidado?' active':''}`}
+              onClick={()=>setPainelVisao('consolidado')}
+              aria-pressed={ehConsolidado}
+              disabled={consolCarregando}>
+              {consolCarregando?'Carregando…':'Consolidado'}
+            </button>
+            {unidadesHero.map(u=>(
+              <button type="button" key={u.id}
+                className={`prx-owner-unit-btn${(!ehConsolidado&&empresaAtiva&&empresaAtiva.id===u.id)?' active':''}`}
+                onClick={()=>{setPainelVisao('unidade');if(onTrocarUnidade)onTrocarUnidade(u.id);}}
+                aria-pressed={!ehConsolidado&&!!empresaAtiva&&empresaAtiva.id===u.id}>
+                {u.nome}
+              </button>
+            ))}
           </div>
           <div className="painel-hero-body">
-            <div className="painel-hero-eyebrow">{`${String(nomeUnidadeAtiva||'Unidade').toUpperCase()} · Visão do Dono`}</div>
+            <div className="painel-hero-eyebrow">{`${ehConsolidado?'CONSOLIDADO':String(nomeUnidadeAtiva||'Unidade').toUpperCase()} · Visão do Dono`}</div>
             <div className="painel-hero-title">A saúde financeira do mês em <b>um só olhar</b></div>
             <div className="painel-hero-sub">Entradas, saídas, médias diárias e a meta de pagamento — tudo o que move o caixa, reunido no topo do painel.</div>
           </div>
@@ -3432,7 +3589,7 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
                 Meta Diária de Pagamento
                 {metaIsManual&&<span className="pc-meta-badge" title={`Meta manual para ${mesLabel}`}>Manual</span>}
               </div>
-              <button
+              {!ehConsolidado&&<button
                 type="button"
                 className="pc-meta-btn"
                 onClick={()=>{
@@ -3443,12 +3600,12 @@ function Painel({entradas,contas,dividas,retiradas,config,setConfig,selectedYear
                 title={`Definir meta diária manual para ${mesLabel}`}
               >
                 Manual
-              </button>
+              </button>}
             </div>
             <div className="hk-value">{fmtFull(metaDiariaPagamento)}</div>
-            <div className="hk-sub">{metaIsManual?`Meta manual — ${mesLabel}`:`${metaPercentual}% da média diária`}</div>
+            <div className="hk-sub">{ehConsolidado?'Soma das metas das unidades':(metaIsManual?`Meta manual — ${mesLabel}`:`${metaPercentual}% da média diária`)}</div>
 
-          {showMetaManual&&(
+          {showMetaManual&&!ehConsolidado&&(
             <div className="pc-meta-popover">
               <div className="pc-meta-popover-title">Meta manual — {mesLabel}</div>
               <div className="pc-meta-popover-row">
@@ -9590,7 +9747,7 @@ function App(){
       </header>
       <div className="page-wrap">
         {activeTab!=='painel'&&pageHeaderEl}
-        {activeTab==='painel'&&<Painel entradas={entradas} contas={contasComParcelas} dividas={dividas} retiradas={retiradas} config={config} setConfig={setConfig} selectedYear={selectedYear} setSelectedYear={setSelectedYear} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} header={pageHeaderEl} nomeUnidadeAtiva={empresaAtiva?.nome}/>}
+        {activeTab==='painel'&&<Painel entradas={entradas} contas={contasComParcelas} dividas={dividas} retiradas={retiradas} config={config} setConfig={setConfig} selectedYear={selectedYear} setSelectedYear={setSelectedYear} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} header={pageHeaderEl} nomeUnidadeAtiva={empresaAtiva?.nome} empresasDisponiveis={empresasDisponiveis} empresaAtiva={empresaAtiva} onTrocarUnidade={trocarEmpresa}/>}
         {activeTab==='entradas'&&<Entradas entradas={entradas} setEntradas={setEntradas} onRecarregarEntradas={recarregarEntradas} contas={contasComParcelas} dividas={dividas} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
         {activeTab==='contas'&&<Contas contas={contas} setContas={setContas} onContaCriar={onContaCriar} onContaEditar={onContaEditar} onContaExcluir={onContaExcluir} onContasImportar={onContasImportar} contasComParcelas={contasComParcelas} mediaDiariaEntrada={mediaDiaria} dividas={dividas} setDividas={setDividas} onDividaEditar={onDividaEditar} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
         {activeTab==='fornecedores'&&<Fornecedores contas={contasComParcelas} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
