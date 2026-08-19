@@ -676,8 +676,9 @@ textarea{resize:vertical;min-height:58px;}
 .prx-owner-cal-drow{display:flex;justify-content:space-between;align-items:center;}
 .prx-owner-cal-dnum{font-weight:800;font-size:15px;}
 .prx-owner-cal-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px;}
-.prx-owner-cal-badge.real{background:#eee;color:#666;}
-.prx-owner-cal-badge.proj{background:#eaecff;color:#6b7cff;}
+.prx-owner-cal-badge.real{background:#ffece0;color:#c2410c;}
+.prx-owner-cal-badge.proj-fut{background:#f1ebff;color:#7c3aed;}
+.prx-owner-cal-badge.proj-pass{background:#fff5d6;color:#a16207;}
 .prx-owner-cal-entra{font-size:10.5px;color:#8a8781;margin-top:6px;}
 .prx-owner-cal-entra b{color:#2e9e5b;font-weight:800;}
 .prx-owner-cal-pgrow{display:flex;justify-content:space-between;gap:5px;margin-top:7px;font-size:9.5px;}
@@ -2119,6 +2120,11 @@ const entImpValor=v=>{
   return Number.isFinite(n)?Math.round(n*100)/100:null;
 };
 
+// Célula vazia = modalidade NÃO INFORMADA (grava NULL), diferente de 0 explícito na planilha.
+// Precisa ser um teste próprio: entImpValor devolve 0 para vazio e null para não-numérico,
+// então sem isto "vazio" e "lixo" ficariam indistinguíveis.
+const entImpVazio=v=>v==null||String(v).trim()==='';
+
 // Detecta a linha de fechamento do arquivo (não é uma Entrada diária).
 const entImpEhTotalGeral=v=>/^TOTAL\s*GERAL$/.test(entImpNorm(v));
 
@@ -2156,17 +2162,21 @@ const entImpParse=(aoa,datasExistentes)=>{
     }
     const data=entImpData(bruta);
     if(!data){res.linhas.push({linha:nLinha,status:'invalida',motivo:'Data inválida ou não reconhecida.',dataBruta:String(bruta==null?'':bruta)});return;}
-    const debito=entImpValor(r[ix.DEBITO]),credito=entImpValor(r[ix.CREDITO]);
-    const voucher=entImpValor(r[ix.VOUCHER]),pix=entImpValor(r[ix.PIX]);
-    const totalArq=entImpValor(r[ix.TOTAL]);
-    if([debito,credito,voucher,pix].some(v=>v===null)){
+    // Não-numérico invalida a linha; vazio apenas não informa a modalidade (vira NULL).
+    const naoNumerico=c=>!entImpVazio(c)&&entImpValor(c)===null;
+    if([ix.DEBITO,ix.CREDITO,ix.VOUCHER,ix.PIX].some(j=>naoNumerico(r[j]))){
       res.linhas.push({linha:nLinha,data,status:'invalida',motivo:'Há valor não numérico entre as modalidades.'});return;
     }
-    if([debito,credito,voucher,pix].some(v=>v<0)){
+    const celula=c=>entImpVazio(c)?null:entImpValor(c);
+    const debito=celula(r[ix.DEBITO]),credito=celula(r[ix.CREDITO]);
+    const voucher=celula(r[ix.VOUCHER]),pix=celula(r[ix.PIX]);
+    const totalArq=entImpValor(r[ix.TOTAL]);
+    if([debito,credito,voucher,pix].some(v=>projNum(v)<0)){
       res.linhas.push({linha:nLinha,data,status:'invalida',motivo:'Valor negativo não é aceito.'});return;
     }
     // O valor da Entrada vem SEMPRE das modalidades; a coluna TOTAL só confere.
-    const total=Math.round((debito+credito+voucher+pix)*100)/100;
+    // NULL soma como zero aqui — é aritmética; a modalidade continua não informada.
+    const total=Math.round((projNum(debito)+projNum(credito)+projNum(voucher)+projNum(pix))*100)/100;
     if(totalArq!==null&&Math.abs(total-totalArq)>0.01){
       res.linhas.push({linha:nLinha,data,debito,credito,voucher,pix,total,totalArq,status:'invalida',
         motivo:`TOTAL divergente: planilha ${fmt(totalArq)} × soma das modalidades ${fmt(total)}.`});return;
@@ -2203,7 +2213,9 @@ const entImpResumo=res=>{
 const entImpParaEntrada=(l,prazosSel)=>({
   id:genId(),
   data:l.data,
-  dinheiro:0,pix:l.pix,debito:l.debito,credito:l.credito,voucher:l.voucher,outros:0,
+  // A planilha não tem colunas de Dinheiro e Outros: elas são NÃO INFORMADAS, não zero.
+  // Gravá-las como 0 marcaria o dia como fechado sem ninguém ter conferido o caixa.
+  dinheiro:null,pix:l.pix,debito:l.debito,credito:l.credito,voucher:l.voucher,outros:null,
   total:l.total,
   obs:'',
   voucherAntecipado:'nao',voucherDataReceb:'',
@@ -2343,107 +2355,242 @@ const calOrdinalDe=iso=>{
   return{weekday:d.getDay(),ordinal:Math.ceil(d.getDate()/7)};
 };
 
-// Referência histórica do MÊS ANTERIOR ao mês (ano,mes) informado, indexada por
-// (dia da semana × ocorrência ordinal) — nunca pelo número da data.
-// Também acumula a média por dia da semana, usada como fallback quando o mês
-// anterior não tem a n-ésima ocorrência (ex.: 5ª sexta contra um mês de 4 sextas).
-// Modalidades que admitem projeção histórica. Dinheiro e Outros NUNCA são projetados
-// (regra aprovada): só aparecem quando há venda real.
-const CAL_MOD_PROJETADAS=['debito','pix','credito','voucher'];
+// ── Modalidades: duas pernas que NUNCA se misturam ────────────────────────
+// CURTO PRAZO é o que a projeção histórica cobre. Crédito e Voucher ficam de fora
+// por decisão de arquitetura: eles já entram pela perna REAL, alocados na data de
+// recebimento por projDataRecebimento. Projetá-los também pela célula somaria o
+// mesmo dinheiro duas vezes no mesmo dia e destruiria a precisão da data — que é
+// justamente o valor do crédito. As cinco formas de CAL_MOD_COMPLETO decidem se um
+// dia está fechado; `outros` participa do caixa mas NÃO do critério de conclusão.
+const CAL_MOD_CURTO=['dinheiro','pix','debito','outros'];
+const CAL_MOD_RECEBIVEL=['credito','voucher'];
+const CAL_MOD_COMPLETO=['dinheiro','pix','debito','credito','voucher'];
+// Chave de unidade quando a linha não traz empresa_id (visão de unidade única / fixtures).
+const CAL_UNIDADE_PADRAO='__unica__';
 
-const calRefAnterior=(entradas,ano,mes)=>{
-  const py=mes===0?ano-1:ano,pm=mes===0?11:mes-1;
-  const ini=monthStart(py,pm),fim=monthEnd(py,pm);
+// Descritivo do card por estado. SOMENTE texto e cor — geometria, barra, grid e a régua
+// financeira verde/amarelo/vermelho do dia ficam intactas e são outra dimensão.
+const CAL_BADGE={
+  'real':        {cls:'real',      txt:'real', desc:'realizado'},
+  'proj-passado':{cls:'proj-pass', txt:'proj', desc:'projeção · falta fechar o dia'},
+  'proj-futuro': {cls:'proj-fut',  txt:'proj', desc:'projeção'},
+};
+
+// Janela móvel da projeção: 6 meses ANTERIORES ao mês da própria venda. Nunca o mês
+// exibido — nem seus dias passados, nem os preenchidos. Peso decrescente e monotônico
+// com a distância (mês -1 pesa 6, mês -6 pesa 1): os meses recentes mandam mais, sem
+// modelo estatístico, sem persistência, sem ajuste manual de resultado.
+const CAL_HIST_MESES=6;
+const CAL_PESO=dist=>CAL_HIST_MESES-dist+1;
+// Amostra suficiente para confiar na célula exata (weekday × ordinal). Abaixo disso a
+// célula é rala — caso típico da 5ª ocorrência — e degrada para weekday puro.
+const CAL_MIN_AMOSTRA=2;
+
+// "Informado" é null-aware: NULL/ausente = não informado; 0 = informado sem venda.
+// Nunca usar truthiness aqui — zero é falsy e zero é um dado legítimo.
+const calInformado=v=>v!==null&&v!==undefined&&v!=='';
+
+// Parser de campo monetário que PRESERVA a distinção NULL × 0. `parseNum` devolve 0 tanto
+// para "" quanto para "0" — usá-lo na gravação apagaria a diferença entre "ainda não
+// informei" e "informado, não houve venda nesta forma". As colunas são nullable no banco
+// (default 0 só se aplica a coluna OMITIDA; enviar null explícito grava NULL).
+const parseNumOuNull=v=>{const s=String(v==null?'':v).trim();return s===''?null:parseNum(s);};
+// Valor de modalidade pronto para um <input>: null vira campo em branco, 0 continua "0".
+const campoMonetario=v=>calInformado(v)?String(v):'';
+
+// Curto prazo de um dia histórico. Devolve null quando NENHUMA das quatro formas foi
+// informada: esse dia não vira observação. Zeros não são inventados para completar
+// amostra — um dia sem dado simplesmente não participa da média.
+const calCurtoPrazoDe=e=>{
+  if(!e)return null;
+  let soma=0,algum=false;
+  CAL_MOD_CURTO.forEach(f=>{if(!calInformado(e[f]))return;soma+=projNum(e[f]);algum=true;});
+  return algum?soma:null;
+};
+
+// Dia COMPLETO = as CINCO formas informadas (não-nulas). `outros` fora, por definição.
+const calDiaCompleto=e=>!!e&&CAL_MOD_COMPLETO.every(f=>calInformado(e[f]));
+
+// Curto prazo POR MODALIDADE de um dia. Cada forma tem prazo próprio, então o valor só pode
+// virar caixa depois de separado. NULL conta 0 aqui (é aritmética) — quem decide se o dia é
+// observação é calCurtoPrazoDe, que devolve null quando NADA foi informado.
+const calCurtoPrazoPorMod=e=>{
+  const out={};
+  CAL_MOD_CURTO.forEach(f=>{out[f]=e?projNum(e[f]):0;});
+  return out;
+};
+
+// Histórico ponderado do curto prazo, indexado por célula (weekday-ordinal) e por
+// weekday puro (fallback), acumulado POR MODALIDADE. Uma passada só: a distância em meses
+// vem da própria data. A referência é sempre ANTERIOR ao mês alvo — é isto que impede
+// agosto de alimentar agosto.
+// Somar as médias por modalidade dá exatamente a média do agregado (linearidade), então
+// separar por forma não altera o total projetado: só permite aplicar o D+X de cada uma.
+const calHistCurtoPrazo=(entradas,ano,mes)=>{
   const porOrd={},porWd={};
+  const acumula=(mapa,chave,mods,peso)=>{
+    if(!mapa[chave]){mapa[chave]={soma:{},peso:0,n:0};CAL_MOD_CURTO.forEach(f=>{mapa[chave].soma[f]=0;});}
+    CAL_MOD_CURTO.forEach(f=>{mapa[chave].soma[f]+=mods[f]*peso;});
+    mapa[chave].peso+=peso;mapa[chave].n+=1;
+  };
   (entradas||[]).forEach(e=>{
-    if(!e||!projDataValida(e.data)||e.data<ini||e.data>fim)return;
+    if(!e||!projDataValida(e.data))return;
+    const y=Number(e.data.slice(0,4)),m=Number(e.data.slice(5,7))-1;
+    const dist=(ano-y)*12+(mes-m);
+    if(dist<1||dist>CAL_HIST_MESES)return;   // 0 = mês exibido (proibido); >6 = fora da janela
+    if(calCurtoPrazoDe(e)===null)return;     // dia sem nada informado não é amostra
+    const peso=CAL_PESO(dist);
+    const mods=calCurtoPrazoPorMod(e);
     const{weekday,ordinal}=calOrdinalDe(e.data);
-    const chave=weekday+'-'+ordinal;
-    if(!porOrd[chave])porOrd[chave]={};
-    if(!porWd[weekday])porWd[weekday]={n:0};
-    CAL_MOD_PROJETADAS.forEach(f=>{
-      const v=projNum(e[f]);
-      porOrd[chave][f]=(porOrd[chave][f]||0)+v;
-      porWd[weekday][f]=(porWd[weekday][f]||0)+v;
-    });
-    porWd[weekday].n+=1;
+    acumula(porOrd,weekday+'-'+ordinal,mods,peso);
+    acumula(porWd,weekday,mods,peso);
   });
   return{porOrd,porWd};
 };
 
-// Venda projetada para uma data futura, pela ocorrência ordinal equivalente do mês
-// anterior. Fallback aprovado: média das ocorrências daquele MESMO dia da semana no mês
-// anterior. Devolve a VENDA — a conversão em caixa (D+X) é feita por quem chama.
-const calVendaProjetada=(ref,iso)=>{
+// Curto prazo projetado de uma data, POR MODALIDADE: média ponderada da célula exata quando
+// há amostra suficiente; senão, do mesmo dia da semana dentro da MESMA janela. Devolve também
+// a fonte, para auditoria.
+const calProjCurtoPrazo=(hist,iso)=>{
   const{weekday,ordinal}=calOrdinalDe(iso);
-  const exata=ref.porOrd[weekday+'-'+ordinal];
-  const out={fallback:false};
-  if(exata){
-    CAL_MOD_PROJETADAS.forEach(f=>{out[f]=projNum(exata[f]);});
-    return out;
-  }
-  const m=ref.porWd[weekday];
-  if(m&&m.n>0){
-    out.fallback=true;
-    CAL_MOD_PROJETADAS.forEach(f=>{out[f]=projNum(m[f])/m.n;});
-    return out;
-  }
-  CAL_MOD_PROJETADAS.forEach(f=>{out[f]=0;});
-  return out;
+  const media=(m,fonte)=>{
+    const valores={};
+    CAL_MOD_CURTO.forEach(f=>{valores[f]=m.soma[f]/m.peso;});
+    return{valores,fonte,n:m.n};
+  };
+  const cel=hist.porOrd[weekday+'-'+ordinal];
+  if(cel&&cel.n>=CAL_MIN_AMOSTRA&&cel.peso>0)return media(cel,'celula');
+  const wd=hist.porWd[weekday];
+  if(wd&&wd.peso>0)return media(wd,'weekday');
+  const zero={};CAL_MOD_CURTO.forEach(f=>{zero[f]=0;});
+  return{valores:zero,fonte:'vazio',n:0};
 };
 
 // ══════════════════════════════════════════════════════════════════════════
 // SÉRIE ÚNICA DE ENTRADA DE CAIXA DO MÊS — fonte de verdade do Placar E do
-// Calendário. Não é um segundo motor: a conversão venda → caixa das vendas REAIS
-// continua sendo feita por projDataRecebimento, e a projeção reusa os helpers
-// ordinais acima. Nada aqui é persistido.
+// Calendário. Duas pernas independentes, somadas uma única vez por dia:
 //
-// Precedência: VENDA REAL > VENDA PROJETADA, decidida pela DATA DA VENDA.
+//   entra(D) = curtoPrazo(D) + creditoReal(D)
 //
-// Janela de origem: recua o maior prazo configurado entre as modalidades projetadas,
-// porque uma venda projetada do mês anterior pode virar caixa dentro deste mês
-// (ex.: crédito D+30 vendido em 20/07 entra em 19/08). Sem esse recuo o mês
-// apareceria truncado. A referência ordinal é sempre a do mês ANTERIOR ao da própria
-// venda — por isso o cache por competência, e não uma referência única.
+//   creditoReal(D) — crédito/voucher de vendas REAIS cuja data de recebimento cai em D,
+//                    pelo motor existente (projDataRecebimento: antecipação › prazo
+//                    congelado › prazo global). INALTERADO.
+//   curtoPrazo(D)  — se o dia está COMPLETO, o realizado informado do próprio dia;
+//                    senão, a projeção histórica da célula. Nunca o parcial.
+//
+// Estado do dia: 'real' (completo) · 'proj-passado' (D<=hoje, incompleto) ·
+// 'proj-futuro' (D>hoje, incompleto). Nada aqui é persistido.
 // ══════════════════════════════════════════════════════════════════════════
-const buildCaixaProjetadoMes=({entradas,ano,mes,prazos,hoje})=>{
+const calCaixaUnidade=({entradas,ano,mes,prazos,hoje})=>{
   const ini=monthStart(ano,mes),fim=monthEnd(ano,mes);
   const porDia={};
-  for(let d=ini;d<=fim;d=addDays(d,1))porDia[d]={data:d,real:0,projetado:0,entra:0};
+  for(let d=ini;d<=fim;d=addDays(d,1))
+    porDia[d]={data:d,real:0,projetado:0,entra:0,completo:false,estado:'proj-futuro',fonte:'',credito:0};
   const dentro=iso=>Object.prototype.hasOwnProperty.call(porDia,iso);
 
-  // 1) Vendas REAIS → caixa, pelo motor existente (antecipação › prazo congelado › global).
-  const datasReais=new Set();
+  // 1) CRÉDITO/VOUCHER REAIS → data de recebimento. Única porta de entrada dessas duas
+  //    modalidades: elas não são projetadas em lugar nenhum, logo não há como duplicar.
+  const porData={};
   (entradas||[]).forEach(e=>{
     if(!e||!projDataValida(e.data))return;
-    datasReais.add(e.data);
-    PROJ_MODALIDADES.forEach(forma=>{
+    porData[e.data]=e;
+    CAL_MOD_RECEBIVEL.forEach(forma=>{
       const v=projNum(e[forma]);
       if(v<=0)return;
       const dr=projDataRecebimento(e,forma,prazos);
-      if(projDataValida(dr)&&dentro(dr)){porDia[dr].real+=v;porDia[dr].entra+=v;}
+      if(projDataValida(dr)&&dentro(dr)){porDia[dr].real+=v;porDia[dr].entra+=v;porDia[dr].credito+=v;}
     });
   });
 
-  // 2) Vendas PROJETADAS para dias FUTUROS sem venda real, convertidas em caixa pelo
-  //    prazo ATUAL da modalidade (projeção não tem prazo congelado).
-  const refs={};
-  const refDe=iso=>{
-    const y=Number(iso.slice(0,4)),m=Number(iso.slice(5,7))-1,k=y+'-'+m;
-    if(!refs[k])refs[k]=calRefAnterior(entradas,y,m);
-    return refs[k];
-  };
+  // 2) CURTO PRAZO em REGIME DE CAIXA. A venda do dia S vira caixa em S+prazo da modalidade
+  //    — Dinheiro/PIX D+0, Débito/Outros D+X — nas DUAS pernas, real e projetada, para que o
+  //    card seja sempre caixa e nunca uma régua misturada. Nas vendas REAIS o alvo sai de
+  //    projDataRecebimento, que honra o prazo congelado em `prazos_recebimento`; na projeção
+  //    não existe prazo congelado, então vale o prazo global vigente.
   const prazoDe=f=>Math.max(0,projNum(prazos&&prazos[f]));
-  const maxPrazo=Math.max(0,...CAL_MOD_PROJETADAS.map(prazoDe));
+  // A janela de vendas recua o maior prazo de curto prazo — inclusive os congelados, senão
+  // uma Entrada importada com prazo maior entraria truncada no início do mês.
+  let maxPrazo=Math.max(0,...CAL_MOD_CURTO.map(prazoDe));
+  (entradas||[]).forEach(e=>{
+    const p=e&&e.prazos_recebimento;
+    if(!p||typeof p!=='object')return;
+    CAL_MOD_CURTO.forEach(f=>{if(p[f]!=null&&Number.isFinite(Number(p[f])))maxPrazo=Math.max(maxPrazo,projNum(p[f]));});
+  });
+  // Histórico por competência da VENDA: uma venda de 31/07 se projeta contra fev–jul,
+  // não contra a janela de agosto. Cache para não reconstruir a cada dia.
+  const hists={};
+  const histDe=iso=>{
+    const y=Number(iso.slice(0,4)),m=Number(iso.slice(5,7))-1,k=y+'-'+m;
+    if(!hists[k])hists[k]=calHistCurtoPrazo(entradas,y,m);
+    return hists[k];
+  };
   for(let s=addDays(ini,-maxPrazo);s<=fim;s=addDays(s,1)){
-    if(s<=hoje)continue;        // só dia estritamente futuro é projetável
-    if(datasReais.has(s))continue; // REAL prevalece — nunca sobrepor venda registrada
-    const vp=calVendaProjetada(refDe(s),s);
-    CAL_MOD_PROJETADAS.forEach(f=>{
-      const v=projNum(vp[f]);
-      if(v<=0)return;
-      const alvo=addDays(s,prazoDe(f));
-      if(dentro(alvo)){porDia[alvo].projetado+=v;porDia[alvo].entra+=v;}
+    const e=porData[s];
+    const completo=calDiaCompleto(e);
+    if(completo){
+      const mods=calCurtoPrazoPorMod(e);
+      CAL_MOD_CURTO.forEach(f=>{
+        if(mods[f]<=0)return;
+        const dr=projDataRecebimento(e,f,prazos);
+        if(projDataValida(dr)&&dentro(dr)){porDia[dr].real+=mods[f];porDia[dr].entra+=mods[f];}
+      });
+    }else{
+      const p=calProjCurtoPrazo(histDe(s),s);
+      CAL_MOD_CURTO.forEach(f=>{
+        const v=p.valores[f];
+        if(!(v>0))return;
+        const alvo=addDays(s,prazoDe(f));
+        if(dentro(alvo)){porDia[alvo].projetado+=v;porDia[alvo].entra+=v;}
+      });
+    }
+  }
+
+  // 3) ESTADO DO CARD — decidido pelo dia da PRÓPRIA VENDA, não pelo caixa que chega nele.
+  //    O badge responde "o dia D foi fechado?", que é a pergunta que o dono faz ao olhar.
+  Object.keys(porDia).forEach(iso=>{
+    const e=porData[iso];
+    const dia=porDia[iso];
+    if(calDiaCompleto(e)){dia.completo=true;dia.estado='real';dia.fonte='real';}
+    else{dia.estado=iso<=hoje?'proj-passado':'proj-futuro';dia.fonte=calProjCurtoPrazo(histDe(iso),iso).fonte;}
+  });
+  return porDia;
+};
+
+// Agregador. No CONSOLIDADO o prop `entradas` é a concatenação plana das unidades, e
+// tratá-la como um bloco só produziria dois erros: (a) `porData[e.data]` guardaria apenas
+// a ÚLTIMA unidade de cada data, e (b) a célula histórica teria uma observação por unidade,
+// devolvendo a MÉDIA entre unidades em vez do total consolidado. Por isso cada unidade gera
+// a própria série — com os próprios meses válidos — e só depois as séries são somadas.
+// Mesmo critério já usado para contas (mergeContasComParcelas por unidade).
+// Um dia consolidado só é REAL quando TODAS as unidades fecharam aquele dia; basta uma
+// incompleta para o dia continuar sendo projeção.
+// `prazosDe(empresaId)` é opcional e existe para o CONSOLIDADO: cada unidade pode ter o
+// próprio prazo de débito, então cada série é construída com o prazo da SUA unidade. Sem
+// isso o consolidado aplicaria o prazo da unidade ativa a todas. Omitido, vale `prazos`.
+const buildCaixaProjetadoMes=({entradas,ano,mes,prazos,hoje,prazosDe})=>{
+  const prazoDaUnidade=u=>(typeof prazosDe==='function'&&u!==CAL_UNIDADE_PADRAO&&prazosDe(u))||prazos;
+  const grupos={};
+  (entradas||[]).forEach(e=>{
+    const u=(e&&e.empresa_id)||CAL_UNIDADE_PADRAO;
+    (grupos[u]=grupos[u]||[]).push(e);
+  });
+  const unidades=Object.keys(grupos);
+  const series=unidades.length?unidades.map(u=>calCaixaUnidade({entradas:grupos[u],ano,mes,prazos:prazoDaUnidade(u),hoje}))
+                              :[calCaixaUnidade({entradas:[],ano,mes,prazos,hoje})];
+
+  const porDia=series[0];
+  if(series.length>1){
+    Object.keys(porDia).forEach(iso=>{
+      const dia=porDia[iso];
+      let completo=dia.completo;
+      for(let i=1;i<series.length;i++){
+        const o=series[i][iso];
+        dia.real+=o.real;dia.projetado+=o.projetado;dia.credito+=o.credito;dia.entra+=o.entra;
+        completo=completo&&o.completo;
+      }
+      dia.completo=completo;
+      dia.estado=completo?'real':(iso<=hoje?'proj-passado':'proj-futuro');
+      dia.fonte='consolidado';
     });
   }
 
@@ -2451,6 +2598,7 @@ const buildCaixaProjetadoMes=({entradas,ano,mes,prazos,hoje})=>{
   Object.keys(porDia).forEach(k=>{
     porDia[k].real=projCents(porDia[k].real);
     porDia[k].projetado=projCents(porDia[k].projetado);
+    porDia[k].credito=projCents(porDia[k].credito);
     porDia[k].entra=projCents(porDia[k].entra);
     total+=porDia[k].entra;
   });
@@ -2469,6 +2617,41 @@ const fornNome = c =>
 // Synchronous localStorage — only for keys not backed by Supabase (e.g. zanon_prazos)
 const loadLocalS = k    => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
 const saveLocalS = (k, d) => { try { localStorage.setItem(k, JSON.stringify(d)); } catch {} };
+
+// ── PRAZOS DE RECEBIMENTO — fonte ÚNICA, por UNIDADE ─────────────────────────
+// Antes existiam TRÊS leitores independentes de 'zanon_prazos' (Painel, Entradas e
+// Projeção), dois deles com useMemo de dependência vazia: mudar o prazo não repercutia
+// em lugar nenhum até recarregar a página, e o valor era global do navegador — a mesma
+// configuração valia para todas as unidades. Agora a chave é por empresa e a leitura
+// passa por estes dois helpers; quem precisa do valor recebe por prop.
+// A chave legada sem sufixo continua sendo lida como semente na primeira vez de cada
+// unidade, para não perder a configuração de quem já usava o sistema.
+const PRAZOS_LS_BASE='zanon_prazos';
+const prazosChave=empresaId=>empresaId?PRAZOS_LS_BASE+':'+empresaId:PRAZOS_LS_BASE;
+
+// Só aproveita chaves conhecidas com inteiro >= 0. Uma chave inválida é descartada
+// individualmente — o resto do objeto continua valendo e nada estoura.
+const prazoValido=v=>{const n=Number(v);return v!==null&&v!==''&&Number.isInteger(n)&&n>=0;};
+const sanitizarPrazos=obj=>{
+  const out={};
+  if(obj&&typeof obj==='object'&&!Array.isArray(obj))
+    Object.keys(DEFAULT_PRAZOS).forEach(f=>{if(prazoValido(obj[f]))out[f]=Number(obj[f]);});
+  return out;
+};
+
+// FONTE OFICIAL: config.prazos_recebimento (Supabase), da própria unidade. O localStorage
+// sobrevive APENAS como semente de migração: é lido quando a config ainda não traz nenhuma
+// chave válida, e nunca sobrepõe o que veio do banco. Merge com DEFAULT_PRAZOS, então a
+// config não precisa persistir todas as modalidades.
+const carregarPrazos=(config,empresaId)=>{
+  const oficial=sanitizarPrazos(config&&config.prazos_recebimento);
+  if(Object.keys(oficial).length)return{...DEFAULT_PRAZOS,...oficial};
+  const legado=sanitizarPrazos(loadLocalS(prazosChave(empresaId))||loadLocalS(PRAZOS_LS_BASE));
+  return{...DEFAULT_PRAZOS,...legado};
+};
+// Débito: opções oferecidas ao dono. O motor aceita qualquer inteiro >= 0; esta lista só
+// define o que a interface expõe.
+const PRAZO_DEBITO_OPCOES=[0,1,2];
 
 // Busca TODAS as páginas de uma consulta Supabase via .range(), contornando o limite padrão
 // de linhas por resposta da API (ex.: 1000) — sem isso, tabelas que crescem além desse limite
@@ -3116,7 +3299,7 @@ function CustoSegmentos({contas,selYear,selMonth}){
 // ══════════════════
 // PAINEL DO DONO
 // ══════════════════
-function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,retiradas:retiradasProp,config,setConfig,selectedYear,setSelectedYear,selectedMonth,setSelectedMonth,header,nomeUnidadeAtiva,empresasDisponiveis,empresaAtiva,onTrocarUnidade}){
+function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,retiradas:retiradasProp,config,setConfig,selectedYear,setSelectedYear,selectedMonth,setSelectedMonth,header,nomeUnidadeAtiva,empresasDisponiveis,empresaAtiva,onTrocarUnidade,prazos:prazosProp}){
   const now=new Date();
   // ── VISÃO DO PAINEL: unidade ativa (padrão) ou consolidado do cliente ──
   // 'consolidado' é apenas um ESTADO DE VISUALIZAÇÃO: EMPRESA_ID nunca é alterado.
@@ -3298,13 +3481,27 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
   // prazo congelado em `prazos_recebimento`. Nenhum segundo motor de recebimento.
   // Varre TODAS as entradas da unidade (o prop traz o histórico completo, sem filtro de data)
   // porque uma venda de julho no crédito D+30 é caixa de agosto.
-  const prazosPlacar=React.useMemo(()=>({...DEFAULT_PRAZOS,...(loadLocalS('zanon_prazos')||{})}),[]);
+  // Fonte única: o prazo vem do App (config da unidade ativa) e muda o calendário na hora.
+  const prazosPlacar=prazosProp||DEFAULT_PRAZOS;
+  // CONSOLIDADO — cada unidade responde com o prazo da SUA config, já carregada em
+  // consol.configs. Nunca aplicar o prazo da unidade ativa às demais.
+  const prazosPorUnidade=React.useMemo(()=>{
+    if(!ehConsolidado)return null;
+    const cache={};
+    return id=>{
+      if(!id)return null;
+      if(!cache[id])cache[id]=carregarPrazos((consol.configs||{})[id],id);
+      return cache[id];
+    };
+  },[ehConsolidado,consol]);
   // SÉRIE ÚNICA — mesma fonte para o Placar e para o Calendário Inteligente. Antes o Placar
   // somava só recebíveis de vendas JÁ realizadas, enquanto o Calendário também projetava o
   // futuro: duas respostas para a mesma pergunta. Agora existe uma série só.
   const caixaProjMes=React.useMemo(()=>buildCaixaProjetadoMes({
     entradas,ano:selYear,mes:selMonth,prazos:prazosPlacar,hoje:todayStr,
-  }),[entradas,selYear,selMonth,prazosPlacar,todayStr]);
+    // No consolidado cada unidade entra com o SEU prazo de débito.
+    prazosDe:ehConsolidado?prazosPorUnidade:null,
+  }),[entradas,selYear,selMonth,prazosPlacar,todayStr,ehConsolidado,prazosPorUnidade]);
   const entradaCaixaProjetadaMes=caixaProjMes.total;
   // ── FATIA COMPROMETÍVEL — fonte ÚNICA do percentual de Meta ──
   // Nasce de config.metaPagamentoPercentual (padrão: reserva 10% = comprometido 90). Durante o arraste vive em
@@ -3423,11 +3620,9 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
   // ══ CALENDÁRIO INTELIGENTE — série diária de CAIXA do mês exibido ══
   // Regra aprovada, por dia:
   //   ENTRA = crédito/voucher REAIS já vendidos que caem naquele dia (projDataRecebimento)
-  //         + demais modalidades REAIS convertidas pelo mesmo motor
-  //         + débito/PIX PROJETADOS para dias sem venda registrada, pela ocorrência ordinal
-  //           do mês anterior, deslocados pelo PRAZO ATUAL da unidade (débito D+X, PIX D+0).
-  //   Dinheiro e Outros nunca são projetados; só aparecem quando reais.
-  //   REAL prevalece: dia com lançamento real não recebe projeção.
+  //         + curto prazo do dia: realizado quando as 5 formas estão informadas, senão a
+  //           projeção histórica da célula (weekday × ordinal) dos 6 meses anteriores.
+  //   Dia PARCIAL não entra com o parcial: usa a projeção inteira e fica marcado.
   // Consome a SÉRIE ÚNICA (caixaProjMes) e apenas acrescenta despesas, meta, folga e badge.
   // Nenhuma regra de entrada é recalculada aqui — é a mesma fonte do Placar, o que garante
   // que a soma dos dias do calendário bate exatamente com a Entrada de Caixa Projetada.
@@ -3435,7 +3630,7 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
     const out={};
     for(let d=1;d<=totalDays;d++){
       const iso=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const base=caixaProjMes.porDia[iso]||{entra:0,real:0,projetado:0};
+      const base=caixaProjMes.porDia[iso]||{entra:0,real:0,projetado:0,estado:'proj-futuro'};
       const itens=contasPorDia[d]||[];
       const aPagar=projCents(itens.reduce((s,c)=>s+projNum(c.valor),0));
       const entra=projCents(base.entra);
@@ -3444,8 +3639,9 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
         dia:d,iso,itens,
         entra,meta,aPagar,
         folga:projCents(entra-aPagar),
-        // PROJ quando qualquer parcela do caixa daquele dia veio de venda projetada.
-        projetado:base.projetado>0,
+        // Estado do descritivo: 'real' (5 formas informadas) · 'proj-passado' (já passou e
+        // não fechou) · 'proj-futuro'. Só o texto/cor do badge depende disto.
+        estado:base.estado,
       };
     }
     return out;
@@ -3769,7 +3965,7 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
                         aria-label={`${d} de ${MONTHS[calMonth].toLowerCase()} — entra ${rdpFmt0(c.entra)}, a pagar ${rdpFmt0(c.aPagar)}`}>
                         <div className="prx-owner-cal-drow">
                           <span className="prx-owner-cal-dnum">{d}</span>
-                          <span className={`prx-owner-cal-badge ${c.projetado?'proj':'real'}`}>{c.projetado?'proj':'real'}</span>
+                          <span className={`prx-owner-cal-badge ${CAL_BADGE[c.estado].cls}`}>{CAL_BADGE[c.estado].txt}</span>
                         </div>
                         <div className="prx-owner-cal-entra">entra <b>{rdpFmt0(c.entra)}</b></div>
                         <div className="prx-owner-cal-pgrow">
@@ -3823,7 +4019,7 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
                   <div className="prx-owner-cal-ph">
                     <button className="close" onClick={fechar} aria-label="Fechar">✕</button>
                     <div className="pdate">{c.dia} de {MONTHS[calMonth].toLowerCase()}, {calYear}</div>
-                    <div className="pweekday">{wdNome}{c.projetado?' · projeção':' · realizado'}</div>
+                    <div className="pweekday">{wdNome} · {CAL_BADGE[c.estado].desc}</div>
                   </div>
                   <div className="prx-owner-cal-pbody">
                     <div className={`prx-owner-cal-status ${col}`}>
@@ -4072,19 +4268,19 @@ function ImportEntradasModal({onClose,entradasExistentes,empresaId,onImportado})
   );
 }
 
-function Entradas({entradas,setEntradas,onRecarregarEntradas,contas,dividas,selectedYear,selectedMonth}){
+function Entradas({entradas,setEntradas,onRecarregarEntradas,contas,dividas,selectedYear,selectedMonth,prazos,setPrazos}){
   const now=new Date();
   const selYear=selectedYear;
   const selMonth=selectedMonth;
   const[showForm,setShowForm]=useState(false);
   const[editId,setEditId]=useState(null);
   const[showConfig,setShowConfig]=useState(false);
-  const[prazos,setPrazos_]=useState(()=>loadLocalS('zanon_prazos')||DEFAULT_PRAZOS);
-  const setPrazos=p=>{setPrazos_(p);saveLocalS('zanon_prazos',p);};
+  // prazos/setPrazos vêm do App — estado único por unidade, sem cópia local.
   const emptyForm={data:today(),dinheiro:'',pix:'',debito:'',credito:'',voucher:'',outros:'',obs:'',voucherAntecipado:'nao',voucherDataReceb:'',creditoAntecipado:'nao',creditoDataReceb:''};
   const[form,setForm]=useState(emptyForm);
   const chartDayRef=useRef(null);
-  const totalF=f=>['dinheiro','pix','debito','credito','voucher','outros'].reduce((s,k)=>s+parseNum(f[k]),0);
+  // O TOTAL soma NULL como zero (é aritmética), mas cada modalidade continua NULL no campo.
+  const totalF=f=>['dinheiro','pix','debito','credito','voucher','outros'].reduce((s,k)=>s+projNum(parseNumOuNull(f[k])),0);
   const todayStr=today();
   const[showImportEnt,setShowImportEnt]=useState(false);
 
@@ -4094,17 +4290,26 @@ function Entradas({entradas,setEntradas,onRecarregarEntradas,contas,dividas,sele
   const entradasDoMes=entradas.filter(e=>e.data>=mStart&&e.data<=mEnd);
 
   const openForm=(e=null)=>{
-    if(e){setForm({...e,dinheiro:e.dinheiro.toString(),pix:e.pix.toString(),debito:e.debito.toString(),credito:e.credito.toString(),voucher:e.voucher.toString(),outros:e.outros.toString(),voucherAntecipado:e.voucherAntecipado||'nao',voucherDataReceb:e.voucherDataReceb||'',creditoAntecipado:e.creditoAntecipado||'nao',creditoDataReceb:e.creditoDataReceb||''});setEditId(e.id);}
+    // campoMonetario preserva o NULL: forma não informada reabre EM BRANCO, e não como 0 —
+    // caso contrário editar um dia parcial o "completaria" sem o dono ter informado nada.
+    if(e){setForm({...e,dinheiro:campoMonetario(e.dinheiro),pix:campoMonetario(e.pix),debito:campoMonetario(e.debito),credito:campoMonetario(e.credito),voucher:campoMonetario(e.voucher),outros:campoMonetario(e.outros),voucherAntecipado:e.voucherAntecipado||'nao',voucherDataReceb:e.voucherDataReceb||'',creditoAntecipado:e.creditoAntecipado||'nao',creditoDataReceb:e.creditoDataReceb||''});setEditId(e.id);}
     else{setForm(emptyForm);setEditId(null);}
     setShowForm(true);
   };
 
   const save_=()=>{
-    const t=totalF(form);if(!form.data||t===0)return alert('Informe a data e pelo menos um valor.');
-    const creditoVal=parseNum(form.credito);
-    if(creditoVal>0&&form.creditoAntecipado==='sim'&&!form.creditoDataReceb)return alert('Informe a data de recebimento do crédito antecipado.');
-    // Crédito zero não guarda configuração de antecipação (evita metadado órfão).
-    const creditoAnt=creditoVal>0?(form.creditoAntecipado||'nao'):'nao';
+    const t=totalF(form);
+    // A trava passou a ser "informou alguma forma?", não "o total é maior que zero". Um dia
+    // legítimo em que todas as formas deram 0 (loja fechada, por exemplo) precisa poder ser
+    // gravado como INFORMADO — é assim que o dia fecha e vira REAL em vez de ficar amarelo.
+    const algumInformado=['dinheiro','pix','debito','credito','voucher','outros']
+      .some(k=>parseNumOuNull(form[k])!==null);
+    if(!form.data||!algumInformado)return alert('Informe a data e pelo menos uma forma de pagamento.\n\nDeixe em branco o que ainda não souber; digite 0 na forma que não teve venda.');
+    const creditoVal=parseNumOuNull(form.credito);
+    const creditoNum=projNum(creditoVal);
+    if(creditoNum>0&&form.creditoAntecipado==='sim'&&!form.creditoDataReceb)return alert('Informe a data de recebimento do crédito antecipado.');
+    // Crédito zero ou não informado não guarda configuração de antecipação (evita metadado órfão).
+    const creditoAnt=creditoNum>0?(form.creditoAntecipado||'nao'):'nao';
     // ── TRAVA DE DATA ÚNICA POR UNIDADE ──
     // Detectada ANTES de qualquer gravação. `setEntradas` chama saveS, que faz DELETE de todas
     // as linhas da empresa e depois INSERT do array: se o array tiver duas Entradas na mesma
@@ -4115,7 +4320,7 @@ function Entradas({entradas,setEntradas,onRecarregarEntradas,contas,dividas,sele
     if(conflitoData){
       return alert(`Já existe um lançamento de entradas em ${fmtDate(form.data)}.\n\nCada unidade admite um único consolidado por data. Edite o lançamento existente em vez de criar outro para a mesma data.`);
     }
-    const entry={...form,id:editId||genId(),dinheiro:parseNum(form.dinheiro),pix:parseNum(form.pix),debito:parseNum(form.debito),credito:creditoVal,voucher:parseNum(form.voucher),outros:parseNum(form.outros),total:t,voucherAntecipado:form.voucherAntecipado||'nao',voucherDataReceb:form.voucherDataReceb||'',creditoAntecipado:creditoAnt,creditoDataReceb:creditoAnt==='sim'?(form.creditoDataReceb||''):''};
+    const entry={...form,id:editId||genId(),dinheiro:parseNumOuNull(form.dinheiro),pix:parseNumOuNull(form.pix),debito:parseNumOuNull(form.debito),credito:creditoVal,voucher:parseNumOuNull(form.voucher),outros:parseNumOuNull(form.outros),total:t,voucherAntecipado:form.voucherAntecipado||'nao',voucherDataReceb:form.voucherDataReceb||'',creditoAntecipado:creditoAnt,creditoDataReceb:creditoAnt==='sim'?(form.creditoDataReceb||''):''};
     const updated=editId?entradas.map(e=>e.id===editId?entry:e):[...entradas.filter(e=>e.data!==form.data||editId),entry];
     setEntradas(updated.sort((a,b)=>a.data.localeCompare(b.data)));
     setForm(emptyForm);setEditId(null);setShowForm(false);
@@ -4168,7 +4373,9 @@ function Entradas({entradas,setEntradas,onRecarregarEntradas,contas,dividas,sele
       const dtReceb=calcRecebimento(e,f.key);
       if(dtReceb<=todayStr)disponivel+=v;else aReceber+=v;
     });
-    const prazoLabel=f.key==='dinheiro'||f.key==='pix'?'D+0':f.key==='debito'?'D+1':f.key==='credito'?`D+${prazos.credito}`:f.key==='voucher'?`D+${prazos.voucher}`:`D+${prazos.outros}`;
+    // O rótulo lê o prazo VIGENTE — antes o débito estava escrito 'D+1' fixo, então a tela
+    // contradizia o motor assim que o prazo fosse outro.
+    const prazoLabel=f.key==='dinheiro'||f.key==='pix'?'D+0':`D+${projNum(prazos[f.key])}`;
     return{...f,vendido,disponivel,aReceber,prazoLabel};
   });
 
@@ -4251,10 +4458,14 @@ function Entradas({entradas,setEntradas,onRecarregarEntradas,contas,dividas,sele
         <div className="card mb-3" style={{background:'var(--surface-2)',border:'1px solid var(--border)'}}>
           <div className="card-title">⚙️ Configuração de Prazos de Recebimento</div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))',gap:8}}>
-            {[{k:'dinheiro',l:'Dinheiro',fixed:true,val:'D+0'},{k:'pix',l:'PIX',fixed:true,val:'D+0'},{k:'debito',l:'Débito',fixed:true,val:'D+1'},{k:'credito',l:'Crédito',fixed:true,val:`D+${prazos.credito}`},{k:'voucher',l:'Voucher (dias)'},{k:'outros',l:'Outros (dias)'}].map(f=>(
+            {[{k:'dinheiro',l:'Dinheiro',fixed:true,val:'D+0'},{k:'pix',l:'PIX',fixed:true,val:'D+0'},{k:'debito',l:'Débito',opcoes:PRAZO_DEBITO_OPCOES},{k:'credito',l:'Crédito',fixed:true,val:`D+${prazos.credito}`},{k:'voucher',l:'Voucher (dias)'},{k:'outros',l:'Outros (dias)'}].map(f=>(
               <div key={f.k} className="fg">
                 <label>{f.l}</label>
-                {f.fixed?<input type="text" value={f.val} disabled style={{background:'var(--ink-100)',color:'var(--text-muted)',cursor:'not-allowed'}}/>:<input type="number" min="0" value={prazos[f.k]} onChange={e=>setPrazos({...prazos,[f.k]:parseInt(e.target.value)||0})} placeholder="dias"/>}
+                {f.opcoes
+                  ?(<select value={projNum(prazos[f.k])} onChange={e=>setPrazos({...prazos,[f.k]:parseInt(e.target.value,10)||0})}>
+                      {f.opcoes.map(d=><option key={d} value={d}>D+{d}</option>)}
+                    </select>)
+                  :(f.fixed?<input type="text" value={f.val} disabled style={{background:'var(--ink-100)',color:'var(--text-muted)',cursor:'not-allowed'}}/>:<input type="number" min="0" value={prazos[f.k]} onChange={e=>setPrazos({...prazos,[f.k]:parseInt(e.target.value)||0})} placeholder="dias"/>)}
               </div>
             ))}
           </div>
@@ -4272,19 +4483,19 @@ function Entradas({entradas,setEntradas,onRecarregarEntradas,contas,dividas,sele
                 <tbody>{sorted.map(e=>(
                   <tr key={e.id}>
                     <td>{fmtDate(e.data)}</td>
-                    <td>{e.dinheiro>0?fmt(e.dinheiro):'—'}</td>
-                    <td>{e.pix>0?fmt(e.pix):'—'}</td>
-                    <td>{e.debito>0?fmt(e.debito):'—'}</td>
-                    <td>{e.credito>0?fmt(e.credito):'—'}</td>
+                    <td>{calInformado(e.dinheiro)?fmt(e.dinheiro):'—'}</td>
+                    <td>{calInformado(e.pix)?fmt(e.pix):'—'}</td>
+                    <td>{calInformado(e.debito)?fmt(e.debito):'—'}</td>
+                    <td>{calInformado(e.credito)?fmt(e.credito):'—'}</td>
                     <td>
-                      {e.voucher>0?(
+                      {calInformado(e.voucher)?(
                         <span style={{display:'flex',alignItems:'center',gap:4}}>
                           {fmt(e.voucher)}
-                          {e.voucherAntecipado==='sim'&&<span style={{fontSize:9,background:'var(--amber-light)',color:'var(--amber-dim)',borderRadius:10,padding:'1px 5px',fontWeight:600}}>ANT</span>}
+                          {e.voucher>0&&e.voucherAntecipado==='sim'&&<span style={{fontSize:9,background:'var(--amber-light)',color:'var(--amber-dim)',borderRadius:10,padding:'1px 5px',fontWeight:600}}>ANT</span>}
                         </span>
                       ):'—'}
                     </td>
-                    <td>{e.outros>0?fmt(e.outros):'—'}</td>
+                    <td>{calInformado(e.outros)?fmt(e.outros):'—'}</td>
                     <td><strong>{fmtFull(e.total)}</strong></td>
                     <td style={{display:'flex',gap:3}}>
                       <button className="btn btn-secondary btn-sm" onClick={()=>openForm(e)}>✏️</button>
@@ -6704,7 +6915,7 @@ function CapitalDeGiroLayer({clienteId,hoje,horizonte,metricas,conf,proj30,emCon
 // pelas próximas camadas. Apenas o JSX deixa de ser renderizado — nada foi apagado.
 const MOSTRAR_PROJECAO_ANTIGA=false;
 
-function Projecao({empresas}){
+function Projecao({empresas,config}){
   const chartRef=useRef(null);
   const hoje=today();
   const[horizonte,setHorizonte]=useState(30);
@@ -6720,7 +6931,11 @@ function Projecao({empresas}){
   const fcRef=useRef(null);                        // canvas do gráfico de previsão
   const[fcHorizonte,setFcHorizonte]=useState(30);  // 15|30|60 — independe do seletor da projeção antiga
 
-  const prazos=React.useMemo(()=>({...DEFAULT_PRAZOS,...(loadLocalS('zanon_prazos')||{})}),[]);
+  // Mesma fonte única dos demais consumidores, na unidade ativa. Esta aba consolida várias
+  // unidades num motor próprio (buildSerieProjecao), que ainda recebe UM conjunto de prazos:
+  // com unidades de prazos diferentes ela usa o da unidade ativa. Limitação conhecida, aqui
+  // registrada — o Calendário e o Placar já resolvem por unidade.
+  const prazos=React.useMemo(()=>carregarPrazos(config,EMPRESA_ID),[config]);
   const idsChave=(empresas||[]).map(e=>e.id).filter(Boolean).join(',');
 
   // ── Carregamento consolidado: 1 rodada por (cliente × conjunto de unidades) ──
@@ -9262,6 +9477,17 @@ function App(){
   const[carregandoAuth,setCarregandoAuth]=useState(true);
   const[carregandoDados,setCarregandoDados]=useState(false);
   const[isSaving,setIsSaving]=useState(false);
+  // ── Persistência de config: rollback em caso de falha ──────────────────────
+  // cfgOkRef  — última config CONFIRMADA pelo banco. É o alvo do rollback: reverter para o
+  //             objeto anterior inteiro evita rollback parcial, que apagaria outros campos.
+  // cfgSeqRef — número da alteração. Só a MAIS RECENTE pode reverter a UI ou apagar o
+  //             "Salvando…"; respostas atrasadas de alterações superadas são ignoradas.
+  // cfgFilaRef— serializa as gravações. Sem isto, duas alterações rápidas correriam em
+  //             paralelo e a segunda poderia reverter para um valor que a primeira ainda
+  //             não confirmou. Serializado, cfgOkRef sempre reflete o banco.
+  const cfgOkRef=useRef(null);
+  const cfgSeqRef=useRef(0);
+  const cfgFilaRef=useRef(Promise.resolve());
   // Estados do Portfólio — carregados via Supabase após autenticação (BLOCO 4.4)
   const[roleGlobal,setRoleGlobal]=useState(null);
   const[empresasSeletorPRX,setEmpresasSeletorPRX]=useState([]); // lista global — só para EmpresaSelector PRX
@@ -9274,6 +9500,14 @@ function App(){
   const[dividas,setD_]=useState([]);
   const[retiradas,setR_]=useState([]);
   const[config,setCfg_]=useState({...defaultConfig});
+  // Carga do banco é a verdade: vira o novo ponto de rollback e invalida gravações em voo
+  // (uma pendente da unidade anterior nunca restaura snapshot sobre a unidade recém-aberta).
+  const adotarConfigCarregada=cfg=>{
+    const pronta={...defaultConfig,...((cfg&&typeof cfg==='object')?cfg:{})};
+    cfgSeqRef.current++;
+    cfgOkRef.current=pronta;
+    setCfg_(pronta);
+  };
 
   // useEffect 1: verificar sessão existente ao abrir o sistema
   useEffect(()=>{
@@ -9320,7 +9554,7 @@ function App(){
       setC_(Array.isArray(cnt)?cnt:[]);
       setD_(Array.isArray(div)?div:[]);
       setR_(Array.isArray(ret)?ret:[]);
-      setCfg_({...defaultConfig,...((cfg&&typeof cfg==='object')?cfg:{})});
+      adotarConfigCarregada(cfg);
     }).catch(err=>{
       console.error('Erro ao carregar dados:',err);
     }).finally(()=>{
@@ -9536,7 +9770,39 @@ function App(){
   const onDividaEditar=async entry=>{const eid=EMPRESA_ID;setIsSaving(true);try{await updateDivida(entry,eid);}catch(err){console.error('Erro ao editar dívida:',err);setIsSaving(false);throw err;}setIsSaving(false);};
   const onDividaExcluir=async id=>{const eid=EMPRESA_ID;setIsSaving(true);try{await deleteDivida(id,eid);}catch(err){console.error('Erro ao excluir dívida:',err);setIsSaving(false);throw err;}setIsSaving(false);};
   const setRetiradas=async d=>{setR_(d);setIsSaving(true);try{await saveS(KEYS.retiradas,d);}catch(err){console.error('Erro ao salvar retiradas:',err);}finally{setIsSaving(false);}};
-  const setConfig=async d=>{setCfg_(d);setIsSaving(true);try{await saveS(KEYS.config,d);}catch(err){console.error('Erro ao salvar config:',err);}finally{setIsSaving(false);}};
+  // Optimistic update + ROLLBACK. Antes, uma falha de gravação só ia para o console e a UI
+  // seguia exibindo o valor novo — o usuário acreditava ter salvo enquanto o banco mantinha
+  // o valor antigo. Como config carrega prazos_recebimento, essa divergência silenciosa
+  // mudava calendário, projeção e Placar sobre um dado que não existia no banco.
+  const setConfig=d=>{
+    const seq=++cfgSeqRef.current;
+    setCfg_(d);            // resposta imediata: o slider da Reserva depende disso
+    setIsSaving(true);
+    cfgFilaRef.current=cfgFilaRef.current.then(async()=>{
+      try{
+        await saveS(KEYS.config,d);
+        cfgOkRef.current=d;
+      }catch(err){
+        console.error('Erro ao salvar config:',err);
+        if(seq===cfgSeqRef.current){
+          // Restaura o ÚLTIMO objeto confirmado pelo banco, inteiro.
+          if(cfgOkRef.current)setCfg_(cfgOkRef.current);
+          alert('Não foi possível salvar a configuração. O valor anterior foi restaurado.');
+        }
+      }finally{
+        if(seq===cfgSeqRef.current)setIsSaving(false);
+      }
+    });
+    return cfgFilaRef.current;
+  };
+  // PRAZOS — DERIVADOS de config.prazos_recebimento, não um estado paralelo. Não há
+  // sincronização a manter: config já é recarregada no login e na troca de unidade, então
+  // refresh, troca de unidade e outro dispositivo funcionam por consequência.
+  const prazos=React.useMemo(()=>carregarPrazos(config,empresaAtiva&&empresaAtiva.id),[config,empresaAtiva]);
+  // Gravar o prazo é gravar a config da unidade — mesmo caminho de metaPagamentoPercentual.
+  // Nada é escrito em localStorage: duas escritas produziriam justamente a divergência que
+  // esta migração existe para eliminar.
+  const setPrazos=p=>setConfig({...config,prazos_recebimento:sanitizarPrazos(p)});
 
   // BLOCO 4.5 — Troca de unidade pelo Portfólio (cliente comum)
   const trocarEmpresa=(eid)=>{
@@ -9561,7 +9827,7 @@ function App(){
       setC_(Array.isArray(cnt)?cnt:[]);
       setD_(Array.isArray(div)?div:[]);
       setR_(Array.isArray(ret)?ret:[]);
-      setCfg_({...defaultConfig,...((cfg&&typeof cfg==='object')?cfg:{})});
+      adotarConfigCarregada(cfg);
     }).catch(err=>{
       console.error('Erro ao recarregar dados após troca de unidade:',err);
     }).finally(()=>{
@@ -9757,13 +10023,13 @@ function App(){
       </header>
       <div className="page-wrap">
         {activeTab!=='painel'&&pageHeaderEl}
-        {activeTab==='painel'&&<Painel entradas={entradas} contas={contasComParcelas} dividas={dividas} retiradas={retiradas} config={config} setConfig={setConfig} selectedYear={selectedYear} setSelectedYear={setSelectedYear} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} header={pageHeaderEl} nomeUnidadeAtiva={empresaAtiva?.nome} empresasDisponiveis={empresasDisponiveis} empresaAtiva={empresaAtiva} onTrocarUnidade={trocarEmpresa}/>}
-        {activeTab==='entradas'&&<Entradas entradas={entradas} setEntradas={setEntradas} onRecarregarEntradas={recarregarEntradas} contas={contasComParcelas} dividas={dividas} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
+        {activeTab==='painel'&&<Painel entradas={entradas} contas={contasComParcelas} dividas={dividas} retiradas={retiradas} config={config} setConfig={setConfig} selectedYear={selectedYear} setSelectedYear={setSelectedYear} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} header={pageHeaderEl} nomeUnidadeAtiva={empresaAtiva?.nome} empresasDisponiveis={empresasDisponiveis} empresaAtiva={empresaAtiva} onTrocarUnidade={trocarEmpresa} prazos={prazos}/>}
+        {activeTab==='entradas'&&<Entradas entradas={entradas} setEntradas={setEntradas} onRecarregarEntradas={recarregarEntradas} contas={contasComParcelas} dividas={dividas} selectedYear={selectedYear} selectedMonth={selectedMonth} prazos={prazos} setPrazos={setPrazos}/>}
         {activeTab==='contas'&&<Contas contas={contas} setContas={setContas} onContaCriar={onContaCriar} onContaEditar={onContaEditar} onContaExcluir={onContaExcluir} onContasImportar={onContasImportar} contasComParcelas={contasComParcelas} mediaDiariaEntrada={mediaDiaria} dividas={dividas} setDividas={setDividas} onDividaEditar={onDividaEditar} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
         {activeTab==='fornecedores'&&<Fornecedores contas={contasComParcelas} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
         {activeTab==='dividas'&&<Dividas dividas={dividas} setDividas={setDividas} onDividaCriar={onDividaCriar} onDividaEditar={onDividaEditar} onDividaExcluir={onDividaExcluir} entradaMensal={totalEntMes}/>}
         {activeTab==='retiradas'&&<Retiradas retiradas={retiradas} setRetiradas={setRetiradas} entradaMensal={totalEntMes} config={config} setConfig={setConfig}/>}
-        {activeTab==='projecao'&&<Projecao empresas={empresasDisponiveis}/>}
+        {activeTab==='projecao'&&<Projecao empresas={empresasDisponiveis} config={config}/>}
         {activeTab==='portfolio'&&<Portfolio
           empresas={empresasDisponiveis}
           selYear={selectedYear}
