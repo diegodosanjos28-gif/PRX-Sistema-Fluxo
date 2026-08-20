@@ -919,7 +919,23 @@ textarea{resize:vertical;min-height:58px;}
 .pc-papaya .pc-value.a{color:#ffffff;}
 .pc-papaya .pc-sub{color:#ffffff;opacity:.85;font-weight:500;}
 
-/* Botão "Manual" + selo + popover do card Meta Diária de Pagamento */
+/* Card "Notas de Entrada" — 4a posicao de destaque da faixa (antes: Meta Diária).
+   Herda toda a geometria de .hk; muda apenas a paleta, para laranja da marca. */
+.hk.hk-notas{background:#FF7A2E;border:1.5px solid #FC6E20;box-shadow:0 14px 32px rgba(252,110,32,.26),0 2px 8px rgba(18,18,20,.24);}
+.hk-notas .hk-label{color:#ffffff;font-weight:600;}
+.hk-notas .hk-value{color:#ffffff;font-weight:800;font-variant-numeric:tabular-nums;}
+.hk-notas .hk-sub{color:rgba(255,255,255,.86);}
+.hk-notas-cap{text-transform:uppercase;letter-spacing:.06em;font-size:9px;font-weight:700;color:rgba(255,255,255,.72);}
+/* Cor FIXA no indicador: para compras, subir nao e bom nem ruim. So a seta muda. */
+.hk-notas-var{color:rgba(255,255,255,.88);font-weight:600;}
+.hk-notas-vazio{color:rgba(255,255,255,.72);font-style:italic;}
+.hk-notas-btn{font-size:9.5px;font-weight:700;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.34);border-radius:20px;padding:3px 9px;cursor:pointer;font-family:inherit;letter-spacing:.04em;line-height:1.2;transition:background .15s,border-color .15s;white-space:nowrap;}
+.hk-notas-btn:hover{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.55);}
+/* Ancora do popover da Meta Manual no seu novo lugar (controles do Calendario).
+   .pc-meta-popover e absolute e precisa de um pai posicionado. */
+.pc-meta-anchor{position:relative;display:inline-flex;align-items:center;gap:5px;}
+
+/* Botão "Manual" + selo + popover da Meta Diária (realocados para os controles) */
 .pc-meta-row{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:4px;}
 .pc-meta-btn{font-size:9.5px;font-weight:700;color:var(--petronas);background:#ffffff;border:1px solid #000000;border-radius:4px;padding:2px 7px;cursor:pointer;font-family:inherit;letter-spacing:.04em;text-transform:uppercase;transition:background .15s,color .15s;line-height:1.2;}
 .pc-meta-btn:hover{background:#000000;color:#ffffff;}
@@ -2222,6 +2238,139 @@ const entImpParaEntrada=(l,prazosSel)=>({
   creditoAntecipado:'nao',creditoDataReceb:'',
   prazos_recebimento:{debito:prazosSel.debito,credito:prazosSel.credito,voucher:prazosSel.voucher,pix:prazosSel.pix},
 });
+
+// ══════════════════════════════════════════════════════════════════════════
+// NOTAS DE ENTRADA — normalização e validação do .xlsx (camada de UX).
+// A autoridade final continua sendo a RPC importar_notas_entrada: tudo aqui
+// existe para dar preview e mensagem clara, nunca como barreira de segurança.
+// ══════════════════════════════════════════════════════════════════════════
+
+const NE_ABA='Notas';
+// Mapeamento FIXO por posição, conforme o modelo entregue ao cliente.
+const NE_COLS=[
+  {i:0,campo:'data_emissao',    rotulo:'Data da Nota'},
+  {i:1,campo:'chave_acesso',    rotulo:'Chave de Acesso'},
+  {i:2,campo:'cnpj_fornecedor', rotulo:'CNPJ do Fornecedor'},
+  {i:3,campo:'nome_fornecedor', rotulo:'Nome do Fornecedor'},
+  {i:4,campo:'valor_mercadoria',rotulo:'Valor da Mercadoria'},
+];
+
+// Só dígitos. A chave NF-e e o CNPJ são SEMPRE tratados como texto: convertê-los
+// para Number perderia zeros à esquerda e estouraria a precisão de 44 dígitos.
+const neDigitos=v=>String(v==null?'':v).replace(/\D+/g,'');
+const neChave=v=>{const s=neDigitos(v);return s.length===44?s:null;};
+const neCnpj =v=>{const s=neDigitos(v);return s.length===14?s:null;};
+
+// Data → 'YYYY-MM-DD'. Reusa entImpData, que já cobre serial do Excel (em UTC),
+// dd/mm/aaaa e ISO — mesma regra do importador de Entradas, sem segunda lógica.
+// Rejeita data impossível: entImpData devolve null e, para o serial, a
+// reconstrução por Date já normaliza.
+const neData=v=>{
+  if(v instanceof Date&&!isNaN(v.getTime()))
+    return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}-${String(v.getDate()).padStart(2,'0')}`;
+  const iso=entImpData(v);
+  if(!iso)return null;
+  // dd/mm/aaaa inexistente (31/02) passa pelo regex de entImpData; aqui o Date
+  // desmente: 2026-02-31 vira 2026-03-03 e a comparação reprova.
+  const d=new Date(iso+'T12:00:00');
+  if(isNaN(d.getTime()))return null;
+  const volta=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return volta===iso?iso:null;
+};
+
+// Valor → STRING decimal com ponto e 2 casas, como a RPC exige.
+// Número do XLSX vem como float (1234.5600000000001) e precisa arredondar;
+// texto pode vir em formato BR (1.234,56) e passa por parseCurrencyBR.
+const neValor=v=>{
+  if(v===null||v===undefined||String(v).trim()==='')return null;
+  const n=typeof v==='number'?v:parseCurrencyBR(String(v));
+  if(!Number.isFinite(n))return null;
+  const r=Math.round(n*100)/100;
+  if(!(r>0))return null;
+  return r.toFixed(2);
+};
+
+const neTexto=v=>String(v==null?'':v).trim();
+
+// Lê a matriz da aba e classifica cada linha. Devolve também os erros agrupados
+// por tipo, que é como o preview os apresenta.
+const neParse=aoa=>{
+  const res={linhas:[],erros:{},lidas:0,erroFatal:null};
+  const brutas=(aoa||[]).filter(r=>Array.isArray(r));
+  if(!brutas.length){res.erroFatal='A aba está vazia.';return res;}
+  const conta=(k)=>{res.erros[k]=(res.erros[k]||0)+1;};
+  const vistas=new Set();
+
+  brutas.slice(1).forEach((r,i)=>{                       // linha 1 = cabeçalho
+    if(r.every(c=>c==null||String(c).trim()===''))return; // linha vazia: ignora
+    const nLinha=i+2;
+    res.lidas+=1;
+    const chave=neChave(r[1]);
+    const data =neData(r[0]);
+    const cnpj =neCnpj(r[2]);
+    const nome =neTexto(r[3]);
+    const valor=neValor(r[4]);
+    const motivos=[];
+    // Chave ausente é tratada como ERRO, e não como descarte silencioso: uma
+    // linha preenchida sem chave costuma ser dado perdido, não lixo.
+    if(!chave)                 {motivos.push('chave');conta('Chave de acesso inválida ou ausente (44 dígitos)');}
+    else if(vistas.has(chave)) {motivos.push('dup');  conta('Chave repetida dentro do próprio arquivo');}
+    if(!data)                  {motivos.push('data'); conta('Data da nota inválida');}
+    if(!cnpj)                  {motivos.push('cnpj'); conta('CNPJ do fornecedor inválido (14 dígitos)');}
+    if(!nome)                  {motivos.push('nome'); conta('Fornecedor sem nome');}
+    if(!valor)                 {motivos.push('valor');conta('Valor da mercadoria inválido ou menor/igual a zero');}
+    if(chave)vistas.add(chave);
+    res.linhas.push({linha:nLinha,chave_acesso:chave,data_emissao:data,
+      cnpj_fornecedor:cnpj,nome_fornecedor:nome,valor_mercadoria:valor,
+      valida:motivos.length===0,motivos});
+  });
+  return res;
+};
+
+// Resumo do preview. `novas` só é confiável DEPOIS da RPC — aqui é estimativa
+// de UX contra as chaves já conhecidas em memória.
+const neResumo=(res,chavesExistentes,mStart,mEnd)=>{
+  const validas=res.linhas.filter(l=>l.valida);
+  const jaExistentes=validas.filter(l=>chavesExistentes.has(l.chave_acesso));
+  const novas=validas.filter(l=>!chavesExistentes.has(l.chave_acesso));
+  const soma=arr=>Math.round(arr.reduce((s,l)=>s+Number(l.valor_mercadoria),0)*100)/100;
+  const doMes=novas.filter(l=>l.data_emissao>=mStart&&l.data_emissao<=mEnd);
+  const totalErros=Object.values(res.erros).reduce((s,n)=>s+n,0);
+  return{
+    lidas:res.lidas,validas:validas.length,
+    jaExistentes:jaExistentes.length,novas:novas.length,
+    valorNovas:soma(novas),
+    novasDoMes:doMes.length,valorNovasDoMes:soma(doMes),
+    totalErros,ok:totalErros===0&&novas.length>0,
+  };
+};
+
+// Payload da RPC. empresa_id NÃO vai na linha: ele viaja só em p_empresa_id,
+// onde a RPC o valida. Também não vão id, competencia nem created_at.
+const neParaPayload=l=>({
+  chave_acesso:l.chave_acesso,
+  data_emissao:l.data_emissao,
+  cnpj_fornecedor:l.cnpj_fornecedor,
+  nome_fornecedor:l.nome_fornecedor,
+  valor_mercadoria:l.valor_mercadoria,   // string decimal ISO, 2 casas
+});
+
+// Soma das notas de um período, para o card. Filtra por unidade e por intervalo
+// de data_emissao — a competência vem da data da nota, nunca do pagamento.
+const neSomaPeriodo=(rows,ids,ini,fim)=>{
+  const set=new Set(ids||[]);
+  let t=0;
+  (rows||[]).forEach(r=>{
+    if(!r||!set.has(r.empresa_id))return;
+    if(r.data_emissao<ini||r.data_emissao>fim)return;
+    t+=projNum(r.valor_mercadoria);
+  });
+  return Math.round(t*100)/100;
+};
+
+// Variação percentual contra o mês anterior. Sem base, não existe percentual:
+// devolve null e a UI mostra "— vs mês anterior".
+const neVariacao=(atual,anterior)=>(anterior>0?((atual-anterior)/anterior)*100:null);
 
 // Calendar health threshold: days between "on-target" (green) and "critical" (red)
 const FAIXA_ATENCAO_CALENDARIO = 2000;
@@ -3527,6 +3676,53 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
   const prevMonth=selMonth===0?11:selMonth-1;
   const mStartPrev=monthStart(prevYear,prevMonth);
   const mEndPrev=monthEnd(prevYear,prevMonth);
+
+  // ══ NOTAS DE ENTRADA — compras por COMPETÊNCIA (data de emissão) ══
+  // Escopo de unidades: no Consolidado é o MESMO conjunto que o resto do painel
+  // usa (consol.ids); na visão de unidade, só a ativa. Nunca a Matriz por padrão.
+  const notasIds=React.useMemo(()=>{
+    if(ehConsolidado)return(consol&&consol.ids)||[];
+    const id=(empresaAtiva&&empresaAtiva.id)||EMPRESA_ID;
+    return id?[id]:[];
+  },[ehConsolidado,consol,empresaAtiva]);
+  const notasIdsChave=notasIds.join(',');
+  const[notasRows,setNotasRows]=useState([]);
+  const[notasCarregando,setNotasCarregando]=useState(false);
+  const[notasVersao,setNotasVersao]=useState(0);   // incrementa p/ refetch pós-import
+  const[showImportNotas,setShowImportNotas]=useState(false);
+
+  // UMA consulta cobrindo mês anterior + mês exibido, para as duas pontas do
+  // comparativo saírem do mesmo conjunto de unidades e sem N+1 por unidade.
+  useEffect(()=>{
+    let cancelado=false;
+    if(!notasIdsChave){setNotasRows([]);return;}
+    const ids=notasIdsChave.split(',');
+    setNotasCarregando(true);
+    (async()=>{
+      try{
+        const rows=await fetchAllPages((from,to)=>supabase
+          .from('nota_entrada')
+          .select('empresa_id,data_emissao,valor_mercadoria,chave_acesso')
+          .in('empresa_id',ids)
+          .gte('data_emissao',mStartPrev).lte('data_emissao',mEnd)
+          .order('data_emissao',{ascending:true}).range(from,to),'painel:notas_entrada');
+        if(cancelado)return;
+        setNotasRows(Array.isArray(rows)?rows:[]);
+      }catch(err){
+        if(cancelado)return;
+        console.error('Erro ao carregar notas de entrada:',err);
+        setNotasRows([]);
+      }finally{if(!cancelado)setNotasCarregando(false);}
+    })();
+    return()=>{cancelado=true;};
+  },[notasIdsChave,mStartPrev,mEnd,notasVersao]);
+
+  const notasMes    =React.useMemo(()=>neSomaPeriodo(notasRows,notasIds,mStart,mEnd),[notasRows,notasIdsChave,mStart,mEnd]);
+  const notasMesPrev=React.useMemo(()=>neSomaPeriodo(notasRows,notasIds,mStartPrev,mEndPrev),[notasRows,notasIdsChave,mStartPrev,mEndPrev]);
+  const notasVar    =neVariacao(notasMes,notasMesPrev);
+  // Só as chaves da janela carregada: serve para a PRÉVIA estimar "já existentes".
+  // A dedup de verdade é do banco (UNIQUE + ON CONFLICT), não daqui.
+  const notasChaves =React.useMemo(()=>new Set(notasRows.map(r=>r&&r.chave_acesso).filter(Boolean)),[notasRows]);
   const entMesPrev=entradas.filter(e=>e.data>=mStartPrev&&e.data<=mEndPrev);
   const totalEntPrev=entMesPrev.reduce((s,e)=>s+e.total,0);
   const deltaEntPct=totalEntPrev>0?((totalEnt-totalEntPrev)/totalEntPrev*100):null;
@@ -3703,6 +3899,19 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
 
   return(
     <div>
+      {/* Importador de Notas de Entrada — só existe fora do Consolidado, porque
+          uma nota precisa pertencer a UMA unidade. */}
+      {showImportNotas&&!ehConsolidado&&(
+        <ImportNotasModal
+          onClose={()=>setShowImportNotas(false)}
+          empresaId={(empresaAtiva&&empresaAtiva.id)||EMPRESA_ID}
+          nomeUnidade={nomeUnidadeAtiva}
+          chavesExistentes={notasChaves}
+          mStart={mStart} mEnd={mEnd} mesLabel={mesLabel}
+          onImportado={async()=>{setNotasVersao(v=>v+1);}}
+        />
+      )}
+
       {/* ══ HERO — imagem do mercado + 4 KPIs sobrepostos ══ */}
       <div className="painel-hero-wrap">
         <div className="painel-hero">
@@ -3783,79 +3992,42 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
             <div className="hk-sub">por dia corrido do mês</div>
           </div>
 
-          {/* Meta Diária de Pagamento — DESTAQUE */}
-          <div className="hk hk-meta">
+          {/* ── NOTAS DE ENTRADA — compras por COMPETÊNCIA ──
+              Substitui o card "Meta Diária de Pagamento" nesta 4ª posição. A Meta
+              Manual NÃO foi removida: o acesso migrou para os controles do
+              Calendário, junto da Reserva de Segurança (mesma área de capacidade
+              de pagamento). Regra, cálculo e persistência da Meta estão intactos. */}
+          <div className="hk hk-notas">
             <div className="hk-top">
-              <div className="hk-label">
-                Meta Diária de Pagamento
-                {metaIsManual&&<span className="pc-meta-badge" title={`Meta manual para ${mesLabel}`}>Manual</span>}
-              </div>
-              {!ehConsolidado&&<button
+              <div className="hk-label">Notas de Entrada · {mesLabel}</div>
+              {/* No Consolidado o botão continua visível, mas a operação exige uma
+                  unidade: uma nota pertence a UMA empresa_id, e o sistema não
+                  escolhe a Matriz por conta própria. */}
+              <button
                 type="button"
-                className="pc-meta-btn"
+                className="hk-notas-btn"
                 onClick={()=>{
-                  const valorAtual=metaDiariaPagamento>0?formatCurrencyBR(metaDiariaPagamento).replace('R$ ',''):'';
-                  setMetaManualInput(valorAtual);
-                  setShowMetaManual(s=>!s);
+                  if(ehConsolidado){
+                    alert('Selecione uma unidade para importar notas de entrada.\n\nO Consolidado soma as unidades, mas cada nota precisa pertencer a uma unidade específica.');
+                    return;
+                  }
+                  setShowImportNotas(true);
                 }}
-                title={`Definir meta diária manual para ${mesLabel}`}
-              >
-                Manual
-              </button>}
+                title={ehConsolidado?'Selecione uma unidade para importar':`Importar notas de entrada — ${nomeUnidadeAtiva||'unidade ativa'}`}
+              >＋ Incluir</button>
             </div>
-            <div className="hk-value">{fmtFull(metaDiariaPagamento)}</div>
-            <div className="hk-sub">{ehConsolidado?'Soma das metas das unidades':(metaIsManual?`Meta manual — ${mesLabel}`:`${metaPercentual}% da média diária`)}</div>
-
-          {showMetaManual&&!ehConsolidado&&(
-            <div className="pc-meta-popover">
-              <div className="pc-meta-popover-title">Meta manual — {mesLabel}</div>
-              <div className="pc-meta-popover-row">
-                <input
-                  type="text"
-                  className="pc-meta-input"
-                  placeholder="R$ 0,00"
-                  value={metaManualInput}
-                  onChange={e=>setMetaManualInput(e.target.value)}
-                  autoFocus
-                />
-              </div>
-              <div className="pc-meta-popover-hint">
-                Aceita R$ 18.000,00 · 18.000,00 · 18000.
-                Use para simular meses futuros sem entradas cadastradas.
-              </div>
-              <div className="pc-meta-popover-actions">
-                <button
-                  type="button"
-                  className="pc-meta-cancel"
-                  onClick={()=>setShowMetaManual(false)}
-                >Cancelar</button>
-                {(config.metasManuaisPorMes&&typeof config.metasManuaisPorMes[chaveMesAtual]==='number')&&(
-                  <button
-                    type="button"
-                    className="pc-meta-remove"
-                    onClick={()=>{
-                      const novoMapa={...(config.metasManuaisPorMes||{})};
-                      delete novoMapa[chaveMesAtual];
-                      setConfig({...config,metasManuaisPorMes:novoMapa});
-                      setShowMetaManual(false);
-                    }}
-                    title="Remove apenas a meta deste mês — volta para a meta automática"
-                  >Remover manual</button>
-                )}
-                <button
-                  type="button"
-                  className="pc-meta-save"
-                  onClick={()=>{
-                    const valor=parseCurrencyBR(metaManualInput);
-                    if(!(valor>0)){alert('Informe um valor financeiro válido (ex: 18.000,00).');return;}
-                    const novoMapa={...(config.metasManuaisPorMes||{}),[chaveMesAtual]:valor};
-                    setConfig({...config,metasManuaisPorMes:novoMapa});
-                    setShowMetaManual(false);
-                  }}
-                >Salvar</button>
-              </div>
+            <div className="hk-value">{notasCarregando?'—':fmtFull(notasMes)}</div>
+            <div className="hk-sub">
+              <span className="hk-notas-cap">Compras por competência</span>
+              {/* Cor FIXA: comprar mais não é bom nem ruim por si só. Só a seta muda. */}
+              <span className="hk-notas-var">
+                {notasVar===null?'— vs mês anterior'
+                  :`${notasVar>=0?'▲':'▼'} ${Math.abs(notasVar).toFixed(1).replace('.',',')}% vs mês anterior`}
+              </span>
             </div>
-          )}
+            {(!notasCarregando&&notasMes<=0)&&(
+              <div className="hk-sub hk-notas-vazio">Importe as notas do mês</div>
+            )}
           </div>
         </div>
       </div>
@@ -3933,6 +4105,75 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
                 onPointerUp={persistirFatia} onKeyUp={persistirFatia} onBlur={persistirFatia}/>
               <span className="prx-owner-cal-ratioval">{100-fatiaPct}%</span>
               <span className="prx-owner-cal-hint">(o restante da entrada vira a Meta de pagamento)</span>
+              {/* META MANUAL — realocada do card substituído. Mesmo estado, mesmo
+                  popover, mesma persistência (config.metasManuaisPorMes). Só mudou
+                  o lugar: aqui, junto da Reserva, que é a outra régua de capacidade
+                  de pagamento. Não existe segunda fonte de estado. */}
+              {!ehConsolidado&&(
+                <span className="pc-meta-anchor">
+                  <button
+                    type="button"
+                    className="pc-meta-btn"
+                    onClick={()=>{
+                      const valorAtual=metaDiariaPagamento>0?formatCurrencyBR(metaDiariaPagamento).replace('R$ ',''):'';
+                      setMetaManualInput(valorAtual);
+                      setShowMetaManual(s=>!s);
+                    }}
+                    title={`Definir meta diária manual para ${mesLabel}`}
+                  >Meta manual</button>
+                  {metaIsManual&&<span className="pc-meta-badge" title={`Meta manual para ${mesLabel}`}>Manual</span>}
+                  {showMetaManual&&!ehConsolidado&&(
+                    <div className="pc-meta-popover">
+                      <div className="pc-meta-popover-title">Meta manual — {mesLabel}</div>
+                      <div className="pc-meta-popover-row">
+                        <input
+                          type="text"
+                          className="pc-meta-input"
+                          placeholder="R$ 0,00"
+                          value={metaManualInput}
+                          onChange={e=>setMetaManualInput(e.target.value)}
+                          autoFocus
+                        />
+                      </div>
+                      <div className="pc-meta-popover-hint">
+                        Aceita R$ 18.000,00 · 18.000,00 · 18000.
+                        Use para simular meses futuros sem entradas cadastradas.
+                      </div>
+                      <div className="pc-meta-popover-actions">
+                        <button
+                          type="button"
+                          className="pc-meta-cancel"
+                          onClick={()=>setShowMetaManual(false)}
+                        >Cancelar</button>
+                        {(config.metasManuaisPorMes&&typeof config.metasManuaisPorMes[chaveMesAtual]==='number')&&(
+                          <button
+                            type="button"
+                            className="pc-meta-remove"
+                            onClick={()=>{
+                              const novoMapa={...(config.metasManuaisPorMes||{})};
+                              delete novoMapa[chaveMesAtual];
+                              setConfig({...config,metasManuaisPorMes:novoMapa});
+                              setShowMetaManual(false);
+                            }}
+                            title="Remove apenas a meta deste mês — volta para a meta automática"
+                          >Remover manual</button>
+                        )}
+                        <button
+                          type="button"
+                          className="pc-meta-save"
+                          onClick={()=>{
+                            const valor=parseCurrencyBR(metaManualInput);
+                            if(!(valor>0)){alert('Informe um valor financeiro válido (ex: 18.000,00).');return;}
+                            const novoMapa={...(config.metasManuaisPorMes||{}),[chaveMesAtual]:valor};
+                            setConfig({...config,metasManuaisPorMes:novoMapa});
+                            setShowMetaManual(false);
+                          }}
+                        >Salvar</button>
+                      </div>
+                    </div>
+                  )}
+                </span>
+              )}
             </div>
             <div className="prx-owner-cal-legend">
               <span><i className="prx-owner-cal-dot g"></i> cabe</span>
@@ -4076,6 +4317,175 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
 // ─────────────────────────────────────────────────────────────
 // SECTION 8 — ENTRADAS
 // ─────────────────────────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════════════════
+// IMPORTADOR DE NOTAS DE ENTRADA (.xlsx, aba "Notas")
+// Mesma estrutura do ImportEntradasModal: Modal + .imp-drop + .imp-preview.
+// A gravação é feita EXCLUSIVAMENTE pela RPC importar_notas_entrada — nunca
+// por INSERT direto. A validação daqui é de UX; a RPC é a autoridade final.
+// ══════════════════════════════════════════════════════════════════════════
+function ImportNotasModal({onClose,empresaId,nomeUnidade,chavesExistentes,mStart,mEnd,mesLabel,onImportado}){
+  const[etapa,setEtapa]=useState('arquivo');   // arquivo|previa|resultado
+  const[nomeArq,setNomeArq]=useState('');
+  const[erro,setErro]=useState('');
+  const[lendo,setLendo]=useState(false);
+  const[parse,setParse]=useState(null);
+  const[enviando,setEnviando]=useState(false);
+  const[resultado,setResultado]=useState(null);
+  const[dragging,setDragging]=useState(false);
+  const inputRef=useRef(null);
+  const envioLock=useRef(false);               // trava de duplo clique
+
+  const resumo=React.useMemo(
+    ()=>parse?neResumo(parse,chavesExistentes||new Set(),mStart,mEnd):null,
+    [parse,chavesExistentes,mStart,mEnd]);
+
+  const lerArquivo=async file=>{
+    setErro('');setParse(null);setNomeArq(file?file.name:'');
+    if(!file)return;
+    if(!/\.xlsx$/i.test(file.name)){setErro('Somente arquivos .xlsx são aceitos.');return;}
+    if(typeof XLSX==='undefined'){setErro('O leitor de planilhas não carregou. Verifique a conexão e recarregue a página.');return;}
+    setLendo(true);
+    try{
+      const buf=await file.arrayBuffer();
+      const wb=XLSX.read(buf,{type:'array',cellDates:true});
+      if(!wb||!wb.SheetNames||!wb.SheetNames.length){setErro('Não foi possível ler a planilha.');return;}
+      const nomeAba=wb.SheetNames.find(n=>entImpNorm(n)===entImpNorm(NE_ABA));
+      if(!nomeAba){setErro(`A planilha não tem a aba "${NE_ABA}". Abas encontradas: ${wb.SheetNames.join(', ')}.`);return;}
+      const aoa=XLSX.utils.sheet_to_json(wb.Sheets[nomeAba],{header:1,raw:true,defval:null});
+      const p=neParse(aoa);
+      if(p.erroFatal){setErro(p.erroFatal);return;}
+      if(!p.lidas){setErro('A aba não tem nenhuma linha de dados.');return;}
+      setParse(p);setEtapa('previa');
+    }catch(err){
+      console.error('Erro ao ler a planilha de notas:',err);
+      setErro('Arquivo inválido ou corrompido. Confirme que é um .xlsx gerado pelo Excel.');
+    }finally{setLendo(false);}
+  };
+
+  const confirmar=async()=>{
+    if(envioLock.current)return;               // duplo clique não duplica lote
+    if(!resumo||!resumo.ok)return;
+    if(!empresaId){setErro('Não foi possível identificar a unidade ativa.');return;}
+    envioLock.current=true;setEnviando(true);setErro('');
+    try{
+      // UMA única chamada por lote. As linhas já existentes no banco também vão:
+      // a RPC as descarta por ON CONFLICT e devolve a contagem real.
+      const payload=parse.linhas.filter(l=>l.valida).map(neParaPayload);
+      const{data,error}=await supabase.rpc('importar_notas_entrada',{
+        p_empresa_id:empresaId,p_rows:payload,
+      });
+      if(error)throw error;
+      const r=data||{};
+      setResultado({
+        inseridas:projNum(r.inseridas),
+        descartadas:projNum(r.descartadas),
+        valorIncluido:projNum(r.valor_incluido),
+      });
+      if(onImportado)await onImportado();       // refetch: o card reflete o real
+      setEtapa('resultado');
+    }catch(err){
+      console.error('Erro ao importar notas de entrada:',err);
+      const cod=String((err&&err.code)||'');
+      const msg=String((err&&(err.message||err.details))||'');
+      if(cod==='42501'||/permiss|permission denied|row-level security/i.test(msg)){
+        setErro('Você não possui permissão para importar notas nesta unidade.');
+      }else if(cod==='22023'||/Lote rejeitado|Nenhuma nota|Lote inválido/i.test(msg)){
+        // Atomicidade: o lote inteiro foi recusado, NADA foi gravado. A prévia
+        // continua na tela para o usuário conferir e corrigir o arquivo.
+        setErro('Nenhuma nota foi importada. '+(msg.replace(/^.*Lote rejeitado:\s*/,'Problemas encontrados: ')||'O arquivo foi recusado por inteiro.'));
+      }else{
+        setErro('Não foi possível concluir a importação. Nenhuma nota foi gravada.');
+      }
+    }finally{setEnviando(false);envioLock.current=false;}
+  };
+
+  const titulo=etapa==='resultado'?'Importação concluída':'Importar Notas de Entrada';
+
+  return(
+    <Modal title={titulo} onClose={enviando?()=>{}:onClose}>
+      {erro&&<div className="alert alert-r" style={{marginBottom:12}}>{erro}</div>}
+
+      {etapa==='arquivo'&&(<>
+        <div className={`imp-drop${dragging?' drag':''}`}
+          onClick={()=>inputRef.current&&inputRef.current.click()}
+          onDragOver={e=>{e.preventDefault();setDragging(true);}}
+          onDragLeave={()=>setDragging(false)}
+          onDrop={e=>{e.preventDefault();setDragging(false);lerArquivo(e.dataTransfer.files&&e.dataTransfer.files[0]);}}>
+          <div className="imp-drop-icon">🧾</div>
+          <div className="imp-drop-text">{lendo?'Lendo a planilha…':'Clique ou arraste a planilha .xlsx aqui'}</div>
+          <div className="imp-drop-sub">Aba “{NE_ABA}” · {NE_COLS.map(c=>c.rotulo).join(' · ')}</div>
+        </div>
+        <p style={{fontSize:11.5,color:'var(--text-muted)',lineHeight:1.5,margin:'10px 0 0'}}>
+          As notas entram pela <strong>data de emissão</strong> (competência), não pela data de
+          pagamento. Uma nota parcelada conta <strong>uma vez</strong>.
+        </p>
+        <input ref={inputRef} type="file" accept=".xlsx" style={{display:'none'}}
+          onChange={e=>{lerArquivo(e.target.files&&e.target.files[0]);e.target.value='';}}/>
+      </>)}
+
+      {etapa==='previa'&&resumo&&(<>
+        <div className="imp-preview">
+          <div className="imp-preview-title">Conferência — {nomeUnidade||'unidade ativa'}</div>
+          <div style={{fontSize:11.5,color:'var(--text-muted)',marginBottom:10}}>
+            <strong>{nomeArq}</strong> · {resumo.lidas} linha{resumo.lidas===1?'':'s'} lida{resumo.lidas===1?'':'s'}
+          </div>
+
+          {resumo.totalErros>0?(
+            <div className="alert alert-r" style={{marginBottom:10}}>
+              <div style={{fontWeight:700,marginBottom:6}}>Este arquivo não pode ser importado.</div>
+              <ul style={{margin:'0 0 8px 16px',padding:0,fontSize:11.5,lineHeight:1.6}}>
+                {Object.entries(parse.erros).map(([tipo,qtd])=>(
+                  <li key={tipo}>{qtd} × {tipo}</li>
+                ))}
+              </ul>
+              <div style={{fontSize:11.5,lineHeight:1.5}}>
+                Volte ao ChatGPT, corrija o que foi preenchido errado e gere o arquivo novamente.
+                O sistema só aceita arquivos 100% válidos — nada é importado pela metade.
+              </div>
+            </div>
+          ):(
+            <div className="alert alert-g" style={{marginBottom:10}}>Arquivo válido — todas as linhas passaram na conferência.</div>
+          )}
+
+          <div className="impent-prazos" style={{marginBottom:8}}>
+            <div className="imp-seg-row"><span>No arquivo</span><strong>{resumo.lidas}</strong></div>
+            <div className="imp-seg-row"><span>Já existentes (serão descartadas)</span><strong>{resumo.jaExistentes}</strong></div>
+            <div className="imp-seg-row"><span>Novas a incluir</span><strong>{resumo.novas}</strong></div>
+            <div className="imp-seg-row"><span>Valor novo a incluir</span><strong>{fmt(resumo.valorNovas)}</strong></div>
+          </div>
+          <div style={{fontSize:11.5,color:'var(--text-muted)',lineHeight:1.5}}>
+            {resumo.novasDoMes} de {mesLabel} — {fmt(resumo.valorNovasDoMes)} entram no card deste mês.
+            As demais são gravadas normalmente e aparecem no mês da própria emissão.
+          </div>
+        </div>
+
+        <div style={{display:'flex',gap:8,justifyContent:'flex-end',marginTop:12}}>
+          <button className="btn btn-secondary" disabled={enviando}
+            onClick={()=>{setParse(null);setNomeArq('');setErro('');setEtapa('arquivo');}}>Trocar arquivo</button>
+          <button className="btn btn-primary" disabled={!resumo.ok||enviando} onClick={confirmar}>
+            {enviando?'Importando…':`Confirmar importação${resumo.novas?` (${resumo.novas})`:''}`}
+          </button>
+        </div>
+      </>)}
+
+      {etapa==='resultado'&&resultado&&(<>
+        <div className="imp-preview">
+          <div className="imp-preview-title">Importação concluída</div>
+          {/* Números do RETORNO DA RPC — nunca do que estava no arquivo. */}
+          <div className="impent-prazos">
+            <div className="imp-seg-row"><span>Notas incluídas</span><strong>{resultado.inseridas}</strong></div>
+            <div className="imp-seg-row"><span>Já existentes (descartadas)</span><strong>{resultado.descartadas}</strong></div>
+            <div className="imp-seg-row"><span>Valor incluído</span><strong>{fmt(resultado.valorIncluido)}</strong></div>
+          </div>
+        </div>
+        <div style={{display:'flex',justifyContent:'flex-end',marginTop:12}}>
+          <button className="btn btn-primary" onClick={onClose}>Fechar</button>
+        </div>
+      </>)}
+    </Modal>
+  );
+}
 
 // ══════════════════════════════════════════════════════════════════════════
 // IMPORTAR ENTRADAS (.xlsx) — modal em 4 etapas: arquivo → regras → prévia → resultado.
