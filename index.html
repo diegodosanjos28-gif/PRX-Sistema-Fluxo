@@ -813,7 +813,125 @@ textarea{resize:vertical;min-height:58px;}
   .forn-pago-hero-cell{border-left:none;padding-left:6px;border-top:1px solid rgba(255,255,255,.18);padding-top:10px;}
 }
 
-.forn-kpi-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:9px;margin-bottom:14px;}
+/* ══════════════════════════════════════════════════════════════════════════
+   ABA FORNECEDORES v2 — porte fiel de MOCKUP FORNECEDORES.html.
+   Namespace exclusivo .forn-v2-* : o mockup usa nomes genéricos (.panel, .row,
+   .tag, .num, .track, .stats) que colidiriam com o sistema. Medidas, raios,
+   sombras e pesos são os do mockup; a família tipográfica continua sendo a do
+   sistema (DM Sans), com os mesmos pesos/tamanhos/tracking do original.
+   Tokens locais no wrapper — nenhum token global é tocado.
+   ══════════════════════════════════════════════════════════════════════════ */
+.forn-v2{
+  --fv-orange:#FC6E20; --fv-ink:#1B1B1B; --fv-ink2:#323232;
+  --fv-offwhite:#FDF1E7; --fv-white:#ffffff; --fv-line:#e6e9ec; --fv-muted:#8a929b;
+  --fv-amber:#E9A400; --fv-green:#22B473; --fv-slate:#3D5A80;
+  color:var(--fv-ink);
+}
+.forn-v2-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px;gap:14px;flex-wrap:wrap;}
+.forn-v2-head h1{font-size:23px;font-weight:800;margin:0;line-height:1.2;color:var(--fv-ink);}
+.forn-v2-head .sub{font-size:12px;color:var(--fv-muted);margin-top:2px;font-weight:500;}
+.forn-v2-per{font-size:12px;color:var(--fv-ink2);font-weight:600;background:var(--fv-white);border:1px solid var(--fv-line);padding:7px 12px;border-radius:9px;white-space:nowrap;}
+
+.forn-v2-g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.forn-v2-g1{display:grid;grid-template-columns:1fr;gap:16px;margin-top:16px;}
+.forn-v2-p{background:var(--fv-white);border-radius:16px;padding:22px 26px;box-shadow:0 3px 12px rgba(16,24,32,.05);}
+.forn-v2-p.off{background:var(--fv-offwhite);}
+.forn-v2-ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;gap:10px;}
+.forn-v2-ph .t{font-size:12px;letter-spacing:.6px;color:var(--fv-ink2);font-weight:700;text-transform:uppercase;}
+
+.forn-v2-tag{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;}
+.forn-v2-tag.caixa{background:#e9ebee;color:#5b6470;}
+.forn-v2-tag.comp{background:#fff0e6;color:var(--fv-orange);}
+.forn-v2-chip{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;}
+.forn-v2-chip.amber{background:#fff3d6;color:#a9780a;}
+.forn-v2-chip.slate{background:#eef1f6;color:var(--fv-slate);}
+.forn-v2-chip.green{background:#e4f7ee;color:#12805a;}
+.forn-v2-chip2{font-size:9.5px;color:#5b6470;background:#f0f2f4;padding:2px 8px;border-radius:20px;font-weight:600;white-space:nowrap;}
+
+.forn-v2-num{font-size:38px;font-weight:800;letter-spacing:.3px;margin-top:14px;line-height:1;font-variant-numeric:tabular-nums;}
+.forn-v2-num.dark{color:var(--fv-ink);}
+.forn-v2-num.orange{color:var(--fv-orange);}
+.forn-v2-accent{width:46px;height:3px;background:var(--fv-orange);border-radius:2px;margin-top:12px;}
+.forn-v2-split{display:flex;gap:22px;margin-top:14px;flex-wrap:wrap;}
+.forn-v2-split .k{font-size:10.5px;color:var(--fv-muted);font-weight:600;}
+.forn-v2-p.off .forn-v2-split .k::before{content:'';display:inline-block;width:7px;height:7px;background:var(--fv-orange);border-radius:2px;margin-right:6px;vertical-align:middle;}
+.forn-v2-split .v{font-size:15px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums;}
+.forn-v2-split .v.hl{color:var(--fv-orange);}
+.forn-v2-note{font-size:11.5px;color:var(--fv-muted);margin-top:14px;line-height:1.5;}
+.forn-v2-note b{color:var(--fv-ink2);}
+
+.forn-v2-strip{margin-top:16px;background:#141416;color:#fff;border-radius:14px;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;}
+.forn-v2-strip .txt{font-size:12.5px;line-height:1.55;flex:1 1 340px;}
+.forn-v2-strip .txt b{color:#ffd7bf;}
+.forn-v2-strip .num2{font-size:22px;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.forn-v2-strip .num2 .amber{color:var(--fv-amber);}
+
+.forn-v2-sect{font-size:11px;letter-spacing:1.4px;color:var(--fv-muted);font-weight:700;text-transform:uppercase;margin:26px 2px 12px;display:flex;align-items:center;gap:10px;}
+.forn-v2-sect::before{content:'';width:22px;height:2px;background:var(--fv-orange);flex:0 0 22px;}
+
+.forn-v2-rtop{display:flex;align-items:baseline;gap:14px;margin-top:12px;}
+.forn-v2-rtop .pct{font-size:44px;font-weight:800;color:var(--fv-ink);line-height:1;font-variant-numeric:tabular-nums;}
+.forn-v2-rtop .forn-v2-accent{height:4px;align-self:center;margin-top:0;}
+.forn-v2-stats{display:flex;gap:26px;margin-top:16px;flex-wrap:wrap;}
+.forn-v2-stats .k{font-size:10.5px;color:var(--fv-muted);font-weight:600;}
+.forn-v2-stats .v{font-size:15px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums;}
+.forn-v2-stats .v.or{color:var(--fv-orange);}
+
+.forn-v2-gauge{margin-top:18px;}
+.forn-v2-gauge .track{position:relative;height:18px;border-radius:10px;background:#eef0f2;overflow:hidden;}
+.forn-v2-gauge .fill{position:absolute;top:0;bottom:0;left:0;background:var(--fv-orange);border-radius:10px 0 0 10px;}
+.forn-v2-gauge .band{position:absolute;top:0;bottom:0;background:rgba(34,180,115,.45);border-left:2px solid var(--fv-green);border-right:2px solid var(--fv-green);}
+.forn-v2-gauge .mark{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--fv-ink);}
+.forn-v2-gauge .scale{display:flex;justify-content:space-between;font-size:10px;color:var(--fv-muted);margin-top:6px;}
+
+.forn-v2-leitura{font-size:12px;color:var(--fv-ink2);margin-top:18px;line-height:1.55;background:#fff7f1;border-left:3px solid var(--fv-orange);padding:11px 14px;border-radius:0 10px 10px 0;}
+.forn-v2-leitura.warn{background:#fffaf0;border-left-color:var(--fv-amber);}
+.forn-v2-leitura b{color:var(--fv-ink);}
+.forn-v2-legend{display:flex;gap:16px;font-size:11px;color:var(--fv-ink2);margin-top:8px;}
+.forn-v2-legend span{display:flex;align-items:center;gap:6px;}
+.forn-v2-legend i{width:14px;height:3px;border-radius:2px;display:inline-block;}
+.forn-v2-ratioline{font-size:11px;color:var(--fv-muted);margin-top:2px;}
+.forn-v2-ratioline b{color:var(--fv-amber);}
+
+.forn-v2-barlist{margin-top:14px;display:flex;flex-direction:column;gap:12px;}
+.forn-v2-barrow .l1{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:12px;gap:10px;}
+.forn-v2-barrow .name{font-weight:600;display:flex;align-items:center;gap:7px;min-width:0;flex-wrap:wrap;}
+.forn-v2-seg{width:9px;height:9px;border-radius:3px;display:inline-block;flex:0 0 9px;}
+.forn-v2-barrow .val{font-weight:700;color:var(--fv-ink);font-variant-numeric:tabular-nums;}
+.forn-v2-barrow .pctv{color:var(--fv-muted);font-size:11px;margin-left:6px;font-weight:600;font-variant-numeric:tabular-nums;}
+.forn-v2-track2{height:9px;background:#eef0f2;border-radius:6px;overflow:hidden;}
+.forn-v2-track2 .f{display:block;height:100%;border-radius:6px;}
+
+.forn-v2-freqrow{display:flex;align-items:center;gap:10px;font-size:12px;margin-bottom:11px;}
+.forn-v2-freqrow .name{flex:1;font-weight:600;display:flex;align-items:center;gap:7px;min-width:0;}
+.forn-v2-freqrow .name span.txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.forn-v2-freqrow .cnt{font-weight:700;flex:0 0 62px;text-align:right;font-variant-numeric:tabular-nums;}
+.forn-v2-freqrow .ft{flex:0 0 44%;height:9px;background:#eef0f2;border-radius:6px;overflow:hidden;}
+.forn-v2-freqrow .ft .f{display:block;height:100%;border-radius:6px;}
+
+.forn-v2-segbars{margin-top:14px;display:flex;flex-direction:column;gap:13px;}
+.forn-v2-segrow .l1{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:5px;gap:10px;}
+.forn-v2-segrow .name{font-weight:600;display:flex;align-items:center;gap:8px;min-width:0;}
+.forn-v2-segrow .right{display:flex;align-items:center;gap:10px;}
+.forn-v2-segrow .val{font-weight:700;font-variant-numeric:tabular-nums;}
+.forn-v2-delta{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;}
+.forn-v2-delta.up{background:#f0f2f4;color:#5b6470;}
+.forn-v2-delta.flag{background:#fff6e0;color:#a9780a;}
+.forn-v2-track3{height:12px;background:#eef0f2;border-radius:7px;overflow:hidden;}
+.forn-v2-track3 .f{display:block;height:100%;border-radius:7px;}
+.forn-v2-foot{font-size:11px;color:var(--fv-muted);margin-top:12px;line-height:1.5;}
+.forn-v2-vazio{font-size:12px;color:var(--fv-muted);margin-top:14px;line-height:1.55;font-style:italic;}
+
+/* Desktop é a prioridade de fidelidade; abaixo de 900px os pares empilham
+   sem deformar painel, gráfico ou barra. */
+@media(max-width:900px){
+  .forn-v2-g2{grid-template-columns:1fr;}
+  .forn-v2-p{padding:18px 18px;}
+  .forn-v2-num{font-size:32px;}
+  .forn-v2-rtop .pct{font-size:36px;}
+  .forn-v2-strip{flex-direction:column;align-items:flex-start;gap:12px;}
+  .forn-v2-freqrow .ft{flex:0 0 34%;}
+}
 .forn-row-2col{display:grid;grid-template-columns:1.55fr 1fr;gap:11px;margin-bottom:11px;align-items:start;}
 /* Variante 40/60 — Ranking por Volume + Custo por Segmento */
 .forn-row-2col.forn-row-4060{grid-template-columns:2fr 3fr;}
@@ -2255,6 +2373,44 @@ const NE_COLS=[
   {i:4,campo:'valor_mercadoria',rotulo:'Valor da Mercadoria'},
 ];
 
+// Sinônimos aceitos de CABEÇALHO, por campo. Comparação é por igualdade EXATA do
+// nome normalizado (entImpNorm: sem acento, sem espaços nas pontas, maiúsculo) —
+// nunca por substring, senão "DATA DA NOTA" casaria com "NOTA".
+const NE_ALIAS={
+  chave_acesso:    ['CHAVE DE ACESSO','CHAVE','CHAVE NFE','CHAVE DA NOTA','CHAVE ACESSO'],
+  numero_nota:     ['NUMERO DA NOTA','NUMERO','NUM NOTA','NUMERO NF','NF'],
+  data_emissao:    ['DATA DA NOTA','DATA DE EMISSAO','DATA EMISSAO','DATA','EMISSAO'],
+  cnpj_fornecedor: ['CNPJ DO FORNECEDOR','CNPJ FORNECEDOR','CNPJ'],
+  nome_fornecedor: ['NOME DO FORNECEDOR','NOME FORNECEDOR','FORNECEDOR','NOME'],
+  segmento:        ['SEGMENTO'],
+  valor_mercadoria:['VALOR DA MERCADORIA','VALOR MERCADORIA','VALOR','VPROD','VALOR DOS PRODUTOS'],
+};
+// Campos sem os quais não dá para importar. numero_nota e segmento são opcionais.
+const NE_OBRIGATORIOS=['chave_acesso','data_emissao','cnpj_fornecedor','nome_fornecedor','valor_mercadoria'];
+
+// Resolve QUAL coluna é QUAL. Duas estratégias, nesta ordem:
+//   1. CABEÇALHO — só é aceito quando os cinco campos obrigatórios foram todos
+//      reconhecidos pelo nome. Aceita qualquer ordem e qualquer nº de colunas,
+//      então planilha nova (com Segmento) e antiga (sem) funcionam igual.
+//   2. POSICIONAL LEGADO — o layout hoje em produção (A..E). É o fallback para
+//      arquivos cujo cabeçalho não seja reconhecível.
+// Por que não trocar o mapa posicional: inserir Segmento no meio faria o
+// importador ler o VALOR de uma planilha antiga como se fosse segmento — e o
+// valor é dado financeiro. Segmento só vem de coluna literalmente chamada
+// "Segmento"; nunca de posição, nunca de adivinhação.
+const neLayout=cabecalho=>{
+  const head=(cabecalho||[]).map(entImpNorm);
+  const idx={};
+  Object.keys(NE_ALIAS).forEach(campo=>{
+    idx[campo]=head.findIndex(h=>h&&NE_ALIAS[campo].indexOf(h)>=0);
+  });
+  if(NE_OBRIGATORIOS.every(c=>idx[c]>=0))return{...idx,fonte:'cabecalho'};
+  return{data_emissao:0,chave_acesso:1,cnpj_fornecedor:2,nome_fornecedor:3,
+         valor_mercadoria:4,numero_nota:-1,segmento:-1,fonte:'posicional'};
+};
+// Célula por campo resolvido. Campo ausente no layout devolve undefined.
+const neCel=(r,ix,campo)=>(ix[campo]>=0?r[ix[campo]]:undefined);
+
 // Só dígitos. A chave NF-e e o CNPJ são SEMPRE tratados como texto: convertê-los
 // para Number perderia zeros à esquerda e estouraria a precisão de 44 dígitos.
 const neDigitos=v=>String(v==null?'':v).replace(/\D+/g,'');
@@ -2295,9 +2451,11 @@ const neTexto=v=>String(v==null?'':v).trim();
 // Lê a matriz da aba e classifica cada linha. Devolve também os erros agrupados
 // por tipo, que é como o preview os apresenta.
 const neParse=aoa=>{
-  const res={linhas:[],erros:{},lidas:0,erroFatal:null};
+  const res={linhas:[],erros:{},lidas:0,erroFatal:null,layout:null};
   const brutas=(aoa||[]).filter(r=>Array.isArray(r));
   if(!brutas.length){res.erroFatal='A aba está vazia.';return res;}
+  const ix=neLayout(brutas[0]);
+  res.layout=ix;
   const conta=(k)=>{res.erros[k]=(res.erros[k]||0)+1;};
   const vistas=new Set();
 
@@ -2305,11 +2463,14 @@ const neParse=aoa=>{
     if(r.every(c=>c==null||String(c).trim()===''))return; // linha vazia: ignora
     const nLinha=i+2;
     res.lidas+=1;
-    const chave=neChave(r[1]);
-    const data =neData(r[0]);
-    const cnpj =neCnpj(r[2]);
-    const nome =neTexto(r[3]);
-    const valor=neValor(r[4]);
+    const chave=neChave(neCel(r,ix,'chave_acesso'));
+    const data =neData (neCel(r,ix,'data_emissao'));
+    const cnpj =neCnpj (neCel(r,ix,'cnpj_fornecedor'));
+    const nome =neTexto(neCel(r,ix,'nome_fornecedor'));
+    const valor=neValor(neCel(r,ix,'valor_mercadoria'));
+    // OPCIONAIS: ausentes ou vazios viram null e NUNCA invalidam a linha.
+    const numero=neTexto(neCel(r,ix,'numero_nota'))||null;
+    const segmento=neTexto(neCel(r,ix,'segmento'))||null;
     const motivos=[];
     // Chave ausente é tratada como ERRO, e não como descarte silencioso: uma
     // linha preenchida sem chave costuma ser dado perdido, não lixo.
@@ -2322,6 +2483,7 @@ const neParse=aoa=>{
     if(chave)vistas.add(chave);
     res.linhas.push({linha:nLinha,chave_acesso:chave,data_emissao:data,
       cnpj_fornecedor:cnpj,nome_fornecedor:nome,valor_mercadoria:valor,
+      numero_nota:numero,segmento:segmento,
       valida:motivos.length===0,motivos});
   });
   return res;
@@ -2336,12 +2498,13 @@ const neResumo=(res,chavesExistentes,mStart,mEnd)=>{
   const soma=arr=>Math.round(arr.reduce((s,l)=>s+Number(l.valor_mercadoria),0)*100)/100;
   const doMes=novas.filter(l=>l.data_emissao>=mStart&&l.data_emissao<=mEnd);
   const totalErros=Object.values(res.erros).reduce((s,n)=>s+n,0);
+  const comSegmento=novas.filter(l=>l.segmento).length;
   return{
     lidas:res.lidas,validas:validas.length,
     jaExistentes:jaExistentes.length,novas:novas.length,
     valorNovas:soma(novas),
     novasDoMes:doMes.length,valorNovasDoMes:soma(doMes),
-    totalErros,ok:totalErros===0&&novas.length>0,
+    totalErros,comSegmento,ok:totalErros===0&&novas.length>0,
   };
 };
 
@@ -2353,6 +2516,8 @@ const neParaPayload=l=>({
   cnpj_fornecedor:l.cnpj_fornecedor,
   nome_fornecedor:l.nome_fornecedor,
   valor_mercadoria:l.valor_mercadoria,   // string decimal ISO, 2 casas
+  numero_nota:l.numero_nota||null,       // opcional
+  segmento:l.segmento||null,             // opcional; a RPC normaliza '' -> NULL
 });
 
 // Soma das notas de um período, para o card. Filtra por unidade e por intervalo
@@ -4414,11 +4579,15 @@ function ImportNotasModal({onClose,empresaId,nomeUnidade,chavesExistentes,mStart
           onDrop={e=>{e.preventDefault();setDragging(false);lerArquivo(e.dataTransfer.files&&e.dataTransfer.files[0]);}}>
           <div className="imp-drop-icon">🧾</div>
           <div className="imp-drop-text">{lendo?'Lendo a planilha…':'Clique ou arraste a planilha .xlsx aqui'}</div>
-          <div className="imp-drop-sub">Aba “{NE_ABA}” · {NE_COLS.map(c=>c.rotulo).join(' · ')}</div>
+          <div className="imp-drop-sub">Aba “{NE_ABA}” · colunas reconhecidas pelo nome no cabeçalho</div>
         </div>
         <p style={{fontSize:11.5,color:'var(--text-muted)',lineHeight:1.5,margin:'10px 0 0'}}>
           As notas entram pela <strong>data de emissão</strong> (competência), não pela data de
           pagamento. Uma nota parcelada conta <strong>uma vez</strong>.
+          {' '}Obrigatórias: <strong>Chave de Acesso</strong>, <strong>Data</strong>,
+          {' '}<strong>CNPJ</strong>, <strong>Fornecedor</strong> e <strong>Valor da Mercadoria</strong>.
+          {' '}Opcionais: <strong>Segmento</strong> e <strong>Número da Nota</strong> — planilhas
+          {' '}antigas, sem essas colunas, continuam funcionando.
         </p>
         <input ref={inputRef} type="file" accept=".xlsx" style={{display:'none'}}
           onChange={e=>{lerArquivo(e.target.files&&e.target.files[0]);e.target.value='';}}/>
@@ -4429,6 +4598,10 @@ function ImportNotasModal({onClose,empresaId,nomeUnidade,chavesExistentes,mStart
           <div className="imp-preview-title">Conferência — {nomeUnidade||'unidade ativa'}</div>
           <div style={{fontSize:11.5,color:'var(--text-muted)',marginBottom:10}}>
             <strong>{nomeArq}</strong> · {resumo.lidas} linha{resumo.lidas===1?'':'s'} lida{resumo.lidas===1?'':'s'}
+            {parse.layout&&parse.layout.fonte==='posicional'&&(
+              <> · <span title="Cabeçalho não reconhecido: as colunas foram lidas na ordem do modelo antigo (Data · Chave · CNPJ · Fornecedor · Valor).">layout antigo por posição</span></>
+            )}
+            {resumo.comSegmento>0&&<> · {resumo.comSegmento} com segmento</>}
           </div>
 
           {resumo.totalErros>0?(
@@ -8473,343 +8646,606 @@ const mergeContasComParcelas=(contas,dividas)=>{
 // ══════════════════════════════════════
 // FORNECEDORES — visão estratégica
 // ══════════════════════════════════════
-function Fornecedores({contas,selectedYear,selectedMonth}){
-  const now=new Date();
-  // Mês/ano vêm do estado GLOBAL (Painel do Dono). Sem useState local nem seletor visual.
+// ══════════════════════════════════════════════════════════════════════════
+// ABA FORNECEDORES v2 — helpers puros de agregação.
+// Separação de regimes, obrigatória e sem exceção:
+//   CAIXA        → `contas` com tipoDespesa 'Fornecedor', por VENCIMENTO
+//   COMPETÊNCIA  → `nota_entrada`, por DATA_EMISSAO
+//   VENDAS       → `entradas`, por DATA
+// Nunca usar vencimento para compras, nem data_emissao para pagamentos.
+// ══════════════════════════════════════════════════════════════════════════
+
+const FORN_SEM_SEG='Sem segmento';
+
+// Paleta FIXA e estável. Vocabulário = SEGMENTOS já existentes no sistema; nada
+// é renomeado nem aproximado (Lacticínios continua Lacticínios). Valor fora da
+// lista recebe neutro; ausência de segmento tem neutro próprio, mais claro,
+// para se distinguir de "segmento desconhecido".
+const FORN_SEG_CORES={
+  'Açougue':'#C1543B','Padaria':'#7B5EA7','Hortifruti':'#2E8B57','Bebidas':'#0F8B8D',
+  'Mercearia Seca':'#FC6E20','Mercearia Salgada':'#B8860B','Mercearia Doce':'#D6749B',
+  'Lacticínios':'#E9A400','Embalagens':'#5C6B73',
+};
+const FORN_COR_OUTRO='#8a929b';
+const FORN_COR_SEM='#b9c0c7';
+const fornSegRotulo=v=>{const s=(v==null?'':String(v)).trim();return s||FORN_SEM_SEG;};
+const fornSegCor=v=>{
+  const s=fornSegRotulo(v);
+  if(s===FORN_SEM_SEG)return FORN_COR_SEM;
+  return FORN_SEG_CORES[s]||FORN_COR_OUTRO;
+};
+
+// Mês anterior com virada de ano correta: janeiro recua para dezembro do ano
+// anterior. Nunca produz mês -1.
+const fornMesAnterior=(ano,mes)=>(mes===0?{ano:ano-1,mes:11}:{ano,mes:mes-1});
+// Recuo de N meses, mesma disciplina.
+const fornRecuaMeses=(ano,mes,n)=>{
+  const t=ano*12+mes-n;
+  return{ano:Math.floor(t/12),mes:((t%12)+12)%12};
+};
+
+const fornNoPeriodo=(iso,ini,fim)=>!!iso&&iso>=ini&&iso<=fim;
+const fornSoma=(arr,campo)=>Math.round(arr.reduce((s,x)=>s+projNum(x&&x[campo]),0)*100)/100;
+
+// ── CAMADA 1 · CAIXA ──────────────────────────────────────────────────────
+// Todas as despesas de fornecedor do mês, pagas e a pagar. Regime de CAIXA:
+// o recorte é por vencimento, e `status` decide o que já saiu.
+const fornCaixaMes=(contas,ini,fim)=>{
+  const doMes=(contas||[]).filter(c=>c&&c.tipoDespesa==='Fornecedor'&&fornNoPeriodo(c.vencimento,ini,fim));
+  const total=fornSoma(doMes,'valor');
+  const pago=fornSoma(doMes.filter(c=>c.status==='Pago'),'valor');
+  return{total,pago,aPagar:Math.round((total-pago)*100)/100,qtd:doMes.length};
+};
+
+// ── CAMADA 1 · COMPETÊNCIA ────────────────────────────────────────────────
+// O que de fato foi comprado no mês, pela data da nota. Fornecedores distintos
+// contam por CNPJ (identidade); o nome serve só para exibir.
+const fornComprasMes=(notas,ini,fim)=>{
+  const doMes=(notas||[]).filter(n=>n&&fornNoPeriodo(n.data_emissao,ini,fim));
+  const cnpjs=new Set();
+  doMes.forEach(n=>{if(n.cnpj_fornecedor)cnpjs.add(n.cnpj_fornecedor);});
+  return{total:fornSoma(doMes,'valor_mercadoria'),notas:doMes.length,fornecedores:cnpjs.size};
+};
+
+// ── CAMADA 2 · COMPRAS ÷ VENDAS ───────────────────────────────────────────
+// Sem vendas não existe razão: devolve null e a UI mostra estado sem base, em
+// vez de inventar percentual ou dividir por zero.
+const FORN_FAIXA_MIN=72, FORN_FAIXA_MAX=80;   // faixa gerencial do mockup
+const fornRatio=(compras,vendas)=>(vendas>0?(compras/vendas)*100:null);
+const fornSituacao=r=>{
+  if(r===null)return{chave:'sem-base',rotulo:'sem base de vendas',cls:'slate'};
+  if(r<FORN_FAIXA_MIN) return{chave:'abaixo', rotulo:'abaixo do saudável',cls:'green'};
+  if(r>FORN_FAIXA_MAX) return{chave:'acima',  rotulo:'acima do saudável', cls:'amber'};
+  return{chave:'dentro',rotulo:'dentro do saudável',cls:'green'};
+};
+
+// ── CAMADA 2 · SÉRIE DE 6 COMPETÊNCIAS ────────────────────────────────────
+// Termina no mês SELECIONADO (nunca no relógio) e recua 5, com virada de ano.
+const fornSerie6=(notas,entradas,ano,mes)=>{
+  const out=[];
+  for(let k=5;k>=0;k--){
+    const{ano:a,mes:m}=fornRecuaMeses(ano,mes,k);
+    const ini=monthStart(a,m),fim=monthEnd(a,m);
+    const compras=fornSoma((notas||[]).filter(n=>n&&fornNoPeriodo(n.data_emissao,ini,fim)),'valor_mercadoria');
+    const vendas =fornSoma((entradas||[]).filter(e=>e&&fornNoPeriodo(e.data,ini,fim)),'total');
+    out.push({ano:a,mes:m,rotulo:MONTHS_SHORT[m],compras,vendas,ratio:fornRatio(compras,vendas)});
+  }
+  return out;
+};
+
+// Diagnóstico da tendência a partir dos meses que TÊM razão calculável.
+// Nada é afirmado sem os dados sustentarem: 'subindo' só sai quando a razão
+// cresce em TODAS as transições observadas.
+const fornTendencia=serie=>{
+  const pts=(serie||[]).filter(p=>p.ratio!==null);
+  if(pts.length<2)return{chave:'sem-base',rotulo:'sem histórico suficiente',de:null,ate:null,n:pts.length};
+  const de=pts[0].ratio,ate=pts[pts.length-1].ratio;
+  let sobe=0,desce=0;
+  for(let i=1;i<pts.length;i++){
+    const d=pts[i].ratio-pts[i-1].ratio;
+    if(d>0.5)sobe++;else if(d<-0.5)desce++;
+  }
+  const trans=pts.length-1;
+  let chave,rotulo;
+  if(sobe===trans)                    {chave='subindo';  rotulo=`subindo ${trans+1} meses seguidos`;}
+  else if(desce===trans)              {chave='caindo';   rotulo=`caindo ${trans+1} meses seguidos`;}
+  else if(sobe===0&&desce===0)        {chave='estavel';  rotulo='estável no período';}
+  else if(desce===0)                  {chave='subindo';  rotulo='em alta no período';}
+  else if(sobe===0)                   {chave='caindo';   rotulo='em queda no período';}
+  else if(sobe>=desce*2)              {chave='subindo';  rotulo='em alta no período';}
+  else if(desce>=sobe*2)              {chave='caindo';   rotulo='em queda no período';}
+  else                                {chave='oscilando';rotulo='oscilando no período';}
+  return{chave,rotulo,de,ate,n:pts.length};
+};
+
+// ── CAMADA 3 · RANKING ────────────────────────────────────────────────────
+// Agrupa por CNPJ (identidade). O nome exibido é o da nota mais recente do
+// grupo — se o fornecedor mudou de razão social, mostra a atual.
+// O segmento também vem da nota mais recente daquele CNPJ: é dado da própria
+// compra, nunca deduzido do nome.
+const fornRanking=(notas,ini,fim)=>{
+  const doMes=(notas||[]).filter(n=>n&&fornNoPeriodo(n.data_emissao,ini,fim));
+  const mapa={};
+  doMes.forEach(n=>{
+    const k=n.cnpj_fornecedor||('nome:'+fornSegRotulo(n.nome_fornecedor));
+    if(!mapa[k])mapa[k]={cnpj:n.cnpj_fornecedor||'',nome:'',segmento:null,valor:0,notas:0,ultima:''};
+    const g=mapa[k];
+    g.valor+=projNum(n.valor_mercadoria);
+    g.notas+=1;
+    if(!g.ultima||n.data_emissao>=g.ultima){
+      g.ultima=n.data_emissao;
+      g.nome=(n.nome_fornecedor||'').trim()||'Sem identificação';
+      g.segmento=n.segmento||null;
+    }
+  });
+  const arr=Object.values(mapa).map(g=>({...g,valor:Math.round(g.valor*100)/100}));
+  const total=Math.round(arr.reduce((s,g)=>s+g.valor,0)*100)/100;
+  arr.sort((a,b)=>b.valor-a.valor||a.nome.localeCompare(b.nome));
+  arr.forEach(g=>{g.pct=total>0?(g.valor/total)*100:0;});
+  const top3=Math.round(arr.slice(0,3).reduce((s,g)=>s+g.valor,0)*100)/100;
+  return{lista:arr,total,concTop3:total>0?(top3/total)*100:0};
+};
+
+// Frequência = QUANTIDADE DE NOTAS por fornecedor no mês. Nunca boletos:
+// boleto é caixa, nota é compra.
+const fornFrequencia=(notas,ini,fim)=>{
+  const{lista}=fornRanking(notas,ini,fim);
+  return lista.slice().sort((a,b)=>b.notas-a.notas||b.valor-a.valor);
+};
+
+// ── CAMADA 3 · SEGMENTOS ──────────────────────────────────────────────────
+// Mês atual x mês anterior, mesmos critérios. NULL vira "Sem segmento" só na
+// apresentação — o dado no banco continua NULL.
+const fornSegmentos=(notas,ini,fim,iniPrev,fimPrev)=>{
+  const agr=(i,f)=>{
+    const m={};
+    (notas||[]).filter(n=>n&&fornNoPeriodo(n.data_emissao,i,f))
+      .forEach(n=>{const k=fornSegRotulo(n.segmento);m[k]=(m[k]||0)+projNum(n.valor_mercadoria);});
+    return m;
+  };
+  const atual=agr(ini,fim),ant=agr(iniPrev,fimPrev);
+  const arr=Object.keys(atual).map(k=>{
+    const valor=Math.round(atual[k]*100)/100;
+    const anterior=Math.round((ant[k]||0)*100)/100;
+    // Sem base no mês anterior não existe percentual: delta fica null e a UI
+    // mostra "novo" em vez de inventar um número.
+    const delta=anterior>0?((valor-anterior)/anterior)*100:null;
+    return{segmento:k,valor,anterior,delta,cor:fornSegCor(k===FORN_SEM_SEG?null:k)};
+  });
+  arr.sort((a,b)=>b.valor-a.valor||a.segmento.localeCompare(b.segmento));
+  return arr;
+};
+
+// Rótulo curto do eixo (120000 -> "120k"), como no mockup.
+const fornKcurto=v=>{
+  const n=projNum(v);
+  if(n>=1000)return Math.round(n/1000)+'k';
+  return String(Math.round(n));
+};
+
+// ── GRÁFICO DE TENDÊNCIA (SVG local, fiel ao mockup) ──────────────────────
+// SVG em vez de Chart.js: o mockup define linhas de 2.5px, pontos de r=3.2 com
+// miolo branco, área translúcida entre as curvas e grid de 3 linhas. Reproduzir
+// isso no Chart.js exigiria mexer na configuração global, o que está vedado.
+// Devolve apenas geometria — o React desenha.
+const fornGeoGrafico=(serie,W,H)=>{
+  const pl=46,pr=16,pt=18,pb=30;
+  const vals=[];
+  (serie||[]).forEach(p=>{vals.push(p.vendas,p.compras);});
+  const max=Math.max(1,...vals);
+  // Escala de 0 ao topo arredondado: mantém as duas curvas dentro da área útil
+  // mesmo quando compras superam vendas.
+  const yMax=max*1.08,yMin=0;
+  const n=Math.max(1,(serie||[]).length);
+  const x=i=>pl+(W-pl-pr)*(n===1?0.5:i/(n-1));
+  const y=v=>pt+(H-pt-pb)*(1-((v-yMin)/(yMax-yMin||1)));
+  const grid=[0.25,0.5,0.75].map(f=>{const v=yMax*f;return{v,y:y(v),rotulo:fornKcurto(v)};});
+  const pts=arr=>(serie||[]).map((p,i)=>`${x(i).toFixed(1)},${y(p[arr]).toFixed(1)}`).join(' ');
+  return{
+    pl,pr,pt,pb,x,y,grid,
+    vendasPts:pts('vendas'),comprasPts:pts('compras'),
+    area:`${pts('vendas')} ${(serie||[]).map((p,i)=>`${x(i).toFixed(1)},${y(p.compras).toFixed(1)}`).reverse().join(' ')}`,
+    pontos:(serie||[]).map((p,i)=>({i,x:x(i),yv:y(p.vendas),yc:y(p.compras),rotulo:p.rotulo})),
+  };
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+// ABA FORNECEDORES — porte fiel de MOCKUP FORNECEDORES.html.
+// Três camadas, nesta ordem: (1) Pago × Compras + faixa executiva;
+// (2) Compras ÷ Vendas + tendência de 6 meses; (3) ranking, frequência e mix
+// por segmento. Escopo: SEMPRE a unidade ativa — esta aba não tem Consolidado.
+// ══════════════════════════════════════════════════════════════════════════
+function Fornecedores({contas,entradas,selectedYear,selectedMonth,empresaAtiva}){
   const selYear=selectedYear;
   const selMonth=selectedMonth;
-  const chartEvolRef=useRef(null);
-
-  const fornNome=c=>(c.fornecedor&&c.fornecedor.trim())?c.fornecedor.trim():(c.descricao||'Sem identificação').trim();
-  const todayStr=today();
-
-  // Universo: só boletos do tipo Fornecedor
-  const universo=contas.filter(c=>c.tipoDespesa==='Fornecedor');
-
-  // Filtro de período (mês/ano selecionado)
   const mStart=monthStart(selYear,selMonth);
   const mEnd=monthEnd(selYear,selMonth);
-  const contasMes=universo.filter(c=>c.vencimento>=mStart&&c.vencimento<=mEnd);
+  const prev=fornMesAnterior(selYear,selMonth);
+  const pStart=monthStart(prev.ano,prev.mes);
+  const pEnd=monthEnd(prev.ano,prev.mes);
+  // Janela de 6 competências terminando no mês SELECIONADO (nunca no relógio).
+  const j0=fornRecuaMeses(selYear,selMonth,5);
+  const jStart=monthStart(j0.ano,j0.mes);
+  const mesLabel=`${MONTHS[selMonth]}/${selYear}`;
+  const empresaId=(empresaAtiva&&empresaAtiva.id)||EMPRESA_ID;
+  const nomeUnidade=(empresaAtiva&&empresaAtiva.nome)||'unidade ativa';
 
-  // Agrupamento por fornecedor no mês
-  const map={};
-  contasMes.forEach(c=>{
-    const nome=fornNome(c);
-    if(!map[nome])map[nome]={nome,valor:0,qtd:0,datas:[],itens:[]};
-    map[nome].valor+=c.valor;
-    map[nome].qtd+=1;
-    map[nome].datas.push(c.vencimento);
-    map[nome].itens.push(c);
-  });
-  const fornArr=Object.values(map).sort((a,b)=>b.valor-a.valor);
-  const totalMes=fornArr.reduce((s,f)=>s+f.valor,0);
-  const totalBoletos=fornArr.reduce((s,f)=>s+f.qtd,0);
-  const ticketMedio=totalBoletos>0?totalMes/totalBoletos:0;
-  const top3Valor=fornArr.slice(0,3).reduce((s,f)=>s+f.valor,0);
-  const concTop3=totalMes>0?pct(top3Valor,totalMes):0;
+  // ── NOTAS DE ENTRADA — uma consulta cobrindo as 6 competências ──
+  // Sem N+1: nada de query por fornecedor, por segmento ou por mês. Tudo o que
+  // as três camadas precisam sai deste array, agregado em memória.
+  const[notas,setNotas]=useState([]);
+  const[carregando,setCarregando]=useState(false);
+  useEffect(()=>{
+    let cancelado=false;
+    if(!empresaId){setNotas([]);return;}
+    setCarregando(true);
+    (async()=>{
+      try{
+        const rows=await fetchAllPages((from,to)=>supabase
+          .from('nota_entrada')
+          .select('empresa_id,data_emissao,valor_mercadoria,cnpj_fornecedor,nome_fornecedor,segmento')
+          .eq('empresa_id',empresaId)
+          .gte('data_emissao',jStart).lte('data_emissao',mEnd)
+          .order('data_emissao',{ascending:true}).range(from,to),'fornecedores:notas');
+        if(cancelado)return;
+        setNotas(Array.isArray(rows)?rows:[]);
+      }catch(err){
+        if(cancelado)return;
+        console.error('Erro ao carregar notas de entrada (Fornecedores):',err);
+        setNotas([]);
+      }finally{if(!cancelado)setCarregando(false);}
+    })();
+    return()=>{cancelado=true;};
+  },[empresaId,jStart,mEnd]);
 
-  // === Total já PAGO aos fornecedores do mês ===
-  // Atualiza automaticamente conforme boletos são marcados como Pago.
-  const contasPagasMes=contasMes.filter(c=>c.status==='Pago');
-  const totalPagoMes=contasPagasMes.reduce((s,c)=>s+c.valor,0);
-  const qtdPagosMes=contasPagasMes.length;
-  const pctPagoMes=totalMes>0?pct(totalPagoMes,totalMes):0;
-  const totalRestanteMes=Math.max(0,totalMes-totalPagoMes);
-  const qtdRestanteMes=Math.max(0,totalBoletos-qtdPagosMes);
+  // ── CAMADA 1 ──
+  const caixa  =React.useMemo(()=>fornCaixaMes(contas,mStart,mEnd),[contas,mStart,mEnd]);
+  const compras=React.useMemo(()=>fornComprasMes(notas,mStart,mEnd),[notas,mStart,mEnd]);
+  const dif=Math.round((caixa.total-compras.total)*100)/100;
 
-  // === Agrupamento por SEGMENTO (Custo por Segmento) ===
-  // Prioridade: segmento → categoria → "Sem segmento". Só considera tipoDespesa='Fornecedor' (já filtrado em contasMes).
-  const segMap={};
-  contasMes.forEach(c=>{
-    const key=(c.segmento&&c.segmento.trim())||(c.categoria&&c.categoria.trim())||'Sem segmento';
-    if(!segMap[key])segMap[key]={nome:key,valor:0,qtd:0};
-    segMap[key].valor+=c.valor;
-    segMap[key].qtd+=1;
-  });
-  const segArr=Object.values(segMap).sort((a,b)=>b.valor-a.valor);
+  // ── CAMADA 2 ──
+  // Vendas do mês vêm de `entradas` (dataset já carregado pelo App): sem
+  // segunda consulta para a mesma pergunta.
+  const vendasMes=React.useMemo(
+    ()=>fornSoma((entradas||[]).filter(e=>e&&fornNoPeriodo(e.data,mStart,mEnd)),'total'),
+    [entradas,mStart,mEnd]);
+  const ratio=fornRatio(compras.total,vendasMes);
+  const situacao=fornSituacao(ratio);
+  const margem=ratio===null?null:100-ratio;
+  const serie=React.useMemo(()=>fornSerie6(notas,entradas,selYear,selMonth),[notas,entradas,selYear,selMonth]);
+  const tend=React.useMemo(()=>fornTendencia(serie),[serie]);
+  const GW=600,GH=250;
+  const geo=React.useMemo(()=>fornGeoGrafico(serie,GW,GH),[serie]);
 
-  // Próximos vencimentos (a partir de hoje, no período)
-  const dMaisHoje=d=>{const a=new Date(d+'T12:00:00'),b=new Date(todayStr+'T12:00:00');return Math.round((a-b)/(1000*60*60*24));};
-  const pendentes=universo.filter(c=>c.status!=='Pago'&&c.vencimento>=todayStr);
-  const prox7=pendentes.filter(c=>{const d=dMaisHoje(c.vencimento);return d>=0&&d<=7;}).reduce((s,c)=>s+c.valor,0);
-  const prox30=pendentes.filter(c=>{const d=dMaisHoje(c.vencimento);return d>=0&&d<=30;}).reduce((s,c)=>s+c.valor,0);
+  // ── CAMADA 3 ──
+  const rank=React.useMemo(()=>fornRanking(notas,mStart,mEnd),[notas,mStart,mEnd]);
+  const freq=React.useMemo(()=>fornFrequencia(notas,mStart,mEnd),[notas,mStart,mEnd]);
+  const segs=React.useMemo(()=>fornSegmentos(notas,mStart,mEnd,pStart,pEnd),[notas,mStart,mEnd,pStart,pEnd]);
+  const top6=rank.lista.slice(0,6);
+  const maxRank=top6.length?top6[0].valor:0;
+  const freq6=freq.slice(0,6);
+  const maxFreq=freq6.length?freq6[0].notas:0;
+  const maxSeg=segs.length?segs[0].valor:0;
 
-  // Próximos vencimentos por fornecedor (janela 30 dias)
-  const proxMap={};
-  pendentes.filter(c=>{const d=dMaisHoje(c.vencimento);return d>=0&&d<=30;}).forEach(c=>{
-    const nome=fornNome(c);
-    if(!proxMap[nome])proxMap[nome]={nome,v7:0,v15:0,v30:0,total:0,qtd:0};
-    const d=dMaisHoje(c.vencimento);
-    if(d<=7)proxMap[nome].v7+=c.valor;
-    if(d<=15)proxMap[nome].v15+=c.valor;
-    proxMap[nome].v30+=c.valor;
-    proxMap[nome].total+=c.valor;
-    proxMap[nome].qtd+=1;
-  });
-  const proxArr=Object.values(proxMap).sort((a,b)=>b.total-a.total);
-
-  // Frequência / cadência (intervalo médio em dias entre compras no mês)
-  const cadencia=fornArr.map(f=>{
-    const dts=[...new Set(f.datas)].sort();
-    let intMed=null;
-    if(dts.length>=2){
-      const difs=[];
-      for(let i=1;i<dts.length;i++){
-        const a=new Date(dts[i-1]+'T12:00:00'),b=new Date(dts[i]+'T12:00:00');
-        difs.push(Math.round((b-a)/(1000*60*60*24)));
-      }
-      intMed=Math.round(difs.reduce((s,x)=>s+x,0)/difs.length);
-    }
-    let classif='—';
-    if(intMed===null)classif='Eventual';
-    else if(intMed<=3)classif='Semanal+';
-    else if(intMed<=8)classif='Semanal';
-    else if(intMed<=16)classif='Quinzenal';
-    else classif='Mensal';
-    return{nome:f.nome,qtd:f.qtd,intMed,classif,valor:f.valor};
-  });
-
-  // Evolução últimos 6 meses — top 5 fornecedores do mês selecionado
-  const top5=fornArr.slice(0,5).map(f=>f.nome);
-  const meses=[];
-  for(let i=5;i>=0;i--){
-    const d=new Date(selYear,selMonth-i,1);
-    meses.push({y:d.getFullYear(),m:d.getMonth(),label:MONTHS_SHORT[d.getMonth()]+'/'+String(d.getFullYear()).slice(2)});
-  }
-  const evolDatasets=top5.map((nome,idx)=>{
-    const cores=['#dc2626','#2563eb','#16a34a','#d97706','#7c3aed'];
-    const data=meses.map(mn=>{
-      const s=monthStart(mn.y,mn.m),e=monthEnd(mn.y,mn.m);
-      return universo.filter(c=>c.vencimento>=s&&c.vencimento<=e&&fornNome(c)===nome).reduce((sm,c)=>sm+c.valor,0);
-    });
-    return{label:nome,data,borderColor:cores[idx],backgroundColor:cores[idx]+'14',tension:0.3,pointRadius:3,fill:false};
-  });
-
-  // (gráfico donut "Concentração de Compras" removido — substituído pelo painel "Custo por Segmento")
-
-  useChart(chartEvolRef,evolDatasets.length>0?{
-    type:'line',
-    data:{labels:meses.map(m=>m.label),datasets:evolDatasets},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{
-      legend:{position:'bottom',labels:{boxWidth:10,font:{size:10},color:'#475569'}},
-      tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+formatCurrency(ctx.parsed.y)}}
-    },scales:{y:{ticks:{callback:v=>formatCurrency(v)}}}}
-  }:null);
-
-  if(universo.length===0){
-    return(
-      <div className="forn-empty-state">
-        <div className="forn-empty-icon">🚚</div>
-        <div className="forn-empty-title">Nenhum boleto de fornecedor cadastrado</div>
-        <div className="forn-empty-sub">Cadastre boletos na aba <strong>Contas a Pagar</strong> com o tipo <em>Fornecedor</em> para que esta aba ganhe vida.</div>
-      </div>
-    );
-  }
+  // Escala do gauge: vai até 110% como no mockup, mas acomoda razão maior sem
+  // estourar a barra.
+  const gMax=Math.max(110,ratio===null?0:Math.ceil(ratio/10)*10+10);
+  const gp=v=>Math.max(0,Math.min(100,(v/gMax)*100));
+  const pctFmt=v=>v.toFixed(1).replace('.',',')+'%';
 
   return(
-    <div>
-      {/* CARD HERO — Total Pago a Fornecedores no mês (atualiza em tempo real) */}
-      <div className="forn-pago-hero">
-        <div className="forn-pago-hero-main">
-          <div className="forn-pago-hero-label">
-            <span className="forn-pago-ico">✓</span>
-            <span>Pago a Fornecedores — {MONTHS[selMonth]} {selYear}</span>
+    <div className="forn-v2">
+      {/* ══ CABEÇALHO ══ */}
+      <div className="forn-v2-head">
+        <div>
+          <h1>Fornecedores</h1>
+          <div className="sub">Pagamentos (caixa) · Compras (competência) · Compras ÷ Vendas</div>
+        </div>
+        <div className="forn-v2-per">{mesLabel} · {nomeUnidade}</div>
+      </div>
+
+      {/* ══ CAMADA 1 ══ */}
+      <div className="forn-v2-g2">
+        <div className="forn-v2-p off">
+          <div className="forn-v2-ph">
+            <span className="t">Pago a fornecedor</span>
+            <span className="forn-v2-tag caixa">regime de caixa</span>
           </div>
-          <div className="forn-pago-hero-value">{fmtFull(totalPagoMes)}</div>
-          <div className="forn-pago-hero-sub">
-            {qtdPagosMes} de {totalBoletos} boleto{totalBoletos===1?'':'s'} quitado{qtdPagosMes===1?'':'s'}
+          <div className="forn-v2-num dark">{fmtFull(caixa.total)}</div>
+          <div className="forn-v2-accent"></div>
+          <div className="forn-v2-split">
+            <div><div className="k">Já pago no mês</div><div className="v">{fmtFull(caixa.pago)}</div></div>
+            <div><div className="k">Ainda a pagar</div><div className="v hl">{fmtFull(caixa.aPagar)}</div></div>
           </div>
-          <div className="forn-pago-hero-prog-wrap">
-            <div className="forn-pago-hero-prog-bg">
-              <div className="forn-pago-hero-prog" style={{width:Math.min(100,pctPagoMes)+'%'}}></div>
+          <div className="forn-v2-note">
+            Todas as despesas de fornecedor do mês — <b>pagas e a pagar</b>. Origem: contas a pagar
+            (tipo Fornecedor), pela data de vencimento.
+          </div>
+        </div>
+
+        <div className="forn-v2-p">
+          <div className="forn-v2-ph">
+            <span className="t">Compras do mês</span>
+            <span className="forn-v2-tag comp">regime de competência</span>
+          </div>
+          <div className="forn-v2-num orange">{carregando?'—':fmtFull(compras.total)}</div>
+          <div className="forn-v2-split">
+            <div><div className="k">Notas do mês</div>
+              <div className="v">{compras.notas} nota{compras.notas===1?'':'s'}</div></div>
+            <div><div className="k">Fornecedores</div><div className="v">{compras.fornecedores}</div></div>
+          </div>
+          <div className="forn-v2-note">
+            O que <b>de fato foi comprado</b> este mês (data da nota). Origem: importações do card
+            <b> Notas de Entrada</b> no Painel do Dono.
+          </div>
+        </div>
+      </div>
+
+      {/* ══ FAIXA EXECUTIVA — Pagou × Comprou ══ */}
+      <div className="forn-v2-strip">
+        <div className="txt">
+          {compras.total<=0&&caixa.total<=0
+            ? <>Sem despesas de fornecedor e sem notas importadas em {mesLabel}. Assim que houver
+                movimento, esta faixa compara o que <b>saiu do caixa</b> com o que foi <b>comprado</b>.</>
+            : (dif>0
+              ? <>Neste mês o caixa comprometido com fornecedores (pago + a pagar) supera as compras
+                  em <b>{fmtFull(dif)}</b>. Enquanto <b>Pagou &gt; Comprou</b>, o passado está vencendo
+                  mais rápido do que você compra. O alarme acende no dia em que inverter.</>
+              : (dif<0
+                ? <>Neste mês as compras superam o caixa comprometido com fornecedores
+                    em <b>{fmtFull(Math.abs(dif))}</b>. <b>Comprou &gt; Pagou</b> significa estoque
+                    sendo alavancado no prazo do fornecedor — sustentável enquanto o giro acompanhar.</>
+                : <>Neste mês o caixa comprometido com fornecedores e as compras estão
+                    <b> equilibrados</b>. O que vence acompanha o que entra de mercadoria.</>))}
+        </div>
+        <div className="num2">
+          {compras.total<=0&&caixa.total<=0
+            ? <span style={{color:'#9aa0a6'}}>sem movimento</span>
+            : <>{dif>0?'Pagou > Comprou':(dif<0?'Comprou > Pagou':'Equilíbrio')}
+                {dif!==0&&<span className="amber"> · {fmtFull(Math.abs(dif))}</span>}</>}
+        </div>
+      </div>
+
+      {/* ══ CAMADA 2 ══ */}
+      <div className="forn-v2-sect">Compras ÷ Vendas e tendência</div>
+      <div className="forn-v2-g2">
+        <div className="forn-v2-p">
+          <div className="forn-v2-ph">
+            <span className="t">Compras ÷ Vendas</span>
+            <span className={`forn-v2-chip ${situacao.cls}`}>{situacao.rotulo}</span>
+          </div>
+          <div className="forn-v2-rtop">
+            <span className="pct">{ratio===null?'—':pctFmt(ratio)}</span>
+            <span className="forn-v2-accent"></span>
+          </div>
+          <div className="forn-v2-stats">
+            <div><div className="k">Compras (competência)</div>
+              <div className="v or">{fmtFull(compras.total)}</div></div>
+            <div><div className="k">Vendas do mês</div>
+              <div className="v">{fmtFull(vendasMes)}</div></div>
+            <div><div className="k">Margem bruta implícita</div>
+              <div className="v">{margem===null?'—':'≈ '+pctFmt(margem)}</div></div>
+          </div>
+          <div className="forn-v2-gauge">
+            <div className="track">
+              <div className="fill" style={{width:(ratio===null?0:gp(ratio))+'%'}}></div>
+              <div className="band" style={{left:gp(FORN_FAIXA_MIN)+'%',
+                width:(gp(FORN_FAIXA_MAX)-gp(FORN_FAIXA_MIN))+'%'}}></div>
+              {ratio!==null&&<div className="mark" style={{left:gp(ratio)+'%'}}></div>}
+            </div>
+            <div className="scale">
+              <span>0%</span>
+              <span>faixa saudável {FORN_FAIXA_MIN}–{FORN_FAIXA_MAX}%</span>
+              <span>{gMax}%</span>
             </div>
           </div>
+          <div className={`forn-v2-leitura${situacao.chave==='acima'?' warn':''}`}>
+            {ratio===null
+              ? <>Sem vendas registradas em {mesLabel}, não há base para calcular a razão. Lance as
+                  entradas do mês para que este indicador passe a fazer sentido.</>
+              : (situacao.chave==='acima'
+                ? <><b>{pctFmt(ratio)} — acima da faixa saudável.</b> De cada R$ 1,00 vendido,
+                    R$ {(ratio/100).toFixed(2).replace('.',',')} foi para repor mercadoria; sobra
+                    ~{pctFmt(margem)} de margem bruta. Ou o preço está baixo, ou você comprou mais
+                    (ou mais caro) do que precisa.</>
+                : (situacao.chave==='abaixo'
+                  ? <><b>{pctFmt(ratio)} — abaixo da faixa saudável.</b> Sobra
+                      ~{pctFmt(margem)} de margem bruta. Folga boa, mas confira se não está
+                      comprando de menos e arriscando ruptura de estoque.</>
+                  : <><b>{pctFmt(ratio)} — dentro da faixa saudável.</b> De cada R$ 1,00 vendido,
+                      R$ {(ratio/100).toFixed(2).replace('.',',')} repõe mercadoria e
+                      ~{pctFmt(margem)} fica de margem bruta. É o patamar de equilíbrio.</>))}
+          </div>
         </div>
-        <div className="forn-pago-hero-cell">
-          <div className="forn-pago-hero-cell-lbl">% do total comprado</div>
-          <div className="forn-pago-hero-cell-val">{pctPagoMes}%</div>
-          <div className="forn-pago-hero-cell-sub">de {fmtFull(totalMes)}</div>
-        </div>
-        <div className="forn-pago-hero-cell">
-          <div className="forn-pago-hero-cell-lbl">Restante a pagar</div>
-          <div className="forn-pago-hero-cell-val">{fmtFull(totalRestanteMes)}</div>
-          <div className="forn-pago-hero-cell-sub">{qtdRestanteMes} boleto{qtdRestanteMes===1?'':'s'} em aberto</div>
-        </div>
-        <div className="forn-pago-hero-cell">
-          <div className="forn-pago-hero-cell-lbl">Ticket médio pago</div>
-          <div className="forn-pago-hero-cell-val">{fmtFull(qtdPagosMes>0?totalPagoMes/qtdPagosMes:0)}</div>
-          <div className="forn-pago-hero-cell-sub">por boleto quitado</div>
+
+        <div className="forn-v2-p">
+          <div className="forn-v2-ph">
+            <span className="t">Tendência · compras vs vendas</span>
+            <span className="forn-v2-chip slate">
+              {tend.de===null?'sem histórico':`razão ${pctFmt(tend.de)} → ${pctFmt(tend.ate)}`}
+            </span>
+          </div>
+          {/* SVG local: o mockup define linha 2.5px, ponto r=3.2 com miolo
+              branco, área translúcida entre as curvas e grid de 3 linhas.
+              Reproduzir isso no Chart.js exigiria mexer na config global. */}
+          <svg viewBox={`0 0 ${GW} ${GH}`} style={{width:'100%',height:'auto',marginTop:10}}
+            role="img" aria-label="Vendas e compras dos últimos seis meses">
+            {geo.grid.map((g,i)=>(
+              <g key={'g'+i}>
+                <line x1={geo.pl} y1={g.y} x2={GW-geo.pr} y2={g.y} stroke="#eef0f2"/>
+                <text x={geo.pl-8} y={g.y+3} fontSize="9" fill="#9aa0a6" textAnchor="end">{g.rotulo}</text>
+              </g>
+            ))}
+            {geo.pontos.map(p=>(
+              <text key={'m'+p.i} x={p.x} y={GH-9} fontSize="10" fill="#8a929b" textAnchor="middle">{p.rotulo}</text>
+            ))}
+            <polygon points={geo.area} fill="rgba(252,110,32,0.07)"/>
+            <polyline points={geo.vendasPts} fill="none" stroke="#3D5A80" strokeWidth="2.5"
+              strokeLinejoin="round" strokeLinecap="round"/>
+            <polyline points={geo.comprasPts} fill="none" stroke="#FC6E20" strokeWidth="2.5"
+              strokeLinejoin="round" strokeLinecap="round"/>
+            {geo.pontos.map(p=>(
+              <circle key={'v'+p.i} cx={p.x} cy={p.yv} r="3.2" fill="#fff" stroke="#3D5A80" strokeWidth="2"/>
+            ))}
+            {geo.pontos.map(p=>(
+              <circle key={'c'+p.i} cx={p.x} cy={p.yc} r="3.2" fill="#fff" stroke="#FC6E20" strokeWidth="2"/>
+            ))}
+          </svg>
+          <div className="forn-v2-legend">
+            <span><i style={{background:'#3D5A80'}}></i>Vendas</span>
+            <span><i style={{background:'#FC6E20'}}></i>Compras</span>
+          </div>
+          <div className="forn-v2-ratioline">
+            Razão compras÷vendas: <b>{tend.rotulo}</b>
+            {tend.de!==null&&<> ({pctFmt(tend.de)} → {pctFmt(tend.ate)}).</>}
+          </div>
+          <div className="forn-v2-leitura">
+            {tend.chave==='sem-base'
+              ? <>Ainda não há meses suficientes com vendas e compras para desenhar uma tendência.
+                  A leitura aparece assim que houver ao menos duas competências completas.</>
+              : (tend.chave==='subindo'
+                ? <>As compras vêm <b>subindo mais rápido que as vendas</b>. A linha laranja está
+                    encostando na azul — o espaço entre elas (sua margem) está encolhendo. Se não
+                    frear as compras ou destravar as vendas, vira estoque parado e aperto de caixa.</>
+                : (tend.chave==='caindo'
+                  ? <>As compras vêm <b>crescendo menos que as vendas</b>. O espaço entre as linhas
+                      está abrindo e a margem bruta ganhando folga. Vale confirmar se o estoque
+                      acompanha o giro, para não arriscar ruptura.</>
+                  : (tend.chave==='estavel'
+                    ? <>A razão está <b>estável</b> no período: compras e vendas crescem no mesmo
+                        ritmo. É o cenário previsível — dá para planejar em cima dele.</>
+                    : <>A razão vem <b>oscilando</b> sem direção clara. Costuma indicar compra
+                        reativa ou sazonalidade forte; olhe o mix por segmento abaixo antes de
+                        concluir.</>)))}
+          </div>
         </div>
       </div>
 
-      {/* KPIs no topo */}
-      <div className="metrics-grid forn-kpi-grid">
-        <div className="metric-card" style={{borderTop:'2px solid var(--blue)'}}>
-          <div className="metric-label">Total comprado</div>
-          <div className="metric-value" style={{color:'var(--blue)'}}>{fmtFull(totalMes)}</div>
-          <div className="metric-sub">{totalBoletos} boleto{totalBoletos===1?'':'s'} em {MONTHS[selMonth]}</div>
-        </div>
-        <div className="metric-card" style={{borderTop:'2px solid var(--ink-300, #94a3b8)'}}>
-          <div className="metric-label">Fornecedores ativos</div>
-          <div className="metric-value">{fornArr.length}</div>
-          <div className="metric-sub">com compras no mês</div>
-        </div>
-        <div className="metric-card" style={{borderTop:'2px solid var(--amber)'}}>
-          <div className="metric-label">Ticket médio</div>
-          <div className="metric-value amber">{fmtFull(ticketMedio)}</div>
-          <div className="metric-sub">por boleto</div>
-        </div>
-        <div className="metric-card" style={{borderTop:`2px solid ${concTop3>=60?'var(--red)':concTop3>=40?'var(--amber)':'var(--green)'}`}}>
-          <div className="metric-label">Concentração TOP-3</div>
-          <div className="metric-value" style={{color:concTop3>=60?'var(--red)':concTop3>=40?'var(--amber)':'var(--green)'}}>{concTop3}%</div>
-          <div className="metric-sub">{concTop3>=60?'⚠️ Alta dependência':concTop3>=40?'Atenção':'Diversificado'}</div>
-        </div>
-        <div className="metric-card" style={{borderTop:'2px solid var(--red)'}}>
-          <div className="metric-label">Vence em 7 dias</div>
-          <div className="metric-value red">{fmtFull(prox7)}</div>
-          <div className="metric-sub">a pagar (geral)</div>
-        </div>
-        <div className="metric-card" style={{borderTop:'2px solid var(--amber)'}}>
-          <div className="metric-label">Vence em 30 dias</div>
-          <div className="metric-value amber">{fmtFull(prox30)}</div>
-          <div className="metric-sub">a pagar (geral)</div>
-        </div>
-      </div>
-
-      {/* Linha 1: Ranking por volume (40%) + Custo por Segmento (60%) */}
-      <div className="forn-row-2col forn-row-4060">
-        <div className="card forn-rank-card">
-          <div className="card-title">Ranking por Volume — {MONTHS[selMonth]} {selYear}</div>
-          {fornArr.length===0?(
-            <div className="forn-empty">Nenhuma compra de fornecedor neste mês.</div>
-          ):(
-            <table className="forn-table">
-              <thead>
-                <tr><th style={{width:28}}>#</th><th>Fornecedor</th><th style={{textAlign:'right',width:104}}>Valor</th><th style={{textAlign:'right',width:90}}>% Total</th><th style={{textAlign:'right',width:60}}>Boletos</th><th style={{textAlign:'right',width:96}}>Ticket médio</th></tr>
-              </thead>
-              <tbody>
-                {fornArr.slice(0,10).map((f,i)=>{
-                  const p=totalMes>0?pct(f.valor,totalMes):0;
-                  const tk=f.qtd>0?f.valor/f.qtd:0;
+      {/* ══ CAMADA 3 ══ */}
+      <div className="forn-v2-sect">Ranking, frequência e mix por segmento</div>
+      <div className="forn-v2-g2">
+        <div className="forn-v2-p">
+          <div className="forn-v2-ph">
+            <span className="t">Ranking por volume</span>
+            <span className="forn-v2-chip2">
+              {rank.total>0?`concentração top 3: ${pctFmt(rank.concTop3)}`:'sem compras no mês'}
+            </span>
+          </div>
+          {top6.length===0
+            ? <div className="forn-v2-vazio">Nenhuma nota de entrada em {mesLabel}. Importe as notas
+                pelo card <b>Notas de Entrada</b> para ver o ranking.</div>
+            : <>
+              <div className="forn-v2-barlist">
+                {top6.map(f=>{
+                  const cor=fornSegCor(f.segmento);
                   return(
-                    <tr key={i}>
-                      <td className="forn-rank-num">{i+1}</td>
-                      <td className="forn-rank-name" title={f.nome}>{f.nome}</td>
-                      <td style={{textAlign:'right',fontWeight:600,color:'var(--text-primary)'}}>{fmtFull(f.valor)}</td>
-                      <td style={{textAlign:'right'}}>
-                        <div className="forn-pct-cell">
-                          <div className="forn-pct-bar"><div className="forn-pct-fill" style={{width:p+'%'}}></div></div>
-                          <span>{p}%</span>
-                        </div>
-                      </td>
-                      <td style={{textAlign:'right'}}>{f.qtd}</td>
-                      <td style={{textAlign:'right'}}>{fmtFull(tk)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-          {fornArr.length>10&&<div className="forn-foot-note">Exibindo top 10 de {fornArr.length} fornecedores</div>}
-        </div>
-
-        <div className="card forn-seg-card">
-          <div className="forn-seg-head">
-            <div className="card-title" style={{marginBottom:0}}>Custo por Segmento — {MONTHS[selMonth]} {selYear}</div>
-            <div className="forn-seg-total">
-              <div className="forn-seg-total-lbl">Total comprado</div>
-              <div className="forn-seg-total-val">{fmtFull(totalMes)}</div>
-            </div>
-          </div>
-          {segArr.length===0?(
-            <div className="forn-empty">Nenhuma compra de fornecedor registrada neste mês.</div>
-          ):(
-            <div className="forn-seg-list">
-              {segArr.map((s,i)=>{
-                const p=totalMes>0?pct(s.valor,totalMes):0;
-                return(
-                  <div className="forn-seg-cell" key={i}>
-                    <div className="forn-seg-row-top">
-                      <div className="forn-seg-name" title={s.nome}>
-                        <span className="forn-seg-rank">{i+1}</span>
-                        <span>{s.nome}</span>
+                    <div className="forn-v2-barrow" key={f.cnpj||f.nome}>
+                      <div className="l1">
+                        <span className="name">
+                          <span className="forn-v2-seg" style={{background:cor}}></span>
+                          {f.nome}
+                          <span className="forn-v2-chip2">{fornSegRotulo(f.segmento)}</span>
+                        </span>
+                        <span>
+                          <span className="val">{fmtFull(f.valor)}</span>
+                          <span className="pctv">{pctFmt(f.pct)}</span>
+                        </span>
                       </div>
-                      <div className="forn-seg-val">{fmtFull(s.valor)}</div>
+                      <div className="forn-v2-track2">
+                        <div className="f" style={{width:(maxRank>0?(f.valor/maxRank*100):0).toFixed(0)+'%',background:cor}}></div>
+                      </div>
                     </div>
-                    <div className="forn-seg-bar-wrap">
-                      <div className="forn-seg-bar-bg"><div className="forn-seg-bar-fill" style={{width:Math.min(100,p)+'%'}}></div></div>
-                      <div className="forn-seg-pct">{p}%</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Linha 2: Frequência + Próximos vencimentos */}
-      <div className="forn-row-2col">
-        <div className="card">
-          <div className="card-title">Frequência de Compra (Cadência)</div>
-          {cadencia.length===0?(
-            <div className="forn-empty">Sem dados de cadência.</div>
-          ):(
-            <table className="forn-table">
-              <thead>
-                <tr><th>Fornecedor</th><th style={{textAlign:'center',width:56}}>Boletos</th><th style={{textAlign:'center',width:96}}>Intervalo médio</th><th style={{textAlign:'right',width:96}}>Classificação</th></tr>
-              </thead>
-              <tbody>
-                {cadencia.slice(0,8).map((c,i)=>{
-                  const badgeClass=c.classif==='Semanal+'||c.classif==='Semanal'?'cad-semanal':c.classif==='Quinzenal'?'cad-quinzenal':c.classif==='Mensal'?'cad-mensal':'cad-eventual';
-                  return(
-                    <tr key={i}>
-                      <td className="forn-rank-name" title={c.nome}>{c.nome}</td>
-                      <td style={{textAlign:'center'}}>{c.qtd}</td>
-                      <td style={{textAlign:'center',color:'var(--text-secondary)'}}>{c.intMed===null?'—':c.intMed+' dia'+(c.intMed===1?'':'s')}</td>
-                      <td style={{textAlign:'right'}}><span className={`cad-badge ${badgeClass}`}>{c.classif}</span></td>
-                    </tr>
                   );
                 })}
-              </tbody>
-            </table>
-          )}
+              </div>
+              <div className="forn-v2-foot">
+                {rank.concTop3>=60
+                  ? <>Dependência alta: os 3 maiores respondem por {pctFmt(rank.concTop3)} da compra
+                      do mês. Renegociar aqui move o resultado — e depender demais também é risco.</>
+                  : (rank.concTop3>=40
+                    ? <>Dependência moderada-alta: os 3 maiores respondem por quase metade da compra.
+                        Fila natural de renegociação.</>
+                    : <>Compra distribuída: os 3 maiores somam {pctFmt(rank.concTop3)}. Menos risco de
+                        dependência, porém menos poder de barganha por fornecedor.</>)}
+              </div>
+            </>}
         </div>
 
-        <div className="card">
-          <div className="card-title">Próximos Vencimentos por Fornecedor</div>
-          {proxArr.length===0?(
-            <div className="forn-empty">Nenhum vencimento a pagar nos próximos 30 dias.</div>
-          ):(
-            <table className="forn-table">
-              <thead>
-                <tr><th>Fornecedor</th><th style={{textAlign:'right',width:84}}>7 dias</th><th style={{textAlign:'right',width:84}}>15 dias</th><th style={{textAlign:'right',width:84}}>30 dias</th></tr>
-              </thead>
-              <tbody>
-                {proxArr.slice(0,8).map((f,i)=>(
-                  <tr key={i}>
-                    <td className="forn-rank-name" title={f.nome}>{f.nome}</td>
-                    <td style={{textAlign:'right',color:f.v7>0?'var(--red-dim)':'var(--text-muted)',fontWeight:f.v7>0?600:400}}>{f.v7>0?fmtFull(f.v7):'—'}</td>
-                    <td style={{textAlign:'right',color:f.v15>0?'var(--amber-dim)':'var(--text-muted)'}}>{f.v15>0?fmtFull(f.v15):'—'}</td>
-                    <td style={{textAlign:'right',color:'var(--text-secondary)'}}>{f.v30>0?fmtFull(f.v30):'—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+        <div className="forn-v2-p">
+          <div className="forn-v2-ph">
+            <span className="t">Frequência de compra</span>
+            <span className="forn-v2-chip2">nº de notas no mês</span>
+          </div>
+          {freq6.length===0
+            ? <div className="forn-v2-vazio">Sem notas em {mesLabel} para medir frequência.</div>
+            : <>
+              <div style={{marginTop:14}}>
+                {freq6.map(f=>{
+                  const cor=fornSegCor(f.segmento);
+                  return(
+                    <div className="forn-v2-freqrow" key={'f'+(f.cnpj||f.nome)}>
+                      <span className="name">
+                        <span className="forn-v2-seg" style={{background:cor}}></span>
+                        <span className="txt">{f.nome}</span>
+                      </span>
+                      <span className="ft">
+                        <span className="f" style={{width:(maxFreq>0?(f.notas/maxFreq*100):0).toFixed(0)+'%',background:cor}}></span>
+                      </span>
+                      <span className="cnt">{f.notas} nota{f.notas===1?'':'s'}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="forn-v2-foot">
+                Frequência é <b>número de notas</b>, não de boletos. Perecíveis costumam entregar quase
+                todo dia (muitas notas, valor menor); mercearia é o oposto. Útil para logística e
+                negociação de entrega.
+              </div>
+            </>}
         </div>
       </div>
 
-      {/* Linha 3: Evolução mensal */}
-      <div className="card forn-evol-card">
-        <div className="card-title">Evolução Mensal — Top 5 fornecedores · últimos 6 meses</div>
-        {top5.length===0?(
-          <div className="forn-empty">Selecione um mês com compras para visualizar a evolução.</div>
-        ):(
-          <div style={{position:'relative',height:240}}>
-            <canvas ref={chartEvolRef}></canvas>
+      <div className="forn-v2-g1">
+        <div className="forn-v2-p">
+          <div className="forn-v2-ph">
+            <span className="t">Compras por segmento · competência</span>
+            <span className="forn-v2-chip2">variação vs {MONTHS[prev.mes]}/{prev.ano}</span>
           </div>
-        )}
+          {segs.length===0
+            ? <div className="forn-v2-vazio">Nenhuma compra em {mesLabel} para distribuir por segmento.</div>
+            : <>
+              <div className="forn-v2-segbars">
+                {segs.map(s=>{
+                  const up=s.delta!==null&&s.delta>=0;
+                  const flag=s.delta!==null&&s.delta>=15;
+                  return(
+                    <div className="forn-v2-segrow" key={s.segmento}>
+                      <div className="l1">
+                        <span className="name">
+                          <span className="forn-v2-seg" style={{background:s.cor}}></span>{s.segmento}
+                        </span>
+                        <span className="right">
+                          <span className="val">{fmtFull(s.valor)}</span>
+                          <span className={`forn-v2-delta ${flag?'flag':'up'}`}>
+                            {s.delta===null?'novo':`${up?'▲ +':'▼ '}${s.delta.toFixed(0)}%`}
+                          </span>
+                        </span>
+                      </div>
+                      <div className="forn-v2-track3">
+                        <div className="f" style={{width:(maxSeg>0?(s.valor/maxSeg*100):0).toFixed(0)+'%',background:s.cor}}></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="forn-v2-foot">
+                Selos âmbar = aumento de 15% ou mais vs {MONTHS[prev.mes]}/{prev.ano} (investigar:
+                promoção de fornecedor, sazonalidade ou sobrecompra?). <b>novo</b> = segmento sem
+                compra no mês anterior. Notas importadas sem a coluna Segmento aparecem
+                como <b>Sem segmento</b>.
+              </div>
+            </>}
+        </div>
       </div>
     </div>
   );
@@ -10436,7 +10872,7 @@ function App(){
         {activeTab==='painel'&&<Painel entradas={entradas} contas={contasComParcelas} dividas={dividas} retiradas={retiradas} config={config} setConfig={setConfig} selectedYear={selectedYear} setSelectedYear={setSelectedYear} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} header={pageHeaderEl} nomeUnidadeAtiva={empresaAtiva?.nome} empresasDisponiveis={empresasDisponiveis} empresaAtiva={empresaAtiva} onTrocarUnidade={trocarEmpresa} prazos={prazos}/>}
         {activeTab==='entradas'&&<Entradas entradas={entradas} setEntradas={setEntradas} onRecarregarEntradas={recarregarEntradas} contas={contasComParcelas} dividas={dividas} selectedYear={selectedYear} selectedMonth={selectedMonth} prazos={prazos} setPrazos={setPrazos}/>}
         {activeTab==='contas'&&<Contas contas={contas} setContas={setContas} onContaCriar={onContaCriar} onContaEditar={onContaEditar} onContaExcluir={onContaExcluir} onContasImportar={onContasImportar} contasComParcelas={contasComParcelas} mediaDiariaEntrada={mediaDiaria} dividas={dividas} setDividas={setDividas} onDividaEditar={onDividaEditar} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
-        {activeTab==='fornecedores'&&<Fornecedores contas={contasComParcelas} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
+        {activeTab==='fornecedores'&&<Fornecedores contas={contasComParcelas} entradas={entradas} selectedYear={selectedYear} selectedMonth={selectedMonth} empresaAtiva={empresaAtiva}/>}
         {activeTab==='dividas'&&<Dividas dividas={dividas} setDividas={setDividas} onDividaCriar={onDividaCriar} onDividaEditar={onDividaEditar} onDividaExcluir={onDividaExcluir} entradaMensal={totalEntMes}/>}
         {activeTab==='retiradas'&&<Retiradas retiradas={retiradas} setRetiradas={setRetiradas} entradaMensal={totalEntMes} config={config} setConfig={setConfig}/>}
         {activeTab==='projecao'&&<Projecao empresas={empresasDisponiveis} config={config}/>}

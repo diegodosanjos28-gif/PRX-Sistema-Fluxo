@@ -266,6 +266,7 @@ set search_path = public
 as $$
 declare
   v_re_valor       constant text := '^[0-9]+(\.[0-9]{1,2})?$';
+  v_uid            uuid;
   v_batch_id       uuid := gen_random_uuid();
   v_total          int  := 0;
   v_qtd            int  := 0;
@@ -276,8 +277,21 @@ declare
   v_inseridas      int  := 0;
   v_valor_incluido numeric(14,2) := 0;
 begin
-  -- a) IDENTIDADE
-  if auth.uid() is null then
+  -- a) IDENTIDADE — lida do JWT da requisição, NÃO de auth.uid().
+  --    auth.uid() vive no schema `auth`, e esta função roda como
+  --    nota_entrada_writer, que PROPOSITALMENTE não tem USAGE nesse schema:
+  --    chamá-la aqui resulta em 42501 'permission denied for schema auth'.
+  --    current_setting é built-in (pg_catalog) e lê o mesmo GUC que o PostgREST
+  --    popula por requisição, sem exigir privilégio nenhum.
+  --    O bloco EXCEPTION cobre claims ausentes, JSON malformado ou sub não-UUID:
+  --    em qualquer desses casos v_uid fica NULL e a sessão é recusada abaixo.
+  --    pode_gravar_notas continua usando auth.uid() — ela é DEFINER de postgres.
+  begin
+    v_uid := nullif(current_setting('request.jwt.claims', true)::jsonb ->> 'sub','')::uuid;
+  exception when others then
+    v_uid := null;
+  end;
+  if v_uid is null then
     raise exception 'Sessão não autenticada.' using errcode = '42501';
   end if;
 
@@ -382,11 +396,19 @@ begin
            d.cnpj_fornecedor, d.nome_fornecedor, d.valor_mercadoria, v_batch_id
       from dados d
     on conflict (chave_acesso) do nothing
-    returning valor_mercadoria
+    -- RETURNING só pode citar coluna sobre a qual o role tem SELECT, e o writer
+    -- tem SOMENTE chave_acesso — de propósito. Devolver valor_mercadoria aqui
+    -- exigiria SELECT nessa coluna e romperia o menor privilégio.
+    returning chave_acesso
   )
-  select count(*), coalesce(sum(valor_mercadoria),0)
+  -- O valor vem do CTE `dados` (derivado do JSON de entrada), NÃO da tabela:
+  -- nenhum SELECT de coluna adicional é necessário. O join é 1:1 porque
+  -- duplicidade interna de chave já foi rejeitada no passo (d), e `ins` devolve
+  -- exatamente as chaves que o ON CONFLICT deixou entrar.
+  select count(*), coalesce(sum(d.valor_mercadoria),0)
     into v_inseridas, v_valor_incluido
-    from ins;
+    from ins i
+    join dados d on d.chave_acesso = i.chave_acesso;
 
   return jsonb_build_object(
     'inseridas',      v_inseridas,
