@@ -2225,6 +2225,10 @@ const DEFAULT_PRAZOS = { dinheiro: 0, pix: 0, debito: 1, credito: 30, voucher: 3
 // ══════════════════════════════════════════════════════════════════════════
 const ENT_IMP_ABA='Consolidado';
 const ENT_IMP_COLS=['DATA','DEBITO','CREDITO','VOUCHER','PIX','TOTAL'];
+// Colunas OPCIONAIS: reconhecidas quando existem, ignoradas quando não. Não
+// entram em ENT_IMP_COLS de propósito — lá a ausência é erro fatal, e isso
+// quebraria toda planilha gerada antes do modelo atual.
+const ENT_IMP_COLS_OPC=['DINHEIRO','OUTROS'];
 // Prazos oferecidos por modalidade na etapa "Regras de recebimento". São PRAZOS normais,
 // nunca antecipação.
 const ENT_IMP_PRAZOS={debito:[0,1,2],credito:[0,1,30],voucher:[0,1,30],pix:[0]};
@@ -2285,6 +2289,10 @@ const entImpParse=(aoa,datasExistentes)=>{
   }
   res.cabecalho=head;
   const ix={};ENT_IMP_COLS.forEach(c=>{ix[c]=head.indexOf(c);});
+  // -1 quando a coluna não existe no arquivo; a leitura devolve undefined e o
+  // valor vira null, igual a uma célula vazia.
+  ENT_IMP_COLS_OPC.forEach(c=>{ix[c]=head.indexOf(c);});
+  const cel=(r,c)=>(ix[c]>=0?r[ix[c]]:undefined);
   const jaVistas=new Set();
   const existentes=new Set(datasExistentes||[]);
 
@@ -2306,31 +2314,46 @@ const entImpParse=(aoa,datasExistentes)=>{
     if(!data){res.linhas.push({linha:nLinha,status:'invalida',motivo:'Data inválida ou não reconhecida.',dataBruta:String(bruta==null?'':bruta)});return;}
     // Não-numérico invalida a linha; vazio apenas não informa a modalidade (vira NULL).
     const naoNumerico=c=>!entImpVazio(c)&&entImpValor(c)===null;
-    if([ix.DEBITO,ix.CREDITO,ix.VOUCHER,ix.PIX].some(j=>naoNumerico(r[j]))){
+    if([cel(r,'DEBITO'),cel(r,'CREDITO'),cel(r,'VOUCHER'),cel(r,'PIX'),
+        cel(r,'DINHEIRO'),cel(r,'OUTROS')].some(c=>naoNumerico(c))){
       res.linhas.push({linha:nLinha,data,status:'invalida',motivo:'Há valor não numérico entre as modalidades.'});return;
     }
     const celula=c=>entImpVazio(c)?null:entImpValor(c);
-    const debito=celula(r[ix.DEBITO]),credito=celula(r[ix.CREDITO]);
-    const voucher=celula(r[ix.VOUCHER]),pix=celula(r[ix.PIX]);
-    const totalArq=entImpValor(r[ix.TOTAL]);
-    if([debito,credito,voucher,pix].some(v=>projNum(v)<0)){
+    const debito=celula(cel(r,'DEBITO')),credito=celula(cel(r,'CREDITO'));
+    const voucher=celula(cel(r,'VOUCHER')),pix=celula(cel(r,'PIX'));
+    // Mesmo normalizador e mesma semântica das demais: célula vazia ou coluna
+    // ausente = NÃO INFORMADO (null), que soma zero no total.
+    const dinheiro=celula(cel(r,'DINHEIRO')),outros=celula(cel(r,'OUTROS'));
+    // entImpValor devolve 0 para célula VAZIA, então ler o TOTAL direto por ele
+    // fazia uma planilha sem a coluna preenchida cair em "TOTAL divergente:
+    // R$ 0,00" e perder a linha inteira. entImpVazio separa ausência de zero:
+    // sem TOTAL no arquivo, simplesmente não há o que conferir.
+    const totalArq=entImpVazio(cel(r,'TOTAL'))?null:entImpValor(cel(r,'TOTAL'));
+    if([debito,credito,voucher,pix,dinheiro,outros].some(v=>projNum(v)<0)){
       res.linhas.push({linha:nLinha,data,status:'invalida',motivo:'Valor negativo não é aceito.'});return;
     }
     // O valor da Entrada vem SEMPRE das modalidades; a coluna TOTAL só confere.
     // NULL soma como zero aqui — é aritmética; a modalidade continua não informada.
-    const total=Math.round((projNum(debito)+projNum(credito)+projNum(voucher)+projNum(pix))*100)/100;
-    if(totalArq!==null&&Math.abs(total-totalArq)>0.01){
-      res.linhas.push({linha:nLinha,data,debito,credito,voucher,pix,total,totalArq,status:'invalida',
+    const total=Math.round((projNum(debito)+projNum(credito)+projNum(voucher)+projNum(pix)
+      +projNum(dinheiro)+projNum(outros))*100)/100;
+    // CONFERÊNCIA TOLERANTE AO MODELO ANTIGO: o TOTAL da planilha padrão é
+    // =SUM(C:F), que cobre só débito/crédito/voucher/pix. Com Dinheiro ou Outros
+    // preenchidos, a coluna TOTAL fica legitimamente menor que a soma das seis —
+    // rejeitar aí descartaria linha boa. Então a divergência só invalida quando
+    // o TOTAL do arquivo não bate NEM com as seis NEM com as quatro legadas.
+    const total4=Math.round((projNum(debito)+projNum(credito)+projNum(voucher)+projNum(pix))*100)/100;
+    if(totalArq!==null&&Math.abs(total-totalArq)>0.01&&Math.abs(total4-totalArq)>0.01){
+      res.linhas.push({linha:nLinha,data,debito,credito,voucher,pix,dinheiro,outros,total,totalArq,status:'invalida',
         motivo:`TOTAL divergente: planilha ${fmt(totalArq)} × soma das modalidades ${fmt(total)}.`});return;
     }
     if(total<=0){res.linhas.push({linha:nLinha,data,status:'invalida',motivo:'Linha sem valor (total zero).'});return;}
     if(jaVistas.has(data)){res.linhas.push({linha:nLinha,data,status:'invalida',motivo:'Data repetida dentro do próprio arquivo.'});return;}
     jaVistas.add(data);
     if(existentes.has(data)){
-      res.linhas.push({linha:nLinha,data,debito,credito,voucher,pix,total,status:'existente',
+      res.linhas.push({linha:nLinha,data,debito,credito,voucher,pix,dinheiro,outros,total,status:'existente',
         motivo:'Já existe um lançamento desta data nesta unidade.'});return;
     }
-    res.linhas.push({linha:nLinha,data,debito,credito,voucher,pix,total,status:'valida'});
+    res.linhas.push({linha:nLinha,data,debito,credito,voucher,pix,dinheiro,outros,total,status:'valida'});
   });
   return res;
 };
@@ -2345,6 +2368,7 @@ const entImpResumo=res=>{
   return{
     validas,existentes,invalidas,
     debito:soma('debito'),credito:soma('credito'),voucher:soma('voucher'),pix:soma('pix'),
+    dinheiro:soma('dinheiro'),outros:soma('outros'),
     total:soma('total'),
     de:datas[0]||null,ate:datas[datas.length-1]||null,dias:validas.length,
   };
@@ -2355,9 +2379,11 @@ const entImpResumo=res=>{
 const entImpParaEntrada=(l,prazosSel)=>({
   id:genId(),
   data:l.data,
-  // A planilha não tem colunas de Dinheiro e Outros: elas são NÃO INFORMADAS, não zero.
-  // Gravá-las como 0 marcaria o dia como fechado sem ninguém ter conferido o caixa.
-  dinheiro:null,pix:l.pix,debito:l.debito,credito:l.credito,voucher:l.voucher,outros:null,
+  // Dinheiro e Outros agora vêm da planilha quando as colunas existem. Ausentes
+  // ou vazias continuam NULL (não informado) — mesma semântica das demais
+  // modalidades, e o dia só fecha quando o caixa for de fato conferido.
+  dinheiro:l.dinheiro===undefined?null:l.dinheiro,pix:l.pix,debito:l.debito,
+  credito:l.credito,voucher:l.voucher,outros:l.outros===undefined?null:l.outros,
   total:l.total,
   obs:'',
   voucherAntecipado:'nao',voucherDataReceb:'',
