@@ -1049,6 +1049,14 @@ textarea{resize:vertical;min-height:58px;}
 .hk-notas-vazio{color:rgba(255,255,255,.72);font-style:italic;}
 .hk-notas-btn{font-size:9.5px;font-weight:700;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.34);border-radius:20px;padding:3px 9px;cursor:pointer;font-family:inherit;letter-spacing:.04em;line-height:1.2;transition:background .15s,border-color .15s;white-space:nowrap;}
 .hk-notas-btn:hover{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.55);}
+/* Lápis: mesma linguagem do botão Incluir, porém menor e mais discreto — não
+   disputa atenção com o CTA. Não altera altura, padding nem geometria do card. */
+.hk-notas-acoes{display:flex;align-items:center;gap:7px;flex:0 0 auto;}
+.hk-notas-edit{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;padding:0;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.34);border-radius:50%;cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s;flex:0 0 20px;}
+.hk-notas-edit:hover{background:rgba(255,255,255,.30);border-color:rgba(255,255,255,.58);}
+.hk-notas-edit:focus-visible{outline:2px solid #fff;outline-offset:1px;}
+/* Selo discreto de valor ajustado — informa, não alarma. */
+.hk-notas-manual{display:inline-block;font-size:8px;font-weight:800;letter-spacing:.07em;background:rgba(255,255,255,.22);color:#fff;padding:1px 5px;border-radius:3px;margin-left:6px;vertical-align:middle;text-transform:uppercase;}
 /* Ancora do popover da Meta Manual no seu novo lugar (controles do Calendario).
    .pc-meta-popover e absolute e precisa de um pai posicionado. */
 .pc-meta-anchor{position:relative;display:inline-flex;align-items:center;gap:5px;}
@@ -2642,6 +2650,45 @@ const monthOf     = d => d ? d.substring(0, 7) : ''; // "2026-06" from any ISO d
 // Competência key: "2026-06" for June 2026
 const chaveCompetencia = (year, month) => `${year}-${String(month + 1).padStart(2, '0')}`;
 
+// ══════════════════════════════════════════════════════════════════════════
+// OVERRIDE GERENCIAL DO TOTAL DE NOTAS — fonte ÚNICA de verdade.
+// Nem toda nota importada é compra de mercadoria para abastecimento (consumo
+// interno, insumo administrativo…), então o dono pode fixar o total gerencial
+// da competência. Isso NÃO toca em nota nenhuma: as linhas de nota_entrada
+// seguem íntegras e auditáveis, e todo dado ANALÍTICO (ranking, frequência,
+// segmentos, contagem de notas e de fornecedores) continua saindo delas.
+// Persistência: config.notas_manuais_por_mes, mapa {"YYYY-MM": valor}, por
+// empresa — cada linha de config pertence a uma empresa.
+// ══════════════════════════════════════════════════════════════════════════
+
+// Override daquela competência, ou null quando não há.
+// ZERO É OVERRIDE VÁLIDO ("nenhuma nota conta neste mês"), então a decisão é
+// por PRESENÇA e tipo — nunca por truthiness. Valor inválido (string, negativo,
+// NaN) é ignorado como se não existisse, em vez de contaminar o indicador.
+const notasOverrideDe=(config,ano,mes)=>{
+  const mapa=config&&config.notas_manuais_por_mes;
+  if(!mapa||typeof mapa!=='object')return null;
+  const v=mapa[chaveCompetencia(ano,mes)];
+  return(typeof v==='number'&&Number.isFinite(v)&&v>=0)?v:null;
+};
+
+// TOTAL GERENCIAL de compras da competência. É o ÚNICO ponto onde a regra
+// override-x-calculado existe; todo indicador agregado passa por aqui.
+const resolveComprasCompetencia=(config,ano,mes,calculado)=>{
+  const ovr=notasOverrideDe(config,ano,mes);
+  return ovr!=null?projCents(ovr):projCents(projNum(calculado));
+};
+
+// Mapa com a competência gravada. Preserva as demais chaves; passar null
+// remove apenas aquela competência (ação "Restaurar valor calculado").
+const notasMapaComOverride=(config,ano,mes,valor)=>{
+  const mapa={...((config&&config.notas_manuais_por_mes)||{})};
+  const k=chaveCompetencia(ano,mes);
+  if(valor==null)delete mapa[k];else mapa[k]=projCents(valor);
+  return mapa;
+};
+
+
 // Returns the effective daily payment goal for a given month.
 // A manually set goal (config.metasManuaisPorMes) takes priority over the automatic one.
 const getMetaDiariaEfetiva = (mediaDiariaEnt, metaPercentual, config, year, month) => {
@@ -3882,9 +3929,27 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
     return()=>{cancelado=true;};
   },[notasIdsChave,mStartPrev,mEnd,notasVersao]);
 
-  const notasMes    =React.useMemo(()=>neSomaPeriodo(notasRows,notasIds,mStart,mEnd),[notasRows,notasIdsChave,mStart,mEnd]);
-  const notasMesPrev=React.useMemo(()=>neSomaPeriodo(notasRows,notasIds,mStartPrev,mEndPrev),[notasRows,notasIdsChave,mStartPrev,mEndPrev]);
+  // Config da unidade: na visão de unidade é a do App; no Consolidado, a de cada
+  // empresa, já carregada em consol.configs — sem consulta nova.
+  const configDaUnidade=React.useCallback(
+    id=>(ehConsolidado?((consol&&consol.configs&&consol.configs[id])||null):config),
+    [ehConsolidado,consol,config]);
+  // TOTAL GERENCIAL: o override é POR UNIDADE + competência, então no
+  // Consolidado o efetivo de cada unidade é resolvido e só depois somado —
+  // nunca um override único sobre o consolidado.
+  const totalEfetivoDe=React.useCallback((ano,mes,ini,fim)=>
+    notasIds.reduce((t,id)=>t+resolveComprasCompetencia(
+      configDaUnidade(id),ano,mes,neSomaPeriodo(notasRows,[id],ini,fim)),0),
+    [notasIds,notasRows,configDaUnidade]);
+  // Soma BRUTA da unidade ativa — só para o editor mostrar o valor importado.
+  const notasMesBruto=React.useMemo(()=>neSomaPeriodo(notasRows,notasIds,mStart,mEnd),[notasRows,notasIdsChave,mStart,mEnd]);
+  const notasMes    =React.useMemo(()=>projCents(totalEfetivoDe(selYear,selMonth,mStart,mEnd)),[totalEfetivoDe,selYear,selMonth,mStart,mEnd]);
+  const notasMesPrev=React.useMemo(()=>projCents(totalEfetivoDe(prevYear,prevMonth,mStartPrev,mEndPrev)),[totalEfetivoDe,prevYear,prevMonth,mStartPrev,mEndPrev]);
   const notasVar    =neVariacao(notasMes,notasMesPrev);
+  // Override da unidade ATIVA (o editor só existe fora do Consolidado).
+  const notasOverride=ehConsolidado?null:notasOverrideDe(config,selYear,selMonth);
+  const[showNotasEdit,setShowNotasEdit]=useState(false);
+  const[notasEditInput,setNotasEditInput]=useState('');
   // Só as chaves da janela carregada: serve para a PRÉVIA estimar "já existentes".
   // A dedup de verdade é do banco (UNIQUE + ON CONFLICT), não daqui.
   const notasChaves =React.useMemo(()=>new Set(notasRows.map(r=>r&&r.chave_acesso).filter(Boolean)),[notasRows]);
@@ -4164,22 +4229,59 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
               de pagamento). Regra, cálculo e persistência da Meta estão intactos. */}
           <div className="hk hk-notas">
             <div className="hk-top">
-              <div className="hk-label">Notas de Entrada · {mesLabel}</div>
+              <div className="hk-label">
+                Notas de Entrada · {mesLabel}
+                {/* Sinaliza que o total não é mais só a soma importada. */}
+                {notasOverride!=null&&(
+                  <span className="hk-notas-manual"
+                    title={'Total ajustado manualmente. Soma das notas importadas: '+fmtFull(notasMesBruto)}>Manual</span>
+                )}
+              </div>
               {/* No Consolidado o botão continua visível, mas a operação exige uma
                   unidade: uma nota pertence a UMA empresa_id, e o sistema não
                   escolhe a Matriz por conta própria. */}
-              <button
-                type="button"
-                className="hk-notas-btn"
-                onClick={()=>{
-                  if(ehConsolidado){
-                    alert('Selecione uma unidade para importar notas de entrada.\n\nO Consolidado soma as unidades, mas cada nota precisa pertencer a uma unidade específica.');
-                    return;
-                  }
-                  setShowImportNotas(true);
-                }}
-                title={ehConsolidado?'Selecione uma unidade para importar':`Importar notas de entrada — ${nomeUnidadeAtiva||'unidade ativa'}`}
-              >＋ Incluir</button>
+              {/* Lápis e Incluir formam UM grupo de ações. Sem este wrapper,
+                  .hk-top (justify-content:space-between) trata os dois botões
+                  como itens independentes e joga o lápis para o meio do card. */}
+              <div className="hk-notas-acoes">
+                {/* Edição do TOTAL GERENCIAL. Não altera nota nenhuma: grava um
+                    override da competência em config.notas_manuais_por_mes.
+                    Só existe fora do Consolidado — um override pertence sempre a
+                    uma empresa real. Reusa .pc-meta-btn/.pc-meta-popover, o padrão
+                    de edição inline já existente; .hk é position:relative, então o
+                    popover ancora sem CSS novo e sem mexer na geometria do card. */}
+                {!ehConsolidado&&(
+                  <button
+                    type="button"
+                    className="hk-notas-edit"
+                    onClick={()=>{
+                      setNotasEditInput(notasOverride!=null
+                        ? formatCurrencyBR(notasOverride).replace('R$ ','')
+                        : formatCurrencyBR(notasMesBruto).replace('R$ ',''));
+                      setShowNotasEdit(v=>!v);
+                    }}
+                    aria-label={`Ajustar o total considerado de ${mesLabel}`}
+                    title={`Ajustar o total considerado de ${mesLabel}`}
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                    </svg>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="hk-notas-btn"
+                  onClick={()=>{
+                    if(ehConsolidado){
+                      alert('Selecione uma unidade para importar notas de entrada.\n\nO Consolidado soma as unidades, mas cada nota precisa pertencer a uma unidade específica.');
+                      return;
+                    }
+                    setShowImportNotas(true);
+                  }}
+                  title={ehConsolidado?'Selecione uma unidade para importar':`Importar notas de entrada — ${nomeUnidadeAtiva||'unidade ativa'}`}
+                >＋ Incluir</button>
+              </div>
             </div>
             <div className="hk-value">{notasCarregando?'—':fmtFull(notasMes)}</div>
             <div className="hk-sub">
@@ -4192,6 +4294,62 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
             </div>
             {(!notasCarregando&&notasMes<=0)&&(
               <div className="hk-sub hk-notas-vazio">Importe as notas do mês</div>
+            )}
+            {showNotasEdit&&!ehConsolidado&&(
+              <div className="pc-meta-popover">
+                <div className="pc-meta-popover-title">Compras por competência — {mesLabel}</div>
+                {/* O usuário precisa ver que está ajustando o TOTAL CONSIDERADO,
+                    e não mexendo nas notas importadas. */}
+                <div className="pc-meta-popover-hint" style={{marginBottom:8}}>
+                  Valor importado: <strong>{fmtFull(notasMesBruto)}</strong>
+                </div>
+                <div className="pc-meta-popover-row">
+                  <input
+                    type="text"
+                    className="pc-meta-input"
+                    placeholder="R$ 0,00"
+                    value={notasEditInput}
+                    onChange={e=>setNotasEditInput(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+                <div className="pc-meta-popover-hint">
+                  Valor considerado nos indicadores gerenciais. As notas importadas
+                  permanecem intactas — ranking, frequência e segmentos seguem usando
+                  os valores reais.
+                </div>
+                <div className="pc-meta-popover-actions">
+                  <button type="button" className="pc-meta-cancel"
+                    onClick={()=>setShowNotasEdit(false)}>Cancelar</button>
+                  {notasOverride!=null&&(
+                    <button
+                      type="button"
+                      className="pc-meta-remove"
+                      onClick={()=>{
+                        // Remove SÓ esta competência; as demais permanecem.
+                        setConfig({...config,notas_manuais_por_mes:notasMapaComOverride(config,selYear,selMonth,null)});
+                        setShowNotasEdit(false);
+                      }}
+                      title="Volta a usar a soma das notas importadas deste mês"
+                    >Restaurar valor calculado</button>
+                  )}
+                  <button
+                    type="button"
+                    className="pc-meta-save"
+                    onClick={()=>{
+                      const valor=parseCurrencyBR(notasEditInput);
+                      // Zero é override VÁLIDO (nenhuma nota conta neste mês);
+                      // só negativo e não-numérico são recusados.
+                      if(!Number.isFinite(valor)||valor<0){
+                        alert('Informe um valor válido (ex: 280.000,00). Zero é aceito e significa que nenhuma nota deste mês entra no total gerencial.');
+                        return;
+                      }
+                      setConfig({...config,notas_manuais_por_mes:notasMapaComOverride(config,selYear,selMonth,valor)});
+                      setShowNotasEdit(false);
+                    }}
+                  >Salvar</button>
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -8721,12 +8879,17 @@ const fornSituacao=r=>{
 
 // ── CAMADA 2 · SÉRIE DE 6 COMPETÊNCIAS ────────────────────────────────────
 // Termina no mês SELECIONADO (nunca no relógio) e recua 5, com virada de ano.
-const fornSerie6=(notas,entradas,ano,mes)=>{
+// `resolveCompras(ano,mes,bruto)` é opcional e existe para o override
+// gerencial: CADA competência resolve o seu próprio, de modo que um ajuste em
+// agosto não contamine julho. Omitido, a série usa a soma bruta — o
+// comportamento anterior, byte a byte.
+const fornSerie6=(notas,entradas,ano,mes,resolveCompras)=>{
   const out=[];
   for(let k=5;k>=0;k--){
     const{ano:a,mes:m}=fornRecuaMeses(ano,mes,k);
     const ini=monthStart(a,m),fim=monthEnd(a,m);
-    const compras=fornSoma((notas||[]).filter(n=>n&&fornNoPeriodo(n.data_emissao,ini,fim)),'valor_mercadoria');
+    const bruto=fornSoma((notas||[]).filter(n=>n&&fornNoPeriodo(n.data_emissao,ini,fim)),'valor_mercadoria');
+    const compras=typeof resolveCompras==='function'?resolveCompras(a,m,bruto):bruto;
     const vendas =fornSoma((entradas||[]).filter(e=>e&&fornNoPeriodo(e.data,ini,fim)),'total');
     out.push({ano:a,mes:m,rotulo:MONTHS_SHORT[m],compras,vendas,ratio:fornRatio(compras,vendas)});
   }
@@ -8855,7 +9018,7 @@ const fornGeoGrafico=(serie,W,H)=>{
 // (2) Compras ÷ Vendas + tendência de 6 meses; (3) ranking, frequência e mix
 // por segmento. Escopo: SEMPRE a unidade ativa — esta aba não tem Consolidado.
 // ══════════════════════════════════════════════════════════════════════════
-function Fornecedores({contas,entradas,selectedYear,selectedMonth,empresaAtiva}){
+function Fornecedores({contas,entradas,selectedYear,selectedMonth,empresaAtiva,config}){
   const selYear=selectedYear;
   const selMonth=selectedMonth;
   const mStart=monthStart(selYear,selMonth);
@@ -8900,8 +9063,16 @@ function Fornecedores({contas,entradas,selectedYear,selectedMonth,empresaAtiva})
 
   // ── CAMADA 1 ──
   const caixa  =React.useMemo(()=>fornCaixaMes(contas,mStart,mEnd),[contas,mStart,mEnd]);
-  const compras=React.useMemo(()=>fornComprasMes(notas,mStart,mEnd),[notas,mStart,mEnd]);
-  const dif=Math.round((caixa.total-compras.total)*100)/100;
+  // BRUTO = soma real das notas (dado analítico). EFETIVO = total gerencial,
+  // que respeita o override manual da competência. A contagem de notas e de
+  // fornecedores continua vindo do bruto: o override nunca falsifica composição.
+  const comprasBruto=React.useMemo(()=>fornComprasMes(notas,mStart,mEnd),[notas,mStart,mEnd]);
+  const comprasTotal=React.useMemo(
+    ()=>resolveComprasCompetencia(config,selYear,selMonth,comprasBruto.total),
+    [config,selYear,selMonth,comprasBruto]);
+  const comprasManual=notasOverrideDe(config,selYear,selMonth)!=null;
+  const compras={...comprasBruto,total:comprasTotal};
+  const dif=Math.round((caixa.total-comprasTotal)*100)/100;
 
   // ── CAMADA 2 ──
   // Vendas do mês vêm de `entradas` (dataset já carregado pelo App): sem
@@ -8909,10 +9080,12 @@ function Fornecedores({contas,entradas,selectedYear,selectedMonth,empresaAtiva})
   const vendasMes=React.useMemo(
     ()=>fornSoma((entradas||[]).filter(e=>e&&fornNoPeriodo(e.data,mStart,mEnd)),'total'),
     [entradas,mStart,mEnd]);
-  const ratio=fornRatio(compras.total,vendasMes);
+  const ratio=fornRatio(comprasTotal,vendasMes);
   const situacao=fornSituacao(ratio);
   const margem=ratio===null?null:100-ratio;
-  const serie=React.useMemo(()=>fornSerie6(notas,entradas,selYear,selMonth),[notas,entradas,selYear,selMonth]);
+  const serie=React.useMemo(
+    ()=>fornSerie6(notas,entradas,selYear,selMonth,(a,m,bruto)=>resolveComprasCompetencia(config,a,m,bruto)),
+    [notas,entradas,selYear,selMonth,config]);
   const tend=React.useMemo(()=>fornTendencia(serie),[serie]);
   const GW=600,GH=250;
   const geo=React.useMemo(()=>fornGeoGrafico(serie,GW,GH),[serie]);
@@ -8977,6 +9150,10 @@ function Fornecedores({contas,entradas,selectedYear,selectedMonth,empresaAtiva})
           <div className="forn-v2-note">
             O que <b>de fato foi comprado</b> este mês (data da nota). Origem: importações do card
             <b> Notas de Entrada</b> no Painel do Dono.
+            {/* Sem isto o dono veria um total que não bate com a soma das notas
+                e não saberia por quê. O ajuste é feito no card do Painel. */}
+            {comprasManual&&<> Total <b>ajustado manualmente</b>; a soma das notas
+              importadas é {fmtFull(comprasBruto.total)}.</>}
           </div>
         </div>
       </div>
@@ -10872,7 +11049,7 @@ function App(){
         {activeTab==='painel'&&<Painel entradas={entradas} contas={contasComParcelas} dividas={dividas} retiradas={retiradas} config={config} setConfig={setConfig} selectedYear={selectedYear} setSelectedYear={setSelectedYear} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} header={pageHeaderEl} nomeUnidadeAtiva={empresaAtiva?.nome} empresasDisponiveis={empresasDisponiveis} empresaAtiva={empresaAtiva} onTrocarUnidade={trocarEmpresa} prazos={prazos}/>}
         {activeTab==='entradas'&&<Entradas entradas={entradas} setEntradas={setEntradas} onRecarregarEntradas={recarregarEntradas} contas={contasComParcelas} dividas={dividas} selectedYear={selectedYear} selectedMonth={selectedMonth} prazos={prazos} setPrazos={setPrazos}/>}
         {activeTab==='contas'&&<Contas contas={contas} setContas={setContas} onContaCriar={onContaCriar} onContaEditar={onContaEditar} onContaExcluir={onContaExcluir} onContasImportar={onContasImportar} contasComParcelas={contasComParcelas} mediaDiariaEntrada={mediaDiaria} dividas={dividas} setDividas={setDividas} onDividaEditar={onDividaEditar} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
-        {activeTab==='fornecedores'&&<Fornecedores contas={contasComParcelas} entradas={entradas} selectedYear={selectedYear} selectedMonth={selectedMonth} empresaAtiva={empresaAtiva}/>}
+        {activeTab==='fornecedores'&&<Fornecedores contas={contasComParcelas} entradas={entradas} selectedYear={selectedYear} selectedMonth={selectedMonth} empresaAtiva={empresaAtiva} config={config}/>}
         {activeTab==='dividas'&&<Dividas dividas={dividas} setDividas={setDividas} onDividaCriar={onDividaCriar} onDividaEditar={onDividaEditar} onDividaExcluir={onDividaExcluir} entradaMensal={totalEntMes}/>}
         {activeTab==='retiradas'&&<Retiradas retiradas={retiradas} setRetiradas={setRetiradas} entradaMensal={totalEntMes} config={config} setConfig={setConfig}/>}
         {activeTab==='projecao'&&<Projecao empresas={empresasDisponiveis} config={config}/>}
