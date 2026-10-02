@@ -706,6 +706,26 @@ textarea{resize:vertical;min-height:58px;}
 .prx-owner-cal-wkcard .folgaw.ok{color:#2e9e5b;}
 .prx-owner-cal-wkcard .folgaw.bad{color:#D64545;}
 
+/* ── MODO GRÁFICO SEMANAL ──
+   Backdrop fixo acima do header (100) e abaixo dos modais (200): bloqueia todo o fundo e não
+   tem onClick. Os fechamentos (111) e os gráficos (112) sobem acima dele só enquanto o modo
+   está ativo — nenhum ancestral do calendário cria stacking context, então o z-index vale
+   na raiz. O gráfico é filho absoluto da própria linha-grid da semana: grid-column 1/8 faz
+   a área dos 7 dias ser o bloco de contenção, sem medir largura nenhuma. */
+.prx-owner-cal-grafbtn{margin-left:auto;background:#3E1F3A;color:#F4E9F1;border:1px solid #2E1629;border-radius:6px;padding:1px 9px;font-family:inherit;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:none;line-height:16px;cursor:pointer;transition:.12s;}
+.prx-owner-cal-grafbtn:hover{background:#4F2849;}
+.prx-owner-cal-grafbtn.on{background:#5E2D57;box-shadow:0 0 0 2px rgba(94,45,87,.25);}
+.prx-owner-cal-grafbtn:focus-visible{outline:2px solid #FF6A00;outline-offset:2px;}
+.prx-owner-cal-grafbg{position:fixed;inset:0;background:rgba(18,18,20,.45);z-index:110;}
+.prx-owner-cal-week{position:relative;}
+.prx-owner-cal.graf-on .prx-owner-cal-wkcard{position:relative;z-index:111;}
+.prx-owner-cal-graf{position:absolute;grid-column:1 / 8;grid-row:1;top:-6px;left:0;right:0;height:calc(100% + 4px);z-index:112;background:#fff;border:1px solid #e4e1da;border-radius:11px;box-shadow:0 10px 30px rgba(18,18,20,.18);padding:10px 14px 8px;display:flex;flex-direction:column;}
+.prx-owner-cal-graf-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:4px;}
+.prx-owner-cal-graf-hd .t{font-size:11px;font-weight:700;color:#8a8781;text-transform:uppercase;letter-spacing:.5px;}
+.prx-owner-cal-graf-hd .lg{display:flex;align-items:center;gap:6px;font-size:11px;color:#8a8781;}
+.prx-owner-cal-graf-hd .lg i{margin-left:8px;}
+.prx-owner-cal-graf-cv{position:relative;flex:1;min-height:0;}
+
 .prx-owner-cal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:.2s;z-index:40;border:none;padding:0;}
 .prx-owner-cal-overlay.on{opacity:1;pointer-events:auto;}
 .prx-owner-cal-panel{position:fixed;top:54px;right:0;height:calc(100% - 54px);width:400px;max-width:93vw;background:#fff;z-index:50;transform:translateX(100%);transition:.24s cubic-bezier(.4,0,.2,1);box-shadow:-8px 0 30px rgba(0,0,0,.15);display:flex;flex-direction:column;line-height:1.4;color:#1b1b1b;}
@@ -3702,6 +3722,43 @@ function CustoSegmentos({contas,selYear,selMonth}){
   );
 }
 
+// Gráfico semanal do calendário do Painel do Dono — SÓ APRESENTAÇÃO. Recebe as linhas já
+// prontas (entra/meta de calSerie, pago das próprias contas do dia); não calcula nada.
+// Dia fora do mês chega como null e vira lacuna na linha (nenhum valor inventado).
+function CalSemanaGrafico({titulo,rows}){
+  const ref=useRef(null);
+  const serie=(label,campo,cor,extra)=>({label,data:rows.map(r=>r[campo]),borderColor:cor,backgroundColor:cor,
+    borderWidth:2.25,tension:.3,pointRadius:2.5,pointHoverRadius:5,pointHoverBackgroundColor:'#fff',pointHoverBorderWidth:2.5,spanGaps:false,...extra});
+  useChart(ref,{
+    type:'line',
+    data:{labels:rows.map(r=>r.lbl),datasets:[
+      serie('Entradas','entra','#2e9e5b'),
+      serie('A Pagar','aPagar','#D64545'),
+      // Meta por cima (order −1) e tracejada: quando Meta = Entradas, o verde aparece nos vãos.
+      serie('Meta','meta','#5F6368',{borderDash:[7,5],borderWidth:2.5,pointRadius:0,pointHoverRadius:4,order:-1}),
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{
+        backgroundColor:'#1B1C20',padding:10,cornerRadius:8,displayColors:true,boxWidth:8,boxHeight:8,boxPadding:4,
+        titleFont:{size:11,weight:'600'},titleColor:'rgba(255,255,255,.72)',bodyFont:{size:12.5,weight:'700'},bodyColor:'#fff',
+        filter:it=>it.parsed.y!=null,itemSort:(a,b)=>a.datasetIndex-b.datasetIndex,
+        callbacks:{title:it=>{const r=it&&it[0]?rows[it[0].dataIndex]:null;return r?fmtDate(r.iso):'';},
+                   label:c=>`${c.dataset.label}: ${fmtFull(c.parsed.y)}`}}},
+      scales:{x:{grid:{display:false},border:{display:false},ticks:{font:{size:11,weight:'600'},color:'#8a8781',maxRotation:0,autoSkip:false}},
+              y:{beginAtZero:true,border:{display:false},grid:{color:'#f0ede7'},
+                 ticks:{font:{size:11,weight:'500'},color:'#8a8781',maxTicksLimit:5,padding:6,callback:v=>fcEixoY(v)}}}},
+  });
+  return(
+    <div className="prx-owner-cal-graf">
+      <div className="prx-owner-cal-graf-hd">
+        <span className="t">{titulo}</span>
+        <span className="lg"><i className="prx-owner-cal-dot g"></i>Entradas<i className="prx-owner-cal-dot r"></i>A Pagar<i className="prx-owner-cal-dot" style={{background:'#5F6368'}}></i>Meta</span>
+      </div>
+      <div className="prx-owner-cal-graf-cv"><canvas ref={ref}></canvas></div>
+    </div>
+  );
+}
+
 // ══════════════════
 // PAINEL DO DONO
 // ══════════════════
@@ -4143,6 +4200,24 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
     return weekOver?'r':'a';
   };
   const[calDiaAberto,setCalDiaAberto]=useState(null);
+  // Modo gráfico semanal: índices (wi de calSemanas) das semanas com gráfico ativo. Toggle
+  // independente por semana; lista vazia = interface no estado normal.
+  const[calGrafSem,setCalGrafSem]=useState([]);
+  const toggleCalGraf=wi=>setCalGrafSem(a=>a.indexOf(wi)>=0?a.filter(x=>x!==wi):[...a,wi]);
+  useEffect(()=>{setCalGrafSem([]);},[calYear,calMonth]); // índice de semana só vale no mês em que foi ativado
+  // Linhas do gráfico de uma semana. Entradas e Meta = calSerie (mesmos valores do card do
+  // dia). A Pagar = calSerie[d].aPagar, o mesmo valor exibido no card do dia.
+  const calGrafRows=wi=>{
+    const primeiro=new Date(calYear,calMonth,1).getDay();
+    return calSemanas[wi].dias.map((d,di)=>{
+      const dt=new Date(calYear,calMonth,1+wi*7+di-primeiro,12);
+      const iso=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+      const lbl=`${CAL_WD_NOMES[dt.getDay()].slice(0,3).toUpperCase()} ${String(dt.getDate()).padStart(2,'0')}`;
+      const c=d?calSerie[d]:null;
+      if(!c)return{iso,lbl,entra:null,aPagar:null,meta:null};
+      return{iso,lbl,entra:c.entra,meta:c.meta,aPagar:c.aPagar};
+    });
+  };
   // Semana de maior pressão recalculada para o mês do calendário (regra de cores funciona em qualquer mês)
   const semaMapCal={};
   contasMesCal.filter(c=>c.status!=='Pago').forEach(c=>{const s=weekOf(c.vencimento);semaMapCal[s]=(semaMapCal[s]||0)+c.valor;});
@@ -4456,7 +4531,9 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
             Substitui integralmente o calendário anterior. Estrutura, proporções, cores e
             comportamento são do mockup; todos os números vêm dos dados reais da unidade.
             O mês é o GLOBAL (calYear/calMonth) — a navegação vive no Placar, como no mockup. ── */}
-        <div className="prx-owner-cal">
+        <div className={`prx-owner-cal${calGrafSem.length?" graf-on":""}`}>
+          {/* Modo gráfico: backdrop sem onClick (não fecha no fundo); sai só pelos botões Gráfico. */}
+          {calGrafSem.length>0&&<div className="prx-owner-cal-grafbg" aria-hidden="true"></div>}
 
           <div className="prx-owner-cal-controls">
             <div className="prx-owner-cal-field">
@@ -4594,8 +4671,12 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
                       </button>
                     );
                   })}
+                  {calGrafSem.indexOf(wi)>=0&&(()=>{const ds=sem.dias.filter(Boolean);return(
+                    <CalSemanaGrafico titulo={`Semana ${String(ds[0]).padStart(2,'0')}–${String(ds[ds.length-1]).padStart(2,'0')} ${MONTHS[calMonth].slice(0,3)}`} rows={calGrafRows(wi)}/>);})()}
                   <div className="prx-owner-cal-wkcard">
-                    <div className="wt"><i className={`prx-owner-cal-dot ${sem.weekOver?'r':'g'}`}></i>Semana</div>
+                    <div className="wt"><i className={`prx-owner-cal-dot ${sem.weekOver?'r':'g'}`}></i>Semana
+                      <button type="button" className={`prx-owner-cal-grafbtn${calGrafSem.indexOf(wi)>=0?' on':''}`} aria-pressed={calGrafSem.indexOf(wi)>=0} onClick={()=>toggleCalGraf(wi)}>Gráfico</button>
+                    </div>
                     <div className="li"><span>Entra caixa</span><b>{rdpFmt0(sem.entra)}</b></div>
                     <div className="li"><span>Meta</span><b>{rdpFmt0(sem.meta)}</b></div>
                     <div className="li"><span>A pagar</span><b>{rdpFmt0(sem.aPagar)}</b></div>
