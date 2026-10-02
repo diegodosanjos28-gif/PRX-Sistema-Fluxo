@@ -708,7 +708,7 @@ textarea{resize:vertical;min-height:58px;}
 
 .prx-owner-cal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:.2s;z-index:40;border:none;padding:0;}
 .prx-owner-cal-overlay.on{opacity:1;pointer-events:auto;}
-.prx-owner-cal-panel{position:fixed;top:0;right:0;height:100%;width:400px;max-width:93vw;background:#fff;z-index:50;transform:translateX(100%);transition:.24s cubic-bezier(.4,0,.2,1);box-shadow:-8px 0 30px rgba(0,0,0,.15);display:flex;flex-direction:column;line-height:1.4;color:#1b1b1b;}
+.prx-owner-cal-panel{position:fixed;top:54px;right:0;height:calc(100% - 54px);width:400px;max-width:93vw;background:#fff;z-index:50;transform:translateX(100%);transition:.24s cubic-bezier(.4,0,.2,1);box-shadow:-8px 0 30px rgba(0,0,0,.15);display:flex;flex-direction:column;line-height:1.4;color:#1b1b1b;}
 .prx-owner-cal-panel.on{transform:translateX(0);}
 .prx-owner-cal-ph{padding:20px 22px;border-bottom:1px solid #e4e1da;position:relative;}
 .prx-owner-cal-ph .close{position:absolute;top:16px;right:18px;font-size:20px;color:#8a8781;cursor:pointer;background:none;border:none;font-family:inherit;line-height:1;padding:0;}
@@ -719,7 +719,11 @@ textarea{resize:vertical;min-height:58px;}
 .prx-owner-cal-status.g{background:#e7f4ec;color:#1e6e3d;}
 .prx-owner-cal-status.a{background:#fbf1dc;color:#96650d;}
 .prx-owner-cal-status.r{background:#fbe7e7;color:#a52f2f;}
-.prx-owner-cal-mini{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px;}
+.prx-owner-cal-mini{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px;align-items:start;}
+.prx-owner-cal-modbrk{padding:0 11px;}
+.prx-owner-cal-modbrk .prx-owner-cal-bol{position:relative;}
+.prx-owner-cal-modbrk .ant{color:#D64545;font-size:10.5px;font-weight:700;margin-left:6px;position:absolute;left:calc(100% + 11px);white-space:nowrap;}
+.prx-owner-cal-modbrk .ref .who,.prx-owner-cal-modbrk .ref .amt{color:#D64545;}
 .prx-owner-cal-mini .box{background:#ECEAE5;border-radius:10px;padding:10px 11px;}
 .prx-owner-cal-mini .box .l{font-size:10px;color:#8a8781;text-transform:uppercase;letter-spacing:.4px;font-weight:700;}
 .prx-owner-cal-mini .box .v{font-size:16px;font-weight:800;margin-top:3px;}
@@ -2872,7 +2876,7 @@ const calCaixaUnidade=({entradas,ano,mes,prazos,hoje})=>{
   const ini=monthStart(ano,mes),fim=monthEnd(ano,mes);
   const porDia={};
   for(let d=ini;d<=fim;d=addDays(d,1))
-    porDia[d]={data:d,real:0,projetado:0,entra:0,completo:false,estado:'proj-futuro',fonte:'',credito:0};
+    porDia[d]={data:d,real:0,projetado:0,entra:0,completo:false,estado:'proj-futuro',fonte:'',credito:0,mods:{},ant:{},antRef:{}};
   const dentro=iso=>Object.prototype.hasOwnProperty.call(porDia,iso);
 
   // 1) CRÉDITO/VOUCHER REAIS → data de recebimento. Única porta de entrada dessas duas
@@ -2885,7 +2889,16 @@ const calCaixaUnidade=({entradas,ano,mes,prazos,hoje})=>{
       const v=projNum(e[forma]);
       if(v<=0)return;
       const dr=projDataRecebimento(e,forma,prazos);
-      if(projDataValida(dr)&&dentro(dr)){porDia[dr].real+=v;porDia[dr].entra+=v;porDia[dr].credito+=v;}
+      if(projDataValida(dr)&&dentro(dr)){porDia[dr].real+=v;porDia[dr].entra+=v;porDia[dr].credito+=v;porDia[dr].mods[forma]=(porDia[dr].mods[forma]||0)+v;}
+      // Rastreabilidade visual da antecipação (não entra em nenhum total): `orig` é a data que
+      // projDataRecebimento devolveria sem antecipação. Só difere de `dr` quando a Entrada
+      // está marcada como antecipada. `ant` ⊂ mods (parcela efetiva antecipada); `antRef` é
+      // apenas a referência na data original e NUNCA soma em entra/real/mods.
+      const orig=addDays(e.data,projPrazoEntrada(e,forma,prazos));
+      if(projDataValida(dr)&&dr!==orig){
+        if(dentro(dr))porDia[dr].ant[forma]=(porDia[dr].ant[forma]||0)+v;
+        if(dentro(orig))porDia[orig].antRef[forma]=(porDia[orig].antRef[forma]||0)+v;
+      }
     });
   });
 
@@ -2919,7 +2932,7 @@ const calCaixaUnidade=({entradas,ano,mes,prazos,hoje})=>{
       CAL_MOD_CURTO.forEach(f=>{
         if(mods[f]<=0)return;
         const dr=projDataRecebimento(e,f,prazos);
-        if(projDataValida(dr)&&dentro(dr)){porDia[dr].real+=mods[f];porDia[dr].entra+=mods[f];}
+        if(projDataValida(dr)&&dentro(dr)){porDia[dr].real+=mods[f];porDia[dr].entra+=mods[f];porDia[dr].mods[f]=(porDia[dr].mods[f]||0)+mods[f];}
       });
     }else{
       const p=calProjCurtoPrazo(histDe(s),s);
@@ -2927,7 +2940,7 @@ const calCaixaUnidade=({entradas,ano,mes,prazos,hoje})=>{
         const v=p.valores[f];
         if(!(v>0))return;
         const alvo=addDays(s,prazoDe(f));
-        if(dentro(alvo)){porDia[alvo].projetado+=v;porDia[alvo].entra+=v;}
+        if(dentro(alvo)){porDia[alvo].projetado+=v;porDia[alvo].entra+=v;porDia[alvo].mods[f]=(porDia[alvo].mods[f]||0)+v;}
       });
     }
   }
@@ -2973,6 +2986,9 @@ const buildCaixaProjetadoMes=({entradas,ano,mes,prazos,hoje,prazosDe})=>{
       for(let i=1;i<series.length;i++){
         const o=series[i][iso];
         dia.real+=o.real;dia.projetado+=o.projetado;dia.credito+=o.credito;dia.entra+=o.entra;
+        Object.keys(o.mods).forEach(f=>{dia.mods[f]=(dia.mods[f]||0)+o.mods[f];});
+        Object.keys(o.ant).forEach(f=>{dia.ant[f]=(dia.ant[f]||0)+o.ant[f];});
+        Object.keys(o.antRef).forEach(f=>{dia.antRef[f]=(dia.antRef[f]||0)+o.antRef[f];});
         completo=completo&&o.completo;
       }
       dia.completo=completo;
@@ -2987,6 +3003,9 @@ const buildCaixaProjetadoMes=({entradas,ano,mes,prazos,hoje,prazosDe})=>{
     porDia[k].projetado=projCents(porDia[k].projetado);
     porDia[k].credito=projCents(porDia[k].credito);
     porDia[k].entra=projCents(porDia[k].entra);
+    Object.keys(porDia[k].mods).forEach(f=>{porDia[k].mods[f]=projCents(porDia[k].mods[f]);});
+    Object.keys(porDia[k].ant).forEach(f=>{porDia[k].ant[f]=projCents(porDia[k].ant[f]);});
+    Object.keys(porDia[k].antRef).forEach(f=>{porDia[k].antRef[f]=projCents(porDia[k].antRef[f]);});
     total+=porDia[k].entra;
   });
   return{porDia,total:projCents(total)};
@@ -4089,7 +4108,7 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
       const meta=projCents(entra*fatia);
       out[d]={
         dia:d,iso,itens,
-        entra,meta,aPagar,
+        entra,meta,aPagar,mods:base.mods||{},ant:base.ant||{},antRef:base.antRef||{},
         folga:projCents(entra-aPagar),
         // Estado do descritivo: 'real' (5 formas informadas) · 'proj-passado' (já passou e
         // não fechou) · 'proj-futuro'. Só o texto/cor do badge depende disto.
@@ -4619,8 +4638,18 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
                     </div>
                     <div className="prx-owner-cal-mini">
                       <div className="box"><div className="l">Entra no caixa</div><div className="v">{fmtFull(c.entra)}</div></div>
-                      <div className="box"><div className="l">Meta de pagto.</div><div className="v">{fmtFull(c.meta)}</div></div>
                       <div className="box"><div className="l">A pagar (total)</div><div className="v">{fmtFull(c.aPagar)}</div></div>
+                      <div className="prx-owner-cal-modbrk">
+                        {PROJ_MODALIDADES.map(f=>{
+                          // normal = efetivo − parcela antecipada; antRef é só referência (fora do total).
+                          const ant=c.ant[f]||0,ref=c.antRef[f]||0,normal=projCents((c.mods[f]||0)-ant);
+                          return(<React.Fragment key={f}>
+                            {normal>0&&<div className="prx-owner-cal-bol"><span className="who">{PROJ_MOD_LABEL[f]}</span><span className="amt">{fmtFull(normal)}</span></div>}
+                            {ant>0&&<div className="prx-owner-cal-bol"><span className="who">{PROJ_MOD_LABEL[f]}</span><span className="amt">{fmtFull(ant)}<span className="ant">- Antecipado</span></span></div>}
+                            {ref>0&&<div className="prx-owner-cal-bol ref"><span className="who"><s>{PROJ_MOD_LABEL[f]}</s></span><span className="amt"><s>{fmtFull(ref)}</s><span className="ant">- Antecipado</span></span></div>}
+                          </React.Fragment>);
+                        })}
+                      </div>
                       <div className="box"><div className="l">Folga (entra − a pagar)</div>
                         <div className="v" style={{color:c.folga>=0?'#2e9e5b':'#D64545'}}>
                           {c.folga>=0?'+ ':'− '}{fmtFull(Math.abs(c.folga))}
