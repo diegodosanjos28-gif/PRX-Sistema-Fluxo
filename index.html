@@ -3735,7 +3735,7 @@ function CalSemanaGrafico({titulo,rows}){
       serie('Entradas','entra','#2e9e5b'),
       serie('A Pagar','aPagar','#D64545'),
       // Meta por cima (order −1) e tracejada: quando Meta = Entradas, o verde aparece nos vãos.
-      serie('Meta','meta','#5F6368',{borderDash:[7,5],borderWidth:2.5,pointRadius:0,pointHoverRadius:4,order:-1}),
+      serie('Meta','meta','#E0961A',{borderDash:[7,5],borderWidth:2.5,pointRadius:0,pointHoverRadius:4,order:-1}),
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},tooltip:{
@@ -3752,7 +3752,7 @@ function CalSemanaGrafico({titulo,rows}){
     <div className="prx-owner-cal-graf">
       <div className="prx-owner-cal-graf-hd">
         <span className="t">{titulo}</span>
-        <span className="lg"><i className="prx-owner-cal-dot g"></i>Entradas<i className="prx-owner-cal-dot r"></i>A Pagar<i className="prx-owner-cal-dot" style={{background:'#5F6368'}}></i>Meta</span>
+        <span className="lg"><i className="prx-owner-cal-dot g"></i>Entradas<i className="prx-owner-cal-dot r"></i>A Pagar<i className="prx-owner-cal-dot a"></i>Meta</span>
       </div>
       <div className="prx-owner-cal-graf-cv"><canvas ref={ref}></canvas></div>
     </div>
