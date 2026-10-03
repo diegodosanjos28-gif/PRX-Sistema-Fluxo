@@ -3322,6 +3322,38 @@ const insertEntradasBatch=async(lista,empresaId)=>{
   return data||[];
 };
 
+// ─── Entradas/Retiradas — persistência INCREMENTAL (substitui o DELETE+INSERT do saveS) ──
+// O saveS apagava TODAS as linhas da empresa e reinseria o array desta sessão: uma sessão
+// com estado antigo apagava o que outra sessão tinha gravado depois (lost update).
+// Aqui a escrita é só a diferença entre o estado ANTERIOR desta sessão e o novo, ou seja,
+// exatamente a ação do usuário: id novo → INSERT; id com conteúdo alterado → UPDATE daquele
+// id; id que esta sessão tinha e o usuário removeu → DELETE daquele id. Linha que existe
+// só no banco (gravada por outra sessão) não está em nenhum dos dois arrays e nunca é tocada.
+const persistirDiferenca=async(chave,antes,depois)=>{
+  const tabela=TABELAS[chave];
+  const eid=EMPRESA_ID;
+  if(!tabela||tabela==='config'||!eid)return;
+  const limpar=r=>{const row={empresa_id:eid};Object.entries(r).forEach(([k,v])=>{if(!k.startsWith('_')&&v!==undefined)row[k]=v;});return row;};
+  const mapA=new Map((antes||[]).map(r=>[r.id,r]));
+  const mapD=new Map((depois||[]).map(r=>[r.id,r]));
+  const novos=[],alterados=[],excluidos=[];
+  mapD.forEach((r,id)=>{const a=mapA.get(id);if(!a)novos.push(r);else if(a!==r&&JSON.stringify(a)!==JSON.stringify(r))alterados.push(r);});
+  mapA.forEach((r,id)=>{if(!mapD.has(id))excluidos.push(id);});
+  if(excluidos.length){
+    const{error}=await supabase.from(tabela).delete().eq('empresa_id',eid).in('id',excluidos);
+    if(error){console.error('SUPABASE ERROR [delete '+tabela+']:',error);throw error;}
+  }
+  for(const r of alterados){
+    const{empresa_id:_eid,id:_id,...updateData}=limpar(r);
+    const{error}=await supabase.from(tabela).update(updateData).eq('id',r.id).eq('empresa_id',eid);
+    if(error){console.error('SUPABASE ERROR [update '+tabela+']:',error);throw error;}
+  }
+  if(novos.length){
+    const{error}=await supabase.from(tabela).insert(novos.map(limpar));
+    if(error){console.error('SUPABASE ERROR [insert '+tabela+']:',error);throw error;}
+  }
+};
+
 // ─── Dívida operations — individual, safe (no DELETE-all) ─────────────────────
 const sanitizeDividaForSupabase=(d,empresaId)=>{
   const row={empresa_id:empresaId};
@@ -10893,7 +10925,7 @@ function App(){
   },[activeTab,autenticado,empresasDisponiveis,selectedYear,selectedMonth]);
 
   // ── Setters assíncronos com optimistic update e indicador isSaving ──
-  const setEntradas=async d=>{setE_(d);setIsSaving(true);try{await saveS(KEYS.entradas,d);}catch(err){console.error('Erro ao salvar entradas:',err);}finally{setIsSaving(false);}};
+  const setEntradas=async d=>{const antes=entradas;setE_(d);setIsSaving(true);try{await persistirDiferenca(KEYS.entradas,antes,d);}catch(err){console.error('Erro ao salvar entradas:',err);}finally{setIsSaving(false);}};
   // Recarga REAL das Entradas a partir do Supabase, sem gravar nada. Obrigatória após a
   // importação: o importador insere direto no banco, e um saveS posterior (disparado por
   // qualquer edição manual) opera sobre o array em memória — se ele estivesse desatualizado,
@@ -10928,7 +10960,7 @@ function App(){
   const onDividaCriar=async entry=>{const eid=EMPRESA_ID;setIsSaving(true);try{await insertDivida(entry,eid);}catch(err){console.error('Erro ao criar dívida:',err);setIsSaving(false);throw err;}setIsSaving(false);};
   const onDividaEditar=async entry=>{const eid=EMPRESA_ID;setIsSaving(true);try{await updateDivida(entry,eid);}catch(err){console.error('Erro ao editar dívida:',err);setIsSaving(false);throw err;}setIsSaving(false);};
   const onDividaExcluir=async id=>{const eid=EMPRESA_ID;setIsSaving(true);try{await deleteDivida(id,eid);}catch(err){console.error('Erro ao excluir dívida:',err);setIsSaving(false);throw err;}setIsSaving(false);};
-  const setRetiradas=async d=>{setR_(d);setIsSaving(true);try{await saveS(KEYS.retiradas,d);}catch(err){console.error('Erro ao salvar retiradas:',err);}finally{setIsSaving(false);}};
+  const setRetiradas=async d=>{const antes=retiradas;setR_(d);setIsSaving(true);try{await persistirDiferenca(KEYS.retiradas,antes,d);}catch(err){console.error('Erro ao salvar retiradas:',err);}finally{setIsSaving(false);}};
   // Optimistic update + ROLLBACK. Antes, uma falha de gravação só ia para o console e a UI
   // seguia exibindo o valor novo — o usuário acreditava ter salvo enquanto o banco mantinha
   // o valor antigo. Como config carrega prazos_recebimento, essa divergência silenciosa
