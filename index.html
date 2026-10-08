@@ -724,6 +724,10 @@ textarea{resize:vertical;min-height:58px;}
 .prx-owner-cal-graf-hd .t{font-size:11px;font-weight:700;color:#8a8781;text-transform:uppercase;letter-spacing:.5px;}
 .prx-owner-cal-graf-hd .lg{display:flex;align-items:center;gap:6px;font-size:11px;color:#8a8781;}
 .prx-owner-cal-graf-hd .lg i{margin-left:8px;}
+/* Item da legenda = botão de visibilidade da série; reproduz o mesmo espaçamento do texto solto. */
+.prx-owner-cal-graf-hd .lg button{display:inline-flex;align-items:center;gap:6px;background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer;transition:opacity .15s;}
+.prx-owner-cal-graf-hd .lg button.off{opacity:.38;}
+.prx-owner-cal-graf-hd .lg button:focus-visible{outline:2px solid #FF6A00;outline-offset:2px;border-radius:3px;}
 .prx-owner-cal-graf-cv{position:relative;flex:1;min-height:0;}
 
 .prx-owner-cal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:.2s;z-index:40;border:none;padding:0;}
@@ -3757,10 +3761,17 @@ function CustoSegmentos({contas,selYear,selMonth}){
 // Gráfico semanal do calendário do Painel do Dono — SÓ APRESENTAÇÃO. Recebe as linhas já
 // prontas (entra/meta de calSerie, pago das próprias contas do dia); não calcula nada.
 // Dia fora do mês chega como null e vira lacuna na linha (nenhum valor inventado).
-function CalSemanaGrafico({titulo,rows}){
+// Visibilidade das séries (vis = {entra,aPagar,meta}) vem do Painel e vale para todos os
+// gráficos abertos; é só exibição — os datasets continuam com os valores originais.
+const CAL_GRAF_SERIES=['entra','aPagar','meta']; // mesma ordem dos datasets abaixo
+function CalSemanaGrafico({titulo,rows,vis,onToggleSerie}){
   const ref=useRef(null);
   const serie=(label,campo,cor,extra)=>({label,data:rows.map(r=>r[campo]),borderColor:cor,backgroundColor:cor,
     borderWidth:2.25,tension:.3,pointRadius:2.5,pointHoverRadius:5,pointHoverBackgroundColor:'#fff',pointHoverBorderWidth:2.5,spanGaps:false,...extra});
+  // Limites do eixo Y a partir de TODAS as séries (visíveis ou não): ocultar uma linha não
+  // reescala o gráfico. Com as três visíveis o resultado é idêntico ao cálculo automático.
+  const valsY=rows.flatMap(r=>CAL_GRAF_SERIES.map(c=>r[c])).filter(v=>v!=null&&isFinite(v));
+  const limY=valsY.length?{suggestedMin:Math.min(...valsY),suggestedMax:Math.max(...valsY)}:{};
   useChart(ref,{
     type:'line',
     data:{labels:rows.map(r=>r.lbl),datasets:[
@@ -3777,14 +3788,27 @@ function CalSemanaGrafico({titulo,rows}){
         callbacks:{title:it=>{const r=it&&it[0]?rows[it[0].dataIndex]:null;return r?fmtDate(r.iso):'';},
                    label:c=>`${c.dataset.label}: ${fmtFull(c.parsed.y)}`}}},
       scales:{x:{grid:{display:false},border:{display:false},ticks:{font:{size:11,weight:'600'},color:'#8a8781',maxRotation:0,autoSkip:false}},
-              y:{beginAtZero:true,border:{display:false},grid:{color:'#f0ede7'},
+              y:{beginAtZero:true,...limY,border:{display:false},grid:{color:'#f0ede7'},
                  ticks:{font:{size:11,weight:'500'},color:'#8a8781',maxTicksLimit:5,padding:6,callback:v=>fcEixoY(v)}}}},
   });
+  // Aplica a visibilidade na instância existente (sem recriar o Chart). Roda a cada render,
+  // depois do useChart, para também cobrir um Chart recém-criado; só atualiza se divergir.
+  useEffect(()=>{
+    const ch=ref.current&&Chart.getChart(ref.current);
+    if(!ch)return;
+    let mudou=false;
+    CAL_GRAF_SERIES.forEach((c,i)=>{const on=!vis||vis[c]!==false;
+      if(ch.isDatasetVisible(i)!==on){ch.setDatasetVisibility(i,on);mudou=true;}});
+    if(mudou)ch.update('none');
+  });
+  const item=(c,cls,label)=>{const on=!vis||vis[c]!==false;return(
+    <button type="button" className={on?'':'off'} aria-pressed={on} title={on?`Ocultar ${label}`:`Exibir ${label}`}
+      onClick={()=>onToggleSerie&&onToggleSerie(c)}><i className={`prx-owner-cal-dot ${cls}`}></i>{label}</button>);};
   return(
     <div className="prx-owner-cal-graf">
       <div className="prx-owner-cal-graf-hd">
         <span className="t">{titulo}</span>
-        <span className="lg"><i className="prx-owner-cal-dot g"></i>Entradas<i className="prx-owner-cal-dot r"></i>A Pagar<i className="prx-owner-cal-dot a"></i>Meta</span>
+        <span className="lg">{item('entra','g','Entradas')}{item('aPagar','r','A Pagar')}{item('meta','a','Meta')}</span>
       </div>
       <div className="prx-owner-cal-graf-cv"><canvas ref={ref}></canvas></div>
     </div>
@@ -4237,6 +4261,10 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
   const[calGrafSem,setCalGrafSem]=useState([]);
   const toggleCalGraf=wi=>setCalGrafSem(a=>a.indexOf(wi)>=0?a.filter(x=>x!==wi):[...a,wi]);
   useEffect(()=>{setCalGrafSem([]);},[calYear,calMonth]); // índice de semana só vale no mês em que foi ativado
+  // Visibilidade das séries, compartilhada por todos os gráficos semanais (inclusive os abertos
+  // depois). Cada legenda alterna só a própria chave; não é persistida.
+  const[calGrafVis,setCalGrafVis]=useState({entra:true,aPagar:true,meta:true});
+  const toggleCalGrafSerie=c=>setCalGrafVis(v=>({...v,[c]:!v[c]}));
   // Linhas do gráfico de uma semana. Entradas e Meta = calSerie (mesmos valores do card do
   // dia). A Pagar = calSerie[d].aPagar, o mesmo valor exibido no card do dia.
   const calGrafRows=wi=>{
@@ -4704,7 +4732,7 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
                     );
                   })}
                   {calGrafSem.indexOf(wi)>=0&&(()=>{const ds=sem.dias.filter(Boolean);return(
-                    <CalSemanaGrafico titulo={`Semana ${String(ds[0]).padStart(2,'0')}–${String(ds[ds.length-1]).padStart(2,'0')} ${MONTHS[calMonth].slice(0,3)}`} rows={calGrafRows(wi)}/>);})()}
+                    <CalSemanaGrafico titulo={`Semana ${String(ds[0]).padStart(2,'0')}–${String(ds[ds.length-1]).padStart(2,'0')} ${MONTHS[calMonth].slice(0,3)}`} rows={calGrafRows(wi)} vis={calGrafVis} onToggleSerie={toggleCalGrafSerie}/>);})()}
                   <div className="prx-owner-cal-wkcard">
                     <div className="wt"><i className={`prx-owner-cal-dot ${sem.weekOver?'r':'g'}`}></i>Semana
                       <button type="button" className={`prx-owner-cal-grafbtn${calGrafSem.indexOf(wi)>=0?' on':''}`} aria-pressed={calGrafSem.indexOf(wi)>=0} onClick={()=>toggleCalGraf(wi)}>Gráfico</button>
