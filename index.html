@@ -544,6 +544,9 @@ textarea{resize:vertical;min-height:58px;}
 @media(max-width:900px){
   .prx-owner-unit-switcher{position:static;margin:0 0 14px;max-width:100%;}
 }
+/* Visualizador: seletor fora do Hero, acima do Placar — fundo escuro do próprio Placar
+   para manter o contraste do texto claro. */
+.prx-owner-unit-switcher.viewer{position:static;align-self:flex-start;margin:0;max-width:100%;background:#141414;border-color:#141414;}
 
 .painel-hero-kpis{position:relative;z-index:5;margin:-80px 20px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:13px;}
 /* ── Painel do Dono — HK KPI cards ── */
@@ -1093,6 +1096,12 @@ textarea{resize:vertical;min-height:58px;}
 .pc-meta-row{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:4px;}
 .pc-meta-btn{font-size:9.5px;font-weight:700;color:var(--petronas);background:#ffffff;border:1px solid #000000;border-radius:4px;padding:2px 7px;cursor:pointer;font-family:inherit;letter-spacing:.04em;text-transform:uppercase;transition:background .15s,color .15s;line-height:1.2;}
 .pc-meta-btn:hover{background:#000000;color:#ffffff;}
+/* Estado desabilitado (só ocorre para o visualizador somente leitura). pointer-events:none
+   evita o hover dos estilos acima sem reescrevê-los. */
+.hdr-btn:disabled{opacity:.35;cursor:not-allowed;}
+.hdr-btn:disabled:hover{color:var(--header-text);}
+.hk-notas-btn:disabled,.hk-notas-edit:disabled,.pc-meta-btn:disabled{opacity:.45;pointer-events:none;}
+.prx-owner-cal-range:disabled{opacity:.55;cursor:not-allowed;}
 .pc-meta-badge{display:inline-block;font-size:8.5px;font-weight:800;letter-spacing:.08em;background:#000000;color:#ffffff;padding:1px 5px;border-radius:3px;margin-left:5px;vertical-align:middle;text-transform:uppercase;}
 .pc-meta-popover{position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:1px solid var(--border);border-radius:7px;box-shadow:0 8px 28px rgba(0,0,0,.14),0 2px 6px rgba(0,0,0,.06);padding:11px 13px;z-index:30;min-width:268px;}
 .pc-meta-popover::before{content:'';position:absolute;top:-6px;right:18px;width:10px;height:10px;background:#fff;border-left:1px solid var(--border);border-top:1px solid var(--border);transform:rotate(45deg);}
@@ -2602,6 +2611,11 @@ const neVariacao=(atual,anterior)=>(anterior>0?((atual-anterior)/anterior)*100:n
 // Calendar health threshold: days between "on-target" (green) and "critical" (red)
 const FAIXA_ATENCAO_CALENDARIO = 2000;
 
+// Visualizador somente leitura — ativado EXCLUSIVAMENTE pelo UID da sessão Supabase (nunca por
+// nome, e-mail, empresa ou role). Só a experiência no frontend: o bloqueio de escrita é do backend.
+const RESTRICTED_VIEWER_UID='e647ef91-c258-467c-8be1-7218ab2ad3fc';
+const RESTRICTED_VIEWER_ABAS=['painel','fornecedores'];
+
 // Navigation tabs
 const TABS=[
   {id:'portfolio',label:'Portfólio',icon:(<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>)},
@@ -3818,7 +3832,7 @@ function CalSemanaGrafico({titulo,rows,vis,onToggleSerie}){
 // ══════════════════
 // PAINEL DO DONO
 // ══════════════════
-function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,retiradas:retiradasProp,config,setConfig,selectedYear,setSelectedYear,selectedMonth,setSelectedMonth,header,nomeUnidadeAtiva,empresasDisponiveis,empresaAtiva,onTrocarUnidade,prazos:prazosProp}){
+function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,retiradas:retiradasProp,config,setConfig,selectedYear,setSelectedYear,selectedMonth,setSelectedMonth,header,nomeUnidadeAtiva,empresasDisponiveis,empresaAtiva,onTrocarUnidade,prazos:prazosProp,somenteLeitura}){
   const now=new Date();
   // ── VISÃO DO PAINEL: unidade ativa (padrão) ou consolidado do cliente ──
   // 'consolidado' é apenas um ESTADO DE VISUALIZAÇÃO: EMPRESA_ID nunca é alterado.
@@ -4030,6 +4044,7 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
   const[fatiaPct,setFatiaPct]=useState(metaPercentual);
   useEffect(()=>{setFatiaPct(metaPercentual);},[metaPercentual]);
   const persistirFatia=()=>{
+    if(somenteLeitura)return; // visualizador: consulta o percentual salvo, não grava
     // No CONSOLIDADO o slider vale só para a sessão: recalcula tudo em memória e NÃO grava
     // em unidade nenhuma (decisão aprovada — evita escrita em massa sobre configs individuais).
     if(ehConsolidado)return;
@@ -4307,30 +4322,12 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
   const calHoje=()=>{setSelMonth(now.getMonth());setSelYear(now.getFullYear());};
   const calEhMesAtual=(calYear===now.getFullYear()&&calMonth===now.getMonth());
 
-  return(
-    <div>
-      {/* Importador de Notas de Entrada — só existe fora do Consolidado, porque
-          uma nota precisa pertencer a UMA unidade. */}
-      {showImportNotas&&!ehConsolidado&&(
-        <ImportNotasModal
-          onClose={()=>setShowImportNotas(false)}
-          empresaId={(empresaAtiva&&empresaAtiva.id)||EMPRESA_ID}
-          nomeUnidade={nomeUnidadeAtiva}
-          chavesExistentes={notasChaves}
-          mStart={mStart} mEnd={mEnd} mesLabel={mesLabel}
-          onImportado={async()=>{setNotasVersao(v=>v+1);}}
-        />
-      )}
-
-      {/* ══ HERO — imagem do mercado + 4 KPIs sobrepostos ══ */}
-      <div className="painel-hero-wrap">
-        <div className="painel-hero">
-          <img className="painel-hero-img" src={BANNER_SRC} alt="Corredor do Mercado Zanon"/>
-          <div className="painel-hero-shade"></div>
-          {/* SELETOR DE VISÃO — ocupa a região antes usada pelo chip do mês e pela logo PRX.
-              Consolidado primeiro, depois Matriz (quando existir) e as demais em ordem
-              alfabética. Clicar numa unidade reutiliza o trocarEmpresa já existente. */}
-          <div className="prx-owner-unit-switcher" role="group" aria-label="Visão do painel">
+  // SELETOR DE VISÃO — ocupa a região antes usada pelo chip do mês e pela logo PRX.
+  // Consolidado primeiro, depois Matriz (quando existir) e as demais em ordem
+  // alfabética. Clicar numa unidade reutiliza o trocarEmpresa já existente.
+  // Um único elemento: no Hero para todos; acima do Placar para o visualizador.
+  const seletorUnidades=(
+          <div className={`prx-owner-unit-switcher${somenteLeitura?' viewer':''}`} role="group" aria-label="Visão do painel">
             <button type="button"
               className={`prx-owner-unit-btn${ehConsolidado?' active':''}`}
               onClick={()=>setPainelVisao('consolidado')}
@@ -4347,6 +4344,32 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
               </button>
             ))}
           </div>
+  );
+
+  return(
+    <div>
+      {/* Importador de Notas de Entrada — só existe fora do Consolidado, porque
+          uma nota precisa pertencer a UMA unidade. */}
+      {showImportNotas&&!ehConsolidado&&!somenteLeitura&&(
+        <ImportNotasModal
+          onClose={()=>setShowImportNotas(false)}
+          empresaId={(empresaAtiva&&empresaAtiva.id)||EMPRESA_ID}
+          nomeUnidade={nomeUnidadeAtiva}
+          chavesExistentes={notasChaves}
+          mStart={mStart} mEnd={mEnd} mesLabel={mesLabel}
+          onImportado={async()=>{setNotasVersao(v=>v+1);}}
+        />
+      )}
+
+      {/* Visualizador somente leitura: toda a região acima do Placar (hero, KPIs, Notas,
+          cabeçalho com mês/ano e Composição) não é renderizada; o painel começa no Placar. */}
+      {!somenteLeitura&&<>
+      {/* ══ HERO — imagem do mercado + 4 KPIs sobrepostos ══ */}
+      <div className="painel-hero-wrap">
+        <div className="painel-hero">
+          <img className="painel-hero-img" src={BANNER_SRC} alt="Corredor do Mercado Zanon"/>
+          <div className="painel-hero-shade"></div>
+          {seletorUnidades}
           <div className="painel-hero-body">
             <div className="painel-hero-eyebrow">{`${ehConsolidado?'CONSOLIDADO':String(nomeUnidadeAtiva||'Unidade').toUpperCase()} · Visão do Dono`}</div>
             <div className="painel-hero-title">A saúde financeira do mês em <b>um só olhar</b></div>
@@ -4434,6 +4457,7 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
                   <button
                     type="button"
                     className="hk-notas-edit"
+                    disabled={somenteLeitura}
                     onClick={()=>{
                       setNotasEditInput(notasOverride!=null
                         ? formatCurrencyBR(notasOverride).replace('R$ ','')
@@ -4452,6 +4476,7 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
                 <button
                   type="button"
                   className="hk-notas-btn"
+                  disabled={somenteLeitura}
                   onClick={()=>{
                     if(ehConsolidado){
                       alert('Selecione uma unidade para importar notas de entrada.\n\nO Consolidado soma as unidades, mas cada nota precisa pertencer a uma unidade específica.');
@@ -4475,7 +4500,7 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
             {(!notasCarregando&&notasMes<=0)&&(
               <div className="hk-sub hk-notas-vazio">Importe as notas do mês</div>
             )}
-            {showNotasEdit&&!ehConsolidado&&(
+            {showNotasEdit&&!ehConsolidado&&!somenteLeitura&&(
               <div className="pc-meta-popover">
                 <div className="pc-meta-popover-title">Compras por competência — {mesLabel}</div>
                 {/* O usuário precisa ver que está ajustando o TOTAL CONSIDERADO,
@@ -4554,9 +4579,13 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
           <CompGroup label="Despesas Financeiras" color="#7c3aed" total={totFin} totalGeral={totalSaiMes} items={finAg} expand={expFin} setExpand={setExpFin} emptyMsg="Nenhuma despesa financeira"/>
         </div>
       </div>
+      </>}
 
       {/* LAYOUT INFERIOR: Pago a Fornecedores (largura total) + Calendário (largura total) */}
       <div className="painel-layout-bottom">
+
+        {/* Visualizador: o mesmo seletor de visão, realocado para logo acima do Placar. */}
+        {somenteLeitura&&seletorUnidades}
 
         {/* ── PLACAR DO MÊS — substitui a barra "Pago a Fornecedores no Mês" neste espaço.
             Visual migrado do painel .board de CALENDÁRIO V4.html; todos os valores vêm dos
@@ -4605,7 +4634,7 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
                   Reserva = 100 − comprometido  ·  Meta = Entrada × (1 − reserva).
                   Feedback imediato em memória durante o arraste; grava uma vez ao concluir. */}
               <input id="prxCalReserva" className="prx-owner-cal-range" type="range"
-                min="0" max={PRX_RESERVA_MAX} step="1" value={100-fatiaPct}
+                min="0" max={PRX_RESERVA_MAX} step="1" value={100-fatiaPct} disabled={somenteLeitura}
                 onChange={e=>setFatiaPct(100-parseInt(e.target.value,10))}
                 onPointerUp={persistirFatia} onKeyUp={persistirFatia} onBlur={persistirFatia}/>
               <span className="prx-owner-cal-ratioval">{100-fatiaPct}%</span>
@@ -4619,6 +4648,7 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
                   <button
                     type="button"
                     className="pc-meta-btn"
+                    disabled={somenteLeitura}
                     onClick={()=>{
                       const valorAtual=metaDiariaPagamento>0?formatCurrencyBR(metaDiariaPagamento).replace('R$ ',''):'';
                       setMetaManualInput(valorAtual);
@@ -4627,7 +4657,7 @@ function Painel({entradas:entradasProp,contas:contasProp,dividas:dividasProp,ret
                     title={`Definir meta diária manual para ${mesLabel}`}
                   >Meta manual</button>
                   {metaIsManual&&<span className="pc-meta-badge" title={`Meta manual para ${mesLabel}`}>Manual</span>}
-                  {showMetaManual&&!ehConsolidado&&(
+                  {showMetaManual&&!ehConsolidado&&!somenteLeitura&&(
                     <div className="pc-meta-popover">
                       <div className="pc-meta-popover-title">Meta manual — {mesLabel}</div>
                       <div className="pc-meta-popover-row">
@@ -10546,10 +10576,10 @@ function LoginScreen({onLogin}){
       const rg=usuario.role_global||null;
       if(rg==='prx_admin'||rg==='prx_editor'){
         const{data:emps}=await supabase.from('empresas').select('id,nome,cliente_id,clientes(nome)').eq('ativo',true).order('nome');
-        onLogin(rg,emps||[]);
+        onLogin(rg,emps||[],data.user.id);
       }else{
         EMPRESA_ID=usuario.empresa_id;
-        onLogin(rg,[]);
+        onLogin(rg,[],data.user.id);
       }
     }catch(err){setErro(err.message||'Erro ao fazer login.');}
     finally{setLoading(false);}
@@ -10713,6 +10743,17 @@ function App(){
   const[empresasDisponiveis,setEmpresasDisponiveis]=useState([]); // unidades do cliente ativo — para o Portfólio
   const[empresaAtiva,setEmpresaAtiva]=useState(null);
   const[kpisPortfolio,setKpisPortfolio]=useState({}); // BLOCO 4.6 — KPIs calculados por empresa para o Portfólio
+  // UID da sessão autenticada — única fonte para o modo visualizador. Vem do Supabase Auth
+  // (login, sessão restaurada, eventos de auth) e é zerado no logout; nunca de localStorage.
+  const[authUid,setAuthUid]=useState(null);
+  const isRestrictedViewer=authUid===RESTRICTED_VIEWER_UID;
+  // Regra ÚNICA de acesso às abas: usada nos botões, na navegação e na renderização.
+  const podeAcessarAba=id=>!isRestrictedViewer||RESTRICTED_VIEWER_ABAS.includes(id);
+  // Aba efetivamente exibida: se activeTab apontar para uma aba proibida, cai para o Painel
+  // no MESMO render — o módulo proibido nunca chega a ser montado.
+  const abaAtual=podeAcessarAba(activeTab)?activeTab:'painel';
+  const irParaAba=id=>{if(podeAcessarAba(id))setActiveTab(id);};
+  useEffect(()=>{if(abaAtual!==activeTab)setActiveTab(abaAtual);},[abaAtual,activeTab]);
 
   const[entradas,setE_]=useState([]);
   const[contas,setC_]=useState([]);
@@ -10732,6 +10773,7 @@ function App(){
   useEffect(()=>{
     supabase.auth.getSession().then(async({data:{session}})=>{
       if(session){
+        setAuthUid(session.user.id);
         const{data:usuario}=await supabase.from('usuarios').select('empresa_id,role_global').eq('id',session.user.id).single();
         if(usuario){
           const rg=usuario.role_global||null;
@@ -10753,7 +10795,8 @@ function App(){
   // useEffect 2: escutar eventos de auth (SIGNED_OUT, renovação de token)
   useEffect(()=>{
     const{data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
-      if(event==='SIGNED_OUT'){setAutenticado(false);EMPRESA_ID=null;setRoleGlobal(null);setEmpresasSeletorPRX([]);setEmpresasDisponiveis([]);setAguardandoSelecaoEmpresa(false);}
+      if(event==='SIGNED_OUT'){setAutenticado(false);EMPRESA_ID=null;setRoleGlobal(null);setEmpresasSeletorPRX([]);setEmpresasDisponiveis([]);setAguardandoSelecaoEmpresa(false);setAuthUid(null);}
+      else if(session&&session.user)setAuthUid(session.user.id); // mantém o UID alinhado à sessão real
     });
     return()=>subscription.unsubscribe();
   },[]);
@@ -10823,7 +10866,7 @@ function App(){
   // Dispara ao abrir a aba Portfólio ou ao mudar mês/ano enquanto ela está ativa.
   // Não altera EMPRESA_ID, loadS, saveS nem useEffect 3.
   useEffect(()=>{
-    if(activeTab!=='portfolio'||!autenticado||empresasDisponiveis.length===0)return;
+    if(activeTab!=='portfolio'||isRestrictedViewer||!autenticado||empresasDisponiveis.length===0)return;
     // PRX_AUDIT_02 — identifica esta invocação do efeito p/ detectar corrida entre requisições.
     // __auditMySeq é monotônico: se uma requisição com seq MENOR terminar (setKpisPortfolio) DEPOIS
     // de uma com seq MAIOR já ter terminado, isso PROVA sobrescrita de dados novos por dados velhos.
@@ -10950,7 +10993,7 @@ function App(){
         console.error('Erro ao calcular KPIs do Portfólio:',err);
       }
     })();
-  },[activeTab,autenticado,empresasDisponiveis,selectedYear,selectedMonth]);
+  },[activeTab,isRestrictedViewer,autenticado,empresasDisponiveis,selectedYear,selectedMonth]);
 
   // ── Setters assíncronos com optimistic update e indicador isSaving ──
   const setEntradas=async d=>{const antes=entradas;setE_(d);setIsSaving(true);try{await persistirDiferenca(KEYS.entradas,antes,d);}catch(err){console.error('Erro ao salvar entradas:',err);}finally{setIsSaving(false);}};
@@ -10994,6 +11037,8 @@ function App(){
   // o valor antigo. Como config carrega prazos_recebimento, essa divergência silenciosa
   // mudava calendário, projeção e Placar sobre um dado que não existia no banco.
   const setConfig=d=>{
+    // Visualizador: nenhuma gravação de config, nem otimista em memória.
+    if(isRestrictedViewer)return Promise.resolve();
     const seq=++cfgSeqRef.current;
     setCfg_(d);            // resposta imediata: o slider da Reserva depende disso
     setIsSaving(true);
@@ -11130,7 +11175,7 @@ function App(){
     }
   };
 
-  const handleLogout=async()=>{await supabase.auth.signOut();setAutenticado(false);EMPRESA_ID=null;};
+  const handleLogout=async()=>{await supabase.auth.signOut();setAutenticado(false);EMPRESA_ID=null;setAuthUid(null);};
   // Volta ao EmpresaSelector já existente, sem logout: reproduz o mesmo par de estados que o
   // login do PRX produz. `autenticado:false` é indispensável — é a transição false→true, no
   // onSelect, que faz o useEffect de carregamento recarregar os dados do novo cliente.
@@ -11152,18 +11197,18 @@ function App(){
     </div>
   );
   if(carregandoAuth)return <Spinner msg="Verificando sessão…"/>;
-  if(!autenticado&&!aguardandoSelecaoEmpresa)return <LoginScreen onLogin={(rg,emps)=>{setRoleGlobal(rg);if(rg==='prx_admin'||rg==='prx_editor'){setEmpresasSeletorPRX(emps);setAguardandoSelecaoEmpresa(true);}else{setAutenticado(true);}}}/>;
+  if(!autenticado&&!aguardandoSelecaoEmpresa)return <LoginScreen onLogin={(rg,emps,uid)=>{setAuthUid(uid||null);setRoleGlobal(rg);if(rg==='prx_admin'||rg==='prx_editor'){setEmpresasSeletorPRX(emps);setAguardandoSelecaoEmpresa(true);}else{setAutenticado(true);}}}/>;
   if(aguardandoSelecaoEmpresa)return <EmpresaSelector empresas={empresasSeletorPRX} roleGlobal={roleGlobal} onSelect={(eid)=>{EMPRESA_ID=eid;const emp=empresasSeletorPRX.find(e=>e.id===eid);const cid=emp?.cliente_id;const unidadesRaw=cid?empresasSeletorPRX.filter(e=>e.cliente_id===cid):[emp].filter(Boolean);const seenIds=new Set();const unidades=unidadesRaw.filter(e=>seenIds.has(e.id)?false:(seenIds.add(e.id),true));setEmpresasDisponiveis(unidades.map(e=>({id:e.id,nome:e.nome,clienteNome:e.clientes?.nome||''})));setEmpresaAtiva({id:emp?.id,nome:emp?.nome,clienteNome:emp?.clientes?.nome||''});setAguardandoSelecaoEmpresa(false);setAutenticado(true);}}/>;
   if(carregandoDados)return <Spinner msg="Carregando dados…"/>;
 
   const nowStr=new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
-  const activeTabObj=TABS.find(t=>t.id===activeTab);
+  const activeTabObj=TABS.find(t=>t.id===abaAtual);
   const pageHeaderEl=(
     <PageHeader
       icon={activeTabObj?.icon}
       title={activeTabObj?.label}
-      sub={TAB_META[activeTab]?.sub}
-      leftExtras={activeTab==='painel'?(
+      sub={TAB_META[abaAtual]?.sub}
+      leftExtras={abaAtual==='painel'?(
         <React.Fragment>
           <div className="page-hdr-sep"></div>
           <div className="month-bar-inline">
@@ -11188,15 +11233,16 @@ function App(){
     <div className="app-shell">
       <header className="app-header">
         <button
-          onClick={()=>setActiveTab('portfolio')}
+          onClick={()=>irParaAba('portfolio')}
+          disabled={!podeAcessarAba('portfolio')}
           title="Portfólio de unidades"
           style={{
             display:'inline-flex',alignItems:'center',justifyContent:'center',
             width:30,height:30,borderRadius:6,flexShrink:0,
-            background:activeTab==='portfolio'?'var(--papaya)':'rgba(255,255,255,.07)',
-            border:activeTab==='portfolio'?'1px solid var(--papaya)':'1px solid rgba(255,255,255,.12)',
-            cursor:'pointer',color:activeTab==='portfolio'?'#fff':'rgba(255,255,255,.55)',
-            fontSize:14,transition:'all .15s',
+            background:abaAtual==='portfolio'?'var(--papaya)':'rgba(255,255,255,.07)',
+            border:abaAtual==='portfolio'?'1px solid var(--papaya)':'1px solid rgba(255,255,255,.12)',
+            cursor:podeAcessarAba('portfolio')?'pointer':'not-allowed',color:abaAtual==='portfolio'?'#fff':'rgba(255,255,255,.55)',
+            fontSize:14,transition:'all .15s',opacity:podeAcessarAba('portfolio')?1:.35,
           }}
         >🏢</button>
         {/* Acesso visual à aba Projeção retirado do header. A aba e todo o seu código
@@ -11222,7 +11268,7 @@ function App(){
         <nav className="hdr-nav">
           <div className="hdr-grp">
             {TABS.filter(t=>t.id!=='projecao'&&t.id!=='portfolio').map(t=>(
-              <button key={t.id} className={`hdr-btn${activeTab===t.id?' active':''}`} onClick={()=>setActiveTab(t.id)}>
+              <button key={t.id} className={`hdr-btn${abaAtual===t.id?' active':''}`} disabled={!podeAcessarAba(t.id)} onClick={()=>irParaAba(t.id)}>
                 <span className="dot"></span><span>{t.icon}</span><span>{t.label}</span>
               </button>
             ))}
@@ -11241,15 +11287,15 @@ function App(){
         </div>
       </header>
       <div className="page-wrap">
-        {activeTab!=='painel'&&pageHeaderEl}
-        {activeTab==='painel'&&<Painel entradas={entradas} contas={contasComParcelas} dividas={dividas} retiradas={retiradas} config={config} setConfig={setConfig} selectedYear={selectedYear} setSelectedYear={setSelectedYear} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} header={pageHeaderEl} nomeUnidadeAtiva={empresaAtiva?.nome} empresasDisponiveis={empresasDisponiveis} empresaAtiva={empresaAtiva} onTrocarUnidade={trocarEmpresa} prazos={prazos}/>}
-        {activeTab==='entradas'&&<Entradas entradas={entradas} setEntradas={setEntradas} onRecarregarEntradas={recarregarEntradas} contas={contasComParcelas} dividas={dividas} selectedYear={selectedYear} selectedMonth={selectedMonth} prazos={prazos} setPrazos={setPrazos}/>}
-        {activeTab==='contas'&&<Contas contas={contas} setContas={setContas} onContaCriar={onContaCriar} onContaEditar={onContaEditar} onContaExcluir={onContaExcluir} onContasImportar={onContasImportar} contasComParcelas={contasComParcelas} mediaDiariaEntrada={mediaDiaria} dividas={dividas} setDividas={setDividas} onDividaEditar={onDividaEditar} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
-        {activeTab==='fornecedores'&&<Fornecedores contas={contasComParcelas} entradas={entradas} selectedYear={selectedYear} selectedMonth={selectedMonth} empresaAtiva={empresaAtiva} config={config}/>}
-        {activeTab==='dividas'&&<Dividas dividas={dividas} setDividas={setDividas} onDividaCriar={onDividaCriar} onDividaEditar={onDividaEditar} onDividaExcluir={onDividaExcluir} entradaMensal={totalEntMes}/>}
-        {activeTab==='retiradas'&&<Retiradas retiradas={retiradas} setRetiradas={setRetiradas} entradaMensal={totalEntMes} config={config} setConfig={setConfig}/>}
-        {activeTab==='projecao'&&<Projecao empresas={empresasDisponiveis} config={config}/>}
-        {activeTab==='portfolio'&&<Portfolio
+        {abaAtual!=='painel'&&pageHeaderEl}
+        {abaAtual==='painel'&&<Painel entradas={entradas} contas={contasComParcelas} dividas={dividas} retiradas={retiradas} config={config} setConfig={setConfig} selectedYear={selectedYear} setSelectedYear={setSelectedYear} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} header={pageHeaderEl} nomeUnidadeAtiva={empresaAtiva?.nome} empresasDisponiveis={empresasDisponiveis} empresaAtiva={empresaAtiva} onTrocarUnidade={trocarEmpresa} prazos={prazos} somenteLeitura={isRestrictedViewer}/>}
+        {abaAtual==='entradas'&&<Entradas entradas={entradas} setEntradas={setEntradas} onRecarregarEntradas={recarregarEntradas} contas={contasComParcelas} dividas={dividas} selectedYear={selectedYear} selectedMonth={selectedMonth} prazos={prazos} setPrazos={setPrazos}/>}
+        {abaAtual==='contas'&&<Contas contas={contas} setContas={setContas} onContaCriar={onContaCriar} onContaEditar={onContaEditar} onContaExcluir={onContaExcluir} onContasImportar={onContasImportar} contasComParcelas={contasComParcelas} mediaDiariaEntrada={mediaDiaria} dividas={dividas} setDividas={setDividas} onDividaEditar={onDividaEditar} selectedYear={selectedYear} selectedMonth={selectedMonth}/>}
+        {abaAtual==='fornecedores'&&<Fornecedores contas={contasComParcelas} entradas={entradas} selectedYear={selectedYear} selectedMonth={selectedMonth} empresaAtiva={empresaAtiva} config={config}/>}
+        {abaAtual==='dividas'&&<Dividas dividas={dividas} setDividas={setDividas} onDividaCriar={onDividaCriar} onDividaEditar={onDividaEditar} onDividaExcluir={onDividaExcluir} entradaMensal={totalEntMes}/>}
+        {abaAtual==='retiradas'&&<Retiradas retiradas={retiradas} setRetiradas={setRetiradas} entradaMensal={totalEntMes} config={config} setConfig={setConfig}/>}
+        {abaAtual==='projecao'&&<Projecao empresas={empresasDisponiveis} config={config}/>}
+        {abaAtual==='portfolio'&&<Portfolio
           empresas={empresasDisponiveis}
           selYear={selectedYear}
           selMonth={selectedMonth}
