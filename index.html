@@ -84,6 +84,16 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 .hdr-logo.hdr-logo-jm-wrap{background:transparent;box-shadow:none;padding:0 2px;}
 .hdr-logo-jm{height:46px;width:auto;max-width:69px;display:block;object-fit:contain;object-position:center;}
 @media(max-width:768px){.hdr-logo-jm{height:38px;max-width:57px;}}
+/* Logo exclusiva do Mercado Angus (PNG 2172×724 = 3:1, fundo transparente). Horizontal: altura
+   máxima que cabe nos 54px do header. O galo e "MERCADO E AÇOUGUE" são pretos — um contorno claro
+   muito discreto (drop-shadow, só aqui) os separa do #1B1C20 sem criar caixa ou fundo. */
+.hdr-logo.hdr-logo-angus-wrap{background:transparent;box-shadow:none;padding:0 2px;}
+.hdr-logo-angus{height:48px;width:auto;max-width:144px;display:block;object-fit:contain;object-position:center;
+  filter:drop-shadow(0 0 1px rgba(255,255,255,.38)) drop-shadow(0 0 3px rgba(255,255,255,.10));}
+@media(max-width:768px){.hdr-logo-angus{height:38px;max-width:114px;}}
+/* Telas muito estreitas (~390px): o menu já está comprimido a zero e cada px da logo empurra o
+   botão Sair para fora da tela. Sem subtítulo, a logo segue legível menor. */
+@media(max-width:420px){.hdr-logo-angus{height:30px;max-width:90px;}}
 .hdr-div{width:1px;height:30px;background:var(--header-border);flex-shrink:0;}
 .hdr-nav{display:flex;align-items:stretch;gap:2px;flex:1;overflow:hidden;height:100%;}
 .hdr-grp{display:flex;align-items:stretch;gap:2px;height:100%;}
@@ -2624,6 +2634,8 @@ const RESTRICTED_VIEWER_ABAS=['painel','fornecedores'];
 
 // Logo exclusiva da Frutaria JM — identificada SOMENTE pelo UUID da empresa ativa.
 const FRUTARIA_JM_EMPRESA_ID='81919f1b-34e5-4f5b-903a-6ae3f3df549c';
+// Logo exclusiva do Mercado Angus — mesmo critério: SOMENTE o empresa_id (não o cliente_id).
+const MERCADO_ANGUS_EMPRESA_ID='d240a807-508a-4bd5-bd45-078209eee17a';
 
 // Navigation tabs
 const TABS=[
@@ -11269,6 +11281,11 @@ function App(){
           if(EMPRESA_ID===FRUTARIA_JM_EMPRESA_ID)return(
             <div className="hdr-logo hdr-logo-jm-wrap">
               <img className="hdr-logo-jm" src="./logo-JM.png" alt="Frutaria JM"/>
+            </div>
+          );
+          if(EMPRESA_ID===MERCADO_ANGUS_EMPRESA_ID)return(
+            <div className="hdr-logo hdr-logo-angus-wrap">
+              <img className="hdr-logo-angus" src="./Logo-Angus.png" alt="Mercado Angus"/>
             </div>
           );
           const nomesCliente=[empresaAtiva?.clienteNome,empresaAtiva?.nome].map(v=>String(v||'').trim().toLowerCase());
