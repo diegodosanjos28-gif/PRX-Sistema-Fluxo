@@ -78,6 +78,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 .hdr-logo-picanhas{height:38px;width:auto;max-width:72px;display:block;object-fit:contain;object-position:center;}
 /* Container da logo do Picanhas Grill: sem caixa branca — funde ao header escuro (não afeta .hdr-logo padrão dos demais clientes) */
 .hdr-logo.hdr-logo-picanhas-wrap{background:transparent;box-shadow:none;}
+/* Logo exclusiva da Frutaria JM (PNG 1536×1024, fundo transparente, ~9% de respiro embutido
+   acima/abaixo). Sem caixa branca: o fundo é o próprio header escuro. Altura cabe nos 54px do
+   header; largura acompanha a proporção 3:2 (contain = nunca corta nem deforma). */
+.hdr-logo.hdr-logo-jm-wrap{background:transparent;box-shadow:none;padding:0 2px;}
+.hdr-logo-jm{height:46px;width:auto;max-width:69px;display:block;object-fit:contain;object-position:center;}
+@media(max-width:768px){.hdr-logo-jm{height:38px;max-width:57px;}}
 .hdr-div{width:1px;height:30px;background:var(--header-border);flex-shrink:0;}
 .hdr-nav{display:flex;align-items:stretch;gap:2px;flex:1;overflow:hidden;height:100%;}
 .hdr-grp{display:flex;align-items:stretch;gap:2px;height:100%;}
@@ -2615,6 +2621,9 @@ const FAIXA_ATENCAO_CALENDARIO = 2000;
 // nome, e-mail, empresa ou role). Só a experiência no frontend: o bloqueio de escrita é do backend.
 const RESTRICTED_VIEWER_UID='e647ef91-c258-467c-8be1-7218ab2ad3fc';
 const RESTRICTED_VIEWER_ABAS=['painel','fornecedores'];
+
+// Logo exclusiva da Frutaria JM — identificada SOMENTE pelo UUID da empresa ativa.
+const FRUTARIA_JM_EMPRESA_ID='81919f1b-34e5-4f5b-903a-6ae3f3df549c';
 
 // Navigation tabs
 const TABS=[
@@ -11254,6 +11263,14 @@ function App(){
           // Checadas de forma independente — no fluxo do usuário padrão (via usuarios_empresas),
           // clienteNome pode não resolver da mesma forma que no fluxo admin (EmpresaSelector),
           // então não basta usar clienteNome com fallback único para nome.
+          // Frutaria JM: por UUID via EMPRESA_ID — o mesmo contexto que define os dados carregados
+          // (loadS). É atribuído antes de qualquer render autenticado e zerado no logout, então a
+          // logo nunca aparece para outra empresa nem sobra de uma sessão anterior.
+          if(EMPRESA_ID===FRUTARIA_JM_EMPRESA_ID)return(
+            <div className="hdr-logo hdr-logo-jm-wrap">
+              <img className="hdr-logo-jm" src="./logo-JM.png" alt="Frutaria JM"/>
+            </div>
+          );
           const nomesCliente=[empresaAtiva?.clienteNome,empresaAtiva?.nome].map(v=>String(v||'').trim().toLowerCase());
           if(nomesCliente.some(v=>v.includes('mercado doca')))return <div className="hdr-logo"></div>;
           const n=nomesCliente[0]||nomesCliente[1]||'';
