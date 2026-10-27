@@ -2327,10 +2327,16 @@ const entImpVazio=v=>v==null||String(v).trim()==='';
 // Detecta a linha de fechamento do arquivo (não é uma Entrada diária).
 const entImpEhTotalGeral=v=>/^TOTAL\s*GERAL$/.test(entImpNorm(v));
 
+// Modalidades de uma Entrada, na mesma ordem do formulário manual.
+const ENT_IMP_MODS=['dinheiro','pix','debito','credito','voucher','outros'];
+const ENT_IMP_ROTULO={dinheiro:'Dinheiro',pix:'PIX',debito:'Débito',credito:'Crédito',voucher:'Voucher',outros:'Outros'};
+
 // ── PARSER ──
 // Recebe a matriz (array de arrays) da aba e devolve diagnóstico + linhas classificadas.
 // Não decide persistência; só interpreta e valida.
-const entImpParse=(aoa,datasExistentes)=>{
+// `entradasExistentes` são as Entradas da unidade ativa: a data já lançada não descarta mais a
+// linha inteira — o conflito é resolvido POR MODALIDADE (ver status 'complemento').
+const entImpParse=(aoa,entradasExistentes)=>{
   const res={erroFatal:null,cabecalho:null,linhas:[],totalGeral:null};
   const linhasBrutas=(aoa||[]).filter(r=>Array.isArray(r));
   if(!linhasBrutas.length){res.erroFatal='A aba está vazia.';return res;}
@@ -2347,7 +2353,7 @@ const entImpParse=(aoa,datasExistentes)=>{
   ENT_IMP_COLS_OPC.forEach(c=>{ix[c]=head.indexOf(c);});
   const cel=(r,c)=>(ix[c]>=0?r[ix[c]]:undefined);
   const jaVistas=new Set();
-  const existentes=new Set(datasExistentes||[]);
+  const existentes=new Map((entradasExistentes||[]).filter(e=>e&&e.data).map(e=>[e.data,e]));
 
   linhasBrutas.slice(1).forEach((r,i)=>{
     const nLinha=i+2; // 1-based, contando o cabeçalho
@@ -2402,9 +2408,38 @@ const entImpParse=(aoa,datasExistentes)=>{
     if(total<=0){res.linhas.push({linha:nLinha,data,status:'invalida',motivo:'Linha sem valor (total zero).'});return;}
     if(jaVistas.has(data)){res.linhas.push({linha:nLinha,data,status:'invalida',motivo:'Data repetida dentro do próprio arquivo.'});return;}
     jaVistas.add(data);
-    if(existentes.has(data)){
-      res.linhas.push({linha:nLinha,data,debito,credito,voucher,pix,dinheiro,outros,total,status:'existente',
-        motivo:'Já existe um lançamento desta data nesta unidade.'});return;
+    const atual=existentes.get(data);
+    if(atual){
+      // CONFLITO POR MODALIDADE: o que o sistema já tem INFORMADO (calInformado — 0 conta como
+      // informado; só NULL/vazio é "não informado") é preservado; a planilha só preenche
+      // modalidade vazia no sistema e informada no arquivo. Nunca soma nem sobrescreve.
+      const lidos={dinheiro,pix,debito,credito,voucher,outros};
+      const preencher=ENT_IMP_MODS.filter(k=>!calInformado(atual[k])&&lidos[k]!==null);
+      const preservadas=ENT_IMP_MODS.filter(k=>calInformado(atual[k])&&lidos[k]!==null);
+      if(!preencher.length){
+        res.linhas.push({linha:nLinha,data,debito,credito,voucher,pix,dinheiro,outros,total,preservadas,status:'existente',
+          motivo:'Já existe um lançamento desta data e todas as modalidades da planilha já estão preenchidas nele.'});return;
+      }
+      // O TOTAL final é recalculado pela soma das modalidades (mesma regra do formulário). Se o
+      // lançamento atual já não fecha com as próprias modalidades (dado legado/inconsistente),
+      // recalcular poderia perder valor — então a data NÃO é complementada automaticamente.
+      const somaAtual=Math.round(ENT_IMP_MODS.reduce((s,k)=>s+projNum(atual[k]),0)*100)/100;
+      if(Math.abs(somaAtual-projNum(atual.total))>0.01){
+        res.linhas.push({linha:nLinha,data,debito,credito,voucher,pix,dinheiro,outros,total,preservadas,status:'existente',
+          motivo:`O lançamento atual tem TOTAL ${fmt(projNum(atual.total))} diferente da soma das modalidades (${fmt(somaAtual)}). Complemente manualmente.`});return;
+      }
+      // Os prazos são mesclados por chave; só um objeto (ou NULL) pode ser mesclado sem perda.
+      const pz=atual.prazos_recebimento;
+      if(pz!=null&&(typeof pz!=='object'||Array.isArray(pz))){
+        res.linhas.push({linha:nLinha,data,debito,credito,voucher,pix,dinheiro,outros,total,preservadas,status:'existente',
+          motivo:'Os prazos de recebimento deste lançamento estão em formato inesperado. Complemente manualmente.'});return;
+      }
+      const importar={};preencher.forEach(k=>{importar[k]=lidos[k];});
+      const acrescimo=Math.round(preencher.reduce((s,k)=>s+projNum(importar[k]),0)*100)/100;
+      const atualModal={};ENT_IMP_MODS.forEach(k=>{atualModal[k]=calInformado(atual[k])?atual[k]:null;});
+      res.linhas.push({linha:nLinha,data,status:'complemento',id:atual.id,
+        atual:{...atualModal,total:atual.total,prazos_recebimento:atual.prazos_recebimento||null},
+        importar,preencher,preservadas,acrescimo,totalFinal:Math.round((somaAtual+acrescimo)*100)/100});return;
     }
     res.linhas.push({linha:nLinha,data,debito,credito,voucher,pix,dinheiro,outros,total,status:'valida'});
   });
@@ -2414,15 +2449,18 @@ const entImpParse=(aoa,datasExistentes)=>{
 // Agrega a prévia a partir do resultado do parser.
 const entImpResumo=res=>{
   const validas=res.linhas.filter(l=>l.status==='valida');
+  const complementos=res.linhas.filter(l=>l.status==='complemento');
   const existentes=res.linhas.filter(l=>l.status==='existente');
   const invalidas=res.linhas.filter(l=>l.status==='invalida');
-  const soma=k=>Math.round(validas.reduce((s,l)=>s+(l[k]||0),0)*100)/100;
-  const datas=validas.map(l=>l.data).sort();
+  // Valores a importar = datas novas + SOMENTE as modalidades que complementam datas existentes.
+  const soma=k=>Math.round((validas.reduce((s,l)=>s+(l[k]||0),0)
+    +complementos.reduce((s,l)=>s+(l.importar[k]||0),0))*100)/100;
+  const datas=validas.concat(complementos).map(l=>l.data).sort();
   return{
-    validas,existentes,invalidas,
+    validas,complementos,existentes,invalidas,
     debito:soma('debito'),credito:soma('credito'),voucher:soma('voucher'),pix:soma('pix'),
     dinheiro:soma('dinheiro'),outros:soma('outros'),
-    total:soma('total'),
+    total:Math.round((validas.reduce((s,l)=>s+(l.total||0),0)+complementos.reduce((s,l)=>s+l.acrescimo,0))*100)/100,
     de:datas[0]||null,ate:datas[datas.length-1]||null,dias:validas.length,
   };
 };
@@ -3359,6 +3397,49 @@ const insertEntradasBatch=async(lista,empresaId)=>{
     .select('id,data');
   if(error)throw error;
   return data||[];
+};
+// Comparações usadas para classificar um UPDATE condicional que não afetou nenhuma linha.
+const entImpMesmoValor=(a,b)=>(a===null||a===undefined)?(b===null||b===undefined)
+  :(b!==null&&b!==undefined&&Math.abs(Number(a)-Number(b))<0.005);
+const entImpJsonOrdenado=o=>o&&typeof o==='object'?JSON.stringify(Object.keys(o).sort().reduce((r,k)=>{r[k]=o[k];return r;},{})):'null';
+// COMPLEMENTO de uma Entrada já existente pela importação (linha 'complemento' do parser).
+// Grava SOMENTE as modalidades que estavam vazias + o TOTAL recalculado. Escrita condicional
+// (compare-and-swap): o UPDATE só acontece se a linha no banco ainda tiver exatamente as
+// modalidades, o TOTAL e os prazos lidos na prévia — nunca sobrescreve dado mais novo.
+// O prazo escolhido nesta importação é congelado só nas modalidades que ela preencheu; as
+// demais mantêm o prazo que já resolviam (próprio da Entrada ou global).
+// Devolve 'ok' | 'conflito' (outra sessão alterou) | 'sem_permissao' (RLS barrou o UPDATE)
+// | 'nao_encontrada' (removida ou invisível). Erro de banco é lançado.
+const complementarEntradaImportada=async(l,prazosSel,empresaId)=>{
+  const upd={...l.importar,total:l.totalFinal};
+  const comPrazo=l.preencher.filter(k=>Object.prototype.hasOwnProperty.call(ENT_IMP_PADRAO,k));
+  if(comPrazo.length){
+    const pAtual=l.atual.prazos_recebimento;
+    const p={...(pAtual&&typeof pAtual==='object'?pAtual:{})};
+    comPrazo.forEach(k=>{p[k]=prazosSel[k];});
+    upd.prazos_recebimento=p;
+  }
+  let q=supabase.from('entradas').update(upd).eq('id',l.id).eq('empresa_id',empresaId).eq('data',l.data);
+  ENT_IMP_MODS.forEach(k=>{q=l.atual[k]===null?q.is(k,null):q.eq(k,l.atual[k]);});
+  q=q.eq('total',l.atual.total);
+  // Prazos também no compare-and-swap: igualdade de JSONB como "contém" + "está contido".
+  const pPrevia=l.atual.prazos_recebimento;
+  q=pPrevia==null?q.is('prazos_recebimento',null)
+    :q.contains('prazos_recebimento',pPrevia).containedBy('prazos_recebimento',pPrevia);
+  const{data,error}=await q.select('id');
+  if(error)throw error;
+  if((data||[]).length>0)return'ok';
+  // Zero linhas não diz o motivo (o RLS barra UPDATE em silêncio). Relê a linha com o mesmo
+  // isolamento: igual à prévia ⇒ sem permissão; diferente ⇒ conflito; ausente ⇒ não encontrada.
+  const{data:agora,error:e2}=await supabase.from('entradas')
+    .select('id,total,prazos_recebimento,'+ENT_IMP_MODS.join(','))
+    .eq('id',l.id).eq('empresa_id',empresaId).eq('data',l.data).maybeSingle();
+  if(e2)throw e2;
+  if(!agora)return'nao_encontrada';
+  const igual=ENT_IMP_MODS.every(k=>entImpMesmoValor(agora[k],l.atual[k]))
+    &&entImpMesmoValor(agora.total,l.atual.total)
+    &&entImpJsonOrdenado(agora.prazos_recebimento)===entImpJsonOrdenado(pPrevia);
+  return igual?'sem_permissao':'conflito';
 };
 
 // ─── Entradas/Retiradas — persistência INCREMENTAL (substitui o DELETE+INSERT do saveS) ──
@@ -5083,7 +5164,6 @@ function ImportEntradasModal({onClose,entradasExistentes,empresaId,onImportado})
   const inputRef=useRef(null);
   const envioLock=useRef(false);
 
-  const datasExistentes=React.useMemo(()=>(entradasExistentes||[]).map(e=>e.data),[entradasExistentes]);
   const resumo=React.useMemo(()=>parse?entImpResumo(parse):null,[parse]);
 
   const lerArquivo=async file=>{
@@ -5099,7 +5179,7 @@ function ImportEntradasModal({onClose,entradasExistentes,empresaId,onImportado})
       const nomeAba=wb.SheetNames.find(n=>entImpNorm(n)===entImpNorm(ENT_IMP_ABA));
       if(!nomeAba){setErro(`A planilha não tem a aba "${ENT_IMP_ABA}". Abas encontradas: ${wb.SheetNames.join(', ')}.`);return;}
       const aoa=XLSX.utils.sheet_to_json(wb.Sheets[nomeAba],{header:1,raw:true,defval:null});
-      const p=entImpParse(aoa,datasExistentes);
+      const p=entImpParse(aoa,entradasExistentes);
       if(p.erroFatal){setErro(p.erroFatal);return;}
       if(!p.linhas.length){setErro('A aba não tem nenhuma linha de dados.');return;}
       setParse(p);setEtapa('regras');
@@ -5111,26 +5191,55 @@ function ImportEntradasModal({onClose,entradasExistentes,empresaId,onImportado})
 
   const confirmar=async()=>{
     if(envioLock.current)return;
-    if(!resumo||!resumo.validas.length)return;
+    if(!resumo||(!resumo.validas.length&&!resumo.complementos.length))return;
     if(!empresaId){setErro('Não foi possível identificar a unidade ativa.');return;}
     envioLock.current=true;setEnviando(true);setErro('');
+    // Progresso real, para que uma falha no meio nunca seja relatada como "nada foi gravado".
+    let gravadasNovas=0,complementadas=0;
     try{
       const novas=resumo.validas.map(l=>entImpParaEntrada(l,prazosSel));
       const inseridas=await insertEntradasBatch(novas,empresaId);
       // Contagem pelo que o BANCO confirmou, não pelo que foi enviado: se o índice único
       // ignorou alguma data, ela não entra no total nem no número de importadas.
       const datasOk=new Set((inseridas||[]).map(r=>r.data));
+      gravadasNovas=datasOk.size;
       const totalOk=Math.round(novas.filter(e=>datasOk.has(e.data)).reduce((s,e)=>s+e.total,0)*100)/100;
+      // Datas existentes: uma a uma, com escrita condicional (complementarEntradaImportada).
+      // A falha de uma data não interrompe as demais; cada desfecho é contado e mostrado.
+      let valorCompl=0;const pend={conflitos:0,semPermissao:0,naoEncontradas:0,falhas:0};
+      for(const l of resumo.complementos){
+        try{
+          const st=await complementarEntradaImportada(l,prazosSel,empresaId);
+          if(st==='ok'){complementadas++;valorCompl+=l.acrescimo;}
+          else if(st==='conflito')pend.conflitos++;
+          else if(st==='sem_permissao')pend.semPermissao++;
+          else pend.naoEncontradas++;
+        }catch(errData){
+          console.error('Erro ao complementar entrada de',l.data,errData);
+          const m=String((errData&&(errData.message||errData.details||errData.code))||'');
+          if(/row-level security|permission denied|42501/i.test(m))pend.semPermissao++;else pend.falhas++;
+        }
+      }
       // Recarga REAL antes de mostrar o resultado — o state local não pode ficar defasado.
-      if(onImportado)await onImportado();
-      setResultado({importadas:datasOk.size,ignoradasBanco:novas.length-datasOk.size,
+      // Se só a recarga falhar, o que foi gravado continua gravado: avisa sem negar o salvamento.
+      let recarregou=true;
+      try{if(onImportado)await onImportado();}
+      catch(errRec){recarregou=false;console.error('Erro ao recarregar entradas após importação:',errRec);}
+      const ignoradasBanco=novas.length-gravadasNovas;
+      setResultado({importadas:gravadasNovas,ignoradasBanco,complementadas,...pend,recarregou,
+        pendencias:ignoradasBanco+pend.conflitos+pend.semPermissao+pend.naoEncontradas+pend.falhas,
         existentes:resumo.existentes.length,invalidas:resumo.invalidas.length,
-        total:totalOk,lidas:parse.linhas.length});
+        total:Math.round((totalOk+valorCompl)*100)/100,lidas:parse.linhas.length});
       setEtapa('resultado');
     }catch(err){
       console.error('Erro ao importar entradas:',err);
       const msg=String((err&&(err.message||err.details))||'');
-      if(/row-level security|permission denied/i.test(msg)){
+      if(gravadasNovas>0||complementadas>0){
+        // Parte já foi gravada: recarrega para a tela refletir o banco e diz exatamente o quê.
+        // Refazer a importação é seguro — o que já entrou não é duplicado nem sobrescrito.
+        try{if(onImportado)await onImportado();}catch(e2){console.error('Erro ao recarregar entradas:',e2);}
+        setErro(`A importação foi interrompida por um erro. Já gravado: ${gravadasNovas} data${gravadasNovas===1?'':'s'} nova${gravadasNovas===1?'':'s'} e ${complementadas} complementada${complementadas===1?'':'s'}; o restante não. Refaça a importação para concluir — o que já entrou não será duplicado.`);
+      }else if(/row-level security|permission denied/i.test(msg)){
         setErro('Seu acesso não permite gravar entradas nesta unidade.');
       }else if(/duplicate key|23505/i.test(msg)){
         setErro('Alguma data deste arquivo já foi cadastrada enquanto a importação era preparada. Feche e refaça a importação.');
@@ -5141,7 +5250,7 @@ function ImportEntradasModal({onClose,entradasExistentes,empresaId,onImportado})
   };
 
   const rotuloPrazo=d=>`D+${d}`;
-  const titulo=etapa==='resultado'?'Importação concluída':'Importar Entradas (Excel)';
+  const titulo=etapa==='resultado'?(resultado&&resultado.pendencias>0?'Importação concluída com pendências':'Importação concluída'):'Importar Entradas (Excel)';
 
   return(
     <Modal title={titulo} onClose={enviando?()=>{}:onClose}>
@@ -5191,7 +5300,8 @@ function ImportEntradasModal({onClose,entradasExistentes,empresaId,onImportado})
           <div className="imp-preview-title">Prévia da importação · {nomeArq}</div>
           <div className="imp-stat"><span className="imp-stat-label">📄 Linhas lidas</span><span className="imp-stat-val">{parse.linhas.length}</span></div>
           <div className="imp-stat"><span className="imp-stat-label">✅ Entradas a importar</span><span className="imp-stat-val green">{resumo.validas.length}</span></div>
-          <div className="imp-stat"><span className="imp-stat-label">↩️ Já existentes (ignoradas)</span><span className="imp-stat-val amber">{resumo.existentes.length}</span></div>
+          <div className="imp-stat"><span className="imp-stat-label">🧩 Datas existentes a complementar</span><span className="imp-stat-val green">{resumo.complementos.length}</span></div>
+          <div className="imp-stat"><span className="imp-stat-label">↩️ Existentes sem alteração</span><span className="imp-stat-val amber">{resumo.existentes.length}</span></div>
           <div className="imp-stat"><span className="imp-stat-label">❌ Inválidas</span><span className="imp-stat-val red">{resumo.invalidas.length}</span></div>
           <div className="imp-stat"><span className="imp-stat-label">📅 Período</span><span className="imp-stat-val">{resumo.de?`${fmtDate(resumo.de)} a ${fmtDate(resumo.ate)}`:'—'}</span></div>
         </div>
@@ -5209,13 +5319,27 @@ function ImportEntradasModal({onClose,entradasExistentes,empresaId,onImportado})
             </div>
           )}
         </div>
+        {resumo.complementos.length>0&&(
+          <div className="imp-preview">
+            <div className="imp-preview-title">Datas existentes a complementar</div>
+            <div className="imp-err-list">
+              {resumo.complementos.map(l=>(
+                <div className="imp-err-item" key={'c'+l.linha} style={{color:'var(--text-secondary)'}}>
+                  Linha {l.linha} · {fmtDate(l.data)} — inclui {l.preencher.map(k=>ENT_IMP_ROTULO[k]).join(', ')}
+                  {l.preservadas.length>0&&<> · mantém {l.preservadas.map(k=>ENT_IMP_ROTULO[k]).join(', ')} já lançado{l.preservadas.length===1?'':'s'}</>}
+                  {' '}· total do dia {fmt(projNum(l.atual.total))} → {fmt(l.totalFinal)}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {(resumo.invalidas.length>0||resumo.existentes.length>0)&&(
           <div className="imp-preview">
             <div className="imp-preview-title">Linhas não importadas</div>
             <div className="imp-err-list">
               {resumo.existentes.map(l=>(
                 <div className="imp-err-item" key={'e'+l.linha} style={{color:'var(--amber-dim)'}}>
-                  Linha {l.linha} · {fmtDate(l.data)} — já existe no sistema
+                  Linha {l.linha} · {fmtDate(l.data)} — {l.motivo}
                 </div>
               ))}
               {resumo.invalidas.map(l=>(
@@ -5228,20 +5352,46 @@ function ImportEntradasModal({onClose,entradasExistentes,empresaId,onImportado})
         )}
         <div style={{marginTop:12,display:'flex',gap:8,justifyContent:'flex-end'}}>
           <button className="btn btn-secondary" onClick={()=>setEtapa('regras')} disabled={enviando}>Voltar</button>
-          <button className="btn btn-primary" onClick={confirmar} disabled={enviando||resumo.validas.length===0}>
-            {enviando?'Importando…':`Importar ${resumo.validas.length} entrada${resumo.validas.length===1?'':'s'}`}
+          <button className="btn btn-primary" onClick={confirmar} disabled={enviando||(resumo.validas.length===0&&resumo.complementos.length===0)}>
+            {enviando?'Importando…':`Importar ${resumo.validas.length} entrada${resumo.validas.length===1?'':'s'}${resumo.complementos.length?` e complementar ${resumo.complementos.length}`:''}`}
           </button>
         </div>
       </>)}
 
       {etapa==='resultado'&&resultado&&(<>
-        <div className="imp-success-banner">
-          {resultado.importadas} entrada{resultado.importadas===1?'':'s'} importada{resultado.importadas===1?'':'s'} com sucesso.
-        </div>
+        {resultado.pendencias>0?(
+          <div className="alert alert-a" style={{marginBottom:10}}>
+            {resultado.importadas} entrada{resultado.importadas===1?'':'s'} importada{resultado.importadas===1?'':'s'} e {resultado.complementadas} complementada{resultado.complementadas===1?'':'s'}.
+            {' '}{resultado.pendencias} data{resultado.pendencias===1?'':'s'} não {resultado.pendencias===1?'foi gravada':'foram gravadas'} — veja abaixo. Nada já lançado foi sobrescrito.
+          </div>
+        ):(
+          <div className="imp-success-banner">
+            {resultado.importadas} entrada{resultado.importadas===1?'':'s'} importada{resultado.importadas===1?'':'s'}
+            {resultado.complementadas>0&&<> e {resultado.complementadas} complementada{resultado.complementadas===1?'':'s'}</>} com sucesso.
+          </div>
+        )}
+        {!resultado.recarregou&&(
+          <div className="alert alert-a" style={{marginBottom:10}}>
+            Os dados foram gravados, mas a tela não pôde ser atualizada. Recarregue a página para ver os valores.
+          </div>
+        )}
         <div className="imp-preview">
           <div className="imp-stat"><span className="imp-stat-label">📄 Linhas encontradas</span><span className="imp-stat-val">{resultado.lidas}</span></div>
           <div className="imp-stat"><span className="imp-stat-label">✅ Importadas</span><span className="imp-stat-val green">{resultado.importadas}</span></div>
-          <div className="imp-stat"><span className="imp-stat-label">↩️ Já existentes</span><span className="imp-stat-val amber">{resultado.existentes}</span></div>
+          <div className="imp-stat"><span className="imp-stat-label">🧩 Complementadas</span><span className="imp-stat-val green">{resultado.complementadas}</span></div>
+          {resultado.conflitos>0&&(
+            <div className="imp-stat"><span className="imp-stat-label">🛡️ Não complementadas (alteradas por outra sessão)</span><span className="imp-stat-val amber">{resultado.conflitos}</span></div>
+          )}
+          {resultado.semPermissao>0&&(
+            <div className="imp-stat"><span className="imp-stat-label">🔒 Não complementadas (sem permissão)</span><span className="imp-stat-val red">{resultado.semPermissao}</span></div>
+          )}
+          {resultado.naoEncontradas>0&&(
+            <div className="imp-stat"><span className="imp-stat-label">❔ Não complementadas (lançamento não encontrado)</span><span className="imp-stat-val amber">{resultado.naoEncontradas}</span></div>
+          )}
+          {resultado.falhas>0&&(
+            <div className="imp-stat"><span className="imp-stat-label">⚠️ Não complementadas (erro ao gravar)</span><span className="imp-stat-val red">{resultado.falhas}</span></div>
+          )}
+          <div className="imp-stat"><span className="imp-stat-label">↩️ Existentes sem alteração</span><span className="imp-stat-val amber">{resultado.existentes}</span></div>
           {resultado.ignoradasBanco>0&&(
             <div className="imp-stat"><span className="imp-stat-label">🛡️ Ignoradas pela trava de data</span><span className="imp-stat-val amber">{resultado.ignoradasBanco}</span></div>
           )}
