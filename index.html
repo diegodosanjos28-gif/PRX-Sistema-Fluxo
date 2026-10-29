@@ -94,6 +94,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 /* Telas muito estreitas (~390px): o menu já está comprimido a zero e cada px da logo empurra o
    botão Sair para fora da tela. Sem subtítulo, a logo segue legível menor. */
 @media(max-width:420px){.hdr-logo-angus{height:30px;max-width:90px;}}
+/* Logo exclusiva do Mercado Sol Nascente (PNG 1983×793 ≈ 2,5:1, fundo transparente). Mesmo
+   tratamento da Angus: sem caixa branca, altura dentro dos 54px do header, contain = sem cortes. */
+.hdr-logo.hdr-logo-nascente-wrap{background:transparent;box-shadow:none;padding:0 2px;}
+.hdr-logo-nascente{height:48px;width:auto;max-width:120px;display:block;object-fit:contain;object-position:center;}
+@media(max-width:768px){.hdr-logo-nascente{height:38px;max-width:95px;}}
+@media(max-width:420px){.hdr-logo-nascente{height:30px;max-width:75px;}}
 .hdr-div{width:1px;height:30px;background:var(--header-border);flex-shrink:0;}
 .hdr-nav{display:flex;align-items:stretch;gap:2px;flex:1;overflow:hidden;height:100%;}
 .hdr-grp{display:flex;align-items:stretch;gap:2px;height:100%;}
@@ -2674,6 +2680,8 @@ const RESTRICTED_VIEWER_ABAS=['painel','fornecedores'];
 const FRUTARIA_JM_EMPRESA_ID='81919f1b-34e5-4f5b-903a-6ae3f3df549c';
 // Logo exclusiva do Mercado Angus — mesmo critério: SOMENTE o empresa_id (não o cliente_id).
 const MERCADO_ANGUS_EMPRESA_ID='d240a807-508a-4bd5-bd45-078209eee17a';
+// Logo exclusiva do Mercado Sol Nascente — mesmo critério: SOMENTE o empresa_id (unidade Matriz).
+const MERCADO_SOL_NASCENTE_EMPRESA_ID='134f6e19-3150-411e-bea9-89f82174b37f';
 
 // Navigation tabs
 const TABS=[
@@ -11439,6 +11447,12 @@ function App(){
             </div>
           );
           const nomesCliente=[empresaAtiva?.clienteNome,empresaAtiva?.nome].map(v=>String(v||'').trim().toLowerCase());
+          // Mercado Sol Nascente: por UUID via EMPRESA_ID (unidade Matriz), mesmo critério da JM/Angus.
+          if(EMPRESA_ID===MERCADO_SOL_NASCENTE_EMPRESA_ID)return(
+            <div className="hdr-logo hdr-logo-nascente-wrap">
+              <img className="hdr-logo-nascente" src="./Logo-Nascente.png" alt="Mercado Sol Nascente"/>
+            </div>
+          );
           if(nomesCliente.some(v=>v.includes('mercado doca')))return <div className="hdr-logo"></div>;
           const n=nomesCliente[0]||nomesCliente[1]||'';
           const isPicanhas=n==='picanhas grill';
