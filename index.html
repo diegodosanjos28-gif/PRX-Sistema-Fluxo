@@ -2678,6 +2678,8 @@ const RESTRICTED_VIEWER_ABAS=['painel','fornecedores'];
 
 // Logo exclusiva da Frutaria JM — identificada SOMENTE pelo UUID da empresa ativa.
 const FRUTARIA_JM_EMPRESA_ID='81919f1b-34e5-4f5b-903a-6ae3f3df549c';
+// Cliente proprietário da Frutaria JM — todas as unidades com este cliente_id usam a mesma logo.
+const FRUTARIA_JM_CLIENTE_ID='dc6f419d-bf27-45f8-86f0-59c96f88779f';
 // Logo exclusiva do Mercado Angus — mesmo critério: SOMENTE o empresa_id (não o cliente_id).
 const MERCADO_ANGUS_EMPRESA_ID='d240a807-508a-4bd5-bd45-078209eee17a';
 // Logo exclusiva do Mercado Sol Nascente — mesmo critério: SOMENTE o empresa_id (unidade Matriz).
@@ -11018,13 +11020,14 @@ function App(){
           // Cliente: RLS em usuarios_empresas filtra automaticamente pelo auth.uid()
           const{data,error}=await supabase
             .from('usuarios_empresas')
-            .select('empresas!inner(id,nome,clientes(nome))').eq('empresas.ativo',true);
+            .select('empresas!inner(id,nome,cliente_id,clientes(nome))').eq('empresas.ativo',true);
           if(error)throw error;
           if(data){
             const unitsRaw=data.map(r=>({
               id:r.empresas.id,
               nome:r.empresas.nome,
               clienteNome:r.empresas.clientes?.nome||'',
+              clienteId:r.empresas.cliente_id||null,
             }));
             // Deduplicação por id — se houver mais de um vínculo em usuarios_empresas para a
             // mesma empresa, evita que o Portfólio Consolidado some a mesma unidade 2x
@@ -11298,7 +11301,7 @@ function App(){
       if(error)return error.message||'Erro ao criar unidade.';
       // Atualizar lista imediatamente sem novo reload
       const clienteNome=empresasDisponiveis.find(e=>e.id===EMPRESA_ID)?.clienteNome||'';
-      setEmpresasDisponiveis(prev=>[...prev,{id:data.empresa_id,nome:nomeTrimmed,clienteNome}]);
+      setEmpresasDisponiveis(prev=>[...prev,{id:data.empresa_id,nome:nomeTrimmed,clienteNome,clienteId}]);
       return null;
     }catch(err){
       return err.message||'Erro inesperado ao criar unidade.';
@@ -11377,7 +11380,7 @@ function App(){
   );
   if(carregandoAuth)return <Spinner msg="Verificando sessão…"/>;
   if(!autenticado&&!aguardandoSelecaoEmpresa)return <LoginScreen onLogin={(rg,emps,uid)=>{setAuthUid(uid||null);setRoleGlobal(rg);if(rg==='prx_admin'||rg==='prx_editor'){setEmpresasSeletorPRX(emps);setAguardandoSelecaoEmpresa(true);}else{setAutenticado(true);}}}/>;
-  if(aguardandoSelecaoEmpresa)return <EmpresaSelector empresas={empresasSeletorPRX} roleGlobal={roleGlobal} onSelect={(eid)=>{EMPRESA_ID=eid;const emp=empresasSeletorPRX.find(e=>e.id===eid);const cid=emp?.cliente_id;const unidadesRaw=cid?empresasSeletorPRX.filter(e=>e.cliente_id===cid):[emp].filter(Boolean);const seenIds=new Set();const unidades=unidadesRaw.filter(e=>seenIds.has(e.id)?false:(seenIds.add(e.id),true));setEmpresasDisponiveis(unidades.map(e=>({id:e.id,nome:e.nome,clienteNome:e.clientes?.nome||''})));setEmpresaAtiva({id:emp?.id,nome:emp?.nome,clienteNome:emp?.clientes?.nome||''});setAguardandoSelecaoEmpresa(false);setAutenticado(true);}}/>;
+  if(aguardandoSelecaoEmpresa)return <EmpresaSelector empresas={empresasSeletorPRX} roleGlobal={roleGlobal} onSelect={(eid)=>{EMPRESA_ID=eid;const emp=empresasSeletorPRX.find(e=>e.id===eid);const cid=emp?.cliente_id;const unidadesRaw=cid?empresasSeletorPRX.filter(e=>e.cliente_id===cid):[emp].filter(Boolean);const seenIds=new Set();const unidades=unidadesRaw.filter(e=>seenIds.has(e.id)?false:(seenIds.add(e.id),true));setEmpresasDisponiveis(unidades.map(e=>({id:e.id,nome:e.nome,clienteNome:e.clientes?.nome||'',clienteId:e.cliente_id||null})));setEmpresaAtiva({id:emp?.id,nome:emp?.nome,clienteNome:emp?.clientes?.nome||'',clienteId:emp?.cliente_id||null});setAguardandoSelecaoEmpresa(false);setAutenticado(true);}}/>;
   if(carregandoDados)return <Spinner msg="Carregando dados…"/>;
 
   const nowStr=new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
@@ -11436,7 +11439,9 @@ function App(){
           // Frutaria JM: por UUID via EMPRESA_ID — o mesmo contexto que define os dados carregados
           // (loadS). É atribuído antes de qualquer render autenticado e zerado no logout, então a
           // logo nunca aparece para outra empresa nem sobra de uma sessão anterior.
-          if(EMPRESA_ID===FRUTARIA_JM_EMPRESA_ID)return(
+          // Demais unidades da JM: pelo cliente_id da própria unidade ativa (empresaAtiva.clienteId).
+          // Sem clienteId (ainda não carregado), só a unidade original é reconhecida.
+          if(EMPRESA_ID===FRUTARIA_JM_EMPRESA_ID||(empresaAtiva?.id===EMPRESA_ID&&empresaAtiva?.clienteId===FRUTARIA_JM_CLIENTE_ID))return(
             <div className="hdr-logo hdr-logo-jm-wrap">
               <img className="hdr-logo-jm" src="./logo-JM.png" alt="Frutaria JM"/>
             </div>
