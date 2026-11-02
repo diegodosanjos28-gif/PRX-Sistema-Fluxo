@@ -2680,6 +2680,8 @@ const RESTRICTED_VIEWER_ABAS=['painel','fornecedores'];
 const FRUTARIA_JM_EMPRESA_ID='81919f1b-34e5-4f5b-903a-6ae3f3df549c';
 // Cliente proprietário da Frutaria JM — todas as unidades com este cliente_id usam a mesma logo.
 const FRUTARIA_JM_CLIENTE_ID='dc6f419d-bf27-45f8-86f0-59c96f88779f';
+// Logo exclusiva da Frutaria JW (mesmo cliente da JM) — SOMENTE o empresa_id; tem precedência sobre o cliente_id.
+const FRUTARIA_JW_EMPRESA_ID='02114930-c874-43f0-a528-276597c13c56';
 // Logo exclusiva do Mercado Angus — mesmo critério: SOMENTE o empresa_id (não o cliente_id).
 const MERCADO_ANGUS_EMPRESA_ID='d240a807-508a-4bd5-bd45-078209eee17a';
 // Logo exclusiva do Mercado Sol Nascente — mesmo critério: SOMENTE o empresa_id (unidade Matriz).
@@ -11441,6 +11443,13 @@ function App(){
           // logo nunca aparece para outra empresa nem sobra de uma sessão anterior.
           // Demais unidades da JM: pelo cliente_id da própria unidade ativa (empresaAtiva.clienteId).
           // Sem clienteId (ainda não carregado), só a unidade original é reconhecida.
+          // Frutaria JW: identidade visual própria, por UUID da unidade. Precede a regra da JM
+          // porque a JW pertence ao mesmo cliente e seria capturada pelo clienteId.
+          if(EMPRESA_ID===FRUTARIA_JW_EMPRESA_ID)return(
+            <div className="hdr-logo hdr-logo-jm-wrap">
+              <img className="hdr-logo-jm" src="./Logo-JW.png" alt="Frutaria JW"/>
+            </div>
+          );
           if(EMPRESA_ID===FRUTARIA_JM_EMPRESA_ID||(empresaAtiva?.id===EMPRESA_ID&&empresaAtiva?.clienteId===FRUTARIA_JM_CLIENTE_ID))return(
             <div className="hdr-logo hdr-logo-jm-wrap">
               <img className="hdr-logo-jm" src="./logo-JM.png" alt="Frutaria JM"/>
